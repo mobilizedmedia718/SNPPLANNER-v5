@@ -869,7 +869,80 @@ const UI = {
     `;
 
 },
-    renderReports(){},
+   renderReports(){
+
+    const report = Reports.summary();
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Business Reports</h2>
+
+    <div class="card">
+
+        <h3>Business Summary</h3>
+
+        <table>
+
+            <tr>
+                <td>Total Events</td>
+                <td>${report.totalEvents}</td>
+            </tr>
+
+            <tr>
+                <td>Total Customers</td>
+                <td>${report.totalCustomers}</td>
+            </tr>
+
+            <tr>
+                <td>Total Vendors</td>
+                <td>${report.totalVendors}</td>
+            </tr>
+
+            <tr>
+                <td>Total Venues</td>
+                <td>${report.totalVenues}</td>
+            </tr>
+
+            <tr>
+                <td>Total Inventory Items</td>
+                <td>${report.totalInventoryItems}</td>
+            </tr>
+
+            <tr>
+                <td>Total Assets</td>
+                <td>${report.totalAssets}</td>
+            </tr>
+
+            <tr>
+                <td>Total Income</td>
+                <td>${Utils.money(report.totalIncome)}</td>
+            </tr>
+
+            <tr>
+                <td>Total Expenses</td>
+                <td>${Utils.money(report.totalExpenses)}</td>
+            </tr>
+
+            <tr>
+                <td>Net Profit</td>
+                <td>${Utils.money(report.totalProfit)}</td>
+            </tr>
+
+        </table>
+
+        <br>
+
+        <button onclick="alert(Reports.export())">
+
+            Export Report
+
+        </button>
+
+    </div>
+
+    `;
+
+   } ,
     renderSettings(){}
 
 };
