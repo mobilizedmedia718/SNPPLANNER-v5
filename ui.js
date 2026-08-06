@@ -943,6 +943,86 @@ const UI = {
     `;
 
    } ,
-    renderSettings(){}
+    renderSettings(){
+
+    const s = Settings.data;
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Settings</h2>
+
+    <div class="card">
+
+        <label>Theme</label>
+
+        <select id="theme">
+
+            <option value="light" ${s.theme==="light"?"selected":""}>Light</option>
+
+            <option value="dark" ${s.theme==="dark"?"selected":""}>Dark</option>
+
+        </select>
+
+        <label>Currency</label>
+
+        <input id="currency" value="${s.currency}">
+
+        <label>Language</label>
+
+        <input id="language" value="${s.language}">
+
+        <label>
+            <input
+                type="checkbox"
+                id="autosave"
+                ${s.autosave?"checked":""}>
+            Enable Autosave
+        </label>
+
+        <label>
+            <input
+                type="checkbox"
+                id="notifications"
+                ${s.notifications?"checked":""}>
+            Enable Notifications
+        </label>
+
+        <label>
+            <input
+                type="checkbox"
+                id="compactMode"
+                ${s.compactMode?"checked":""}>
+            Compact Mode
+        </label>
+
+        <br><br>
+
+        <button onclick="
+
+            Settings.update('theme',document.getElementById('theme').value);
+
+            Settings.update('currency',document.getElementById('currency').value);
+
+            Settings.update('language',document.getElementById('language').value);
+
+            Settings.update('autosave',document.getElementById('autosave').checked);
+
+            Settings.update('notifications',document.getElementById('notifications').checked);
+
+            Settings.update('compactMode',document.getElementById('compactMode').checked);
+
+            alert('Settings Saved');
+
+        ">
+
+        Save Settings
+
+        </button>
+
+    </div>
+
+    `;
+
+    }
 
 };
