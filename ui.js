@@ -430,7 +430,110 @@ const UI = {
     `;
 
     },
-    renderInventory(){},
+    renderInventory(){
+
+    const items = Inventory.all();
+    const vendors = Vendors.all();
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Inventory</h2>
+
+    <button onclick="Inventory.create(); UI.renderInventory();">
+        + Add Item
+    </button>
+
+    <br><br>
+
+    ${
+        items.length===0
+        ? "<p>No inventory items added yet.</p>"
+        : items.map(item=>`
+
+        <div class="card">
+
+            <label>Item Name</label>
+
+            <input
+                value="${item.name}"
+                onchange="Inventory.update('${item.id}',{name:this.value})">
+
+            <label>Category</label>
+
+            <input
+                value="${item.category}"
+                onchange="Inventory.update('${item.id}',{category:this.value})">
+
+            <label>Vendor</label>
+
+            <select onchange="Inventory.update('${item.id}',{vendorId:this.value})">
+
+                <option value="">Select Vendor</option>
+
+                ${vendors.map(v=>`
+
+                    <option
+                        value="${v.id}"
+                        ${item.vendorId===v.id?"selected":""}>
+
+                        ${v.name}
+
+                    </option>
+
+                `).join("")}
+
+            </select>
+
+            <label>Quantity</label>
+
+            <input
+                type="number"
+                value="${item.quantity}"
+                onchange="Inventory.update('${item.id}',{quantity:Number(this.value)})">
+
+            <label>Minimum Stock</label>
+
+            <input
+                type="number"
+                value="${item.minimum}"
+                onchange="Inventory.update('${item.id}',{minimum:Number(this.value)})">
+
+            <label>Unit Cost</label>
+
+            <input
+                type="number"
+                value="${item.cost}"
+                onchange="Inventory.update('${item.id}',{cost:Number(this.value)})">
+
+            <label>Selling Price</label>
+
+            <input
+                type="number"
+                value="${item.sellPrice}"
+                onchange="Inventory.update('${item.id}',{sellPrice:Number(this.value)})">
+
+            <br><br>
+
+            <button onclick="
+                if(confirm('Delete this item?')){
+                    Inventory.remove('${item.id}');
+                    UI.renderInventory();
+                }">
+
+                Delete Item
+
+            </button>
+
+        </div>
+
+        <br>
+
+        `).join("")
+    }
+
+    `;
+
+    },
     renderCRM(){},
     renderFinance(){},
     renderAssets(){},
