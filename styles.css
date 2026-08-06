@@ -143,3 +143,48 @@ td{
 }
 
 }
+.topbar-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+#globalSearch{
+    width:280px;
+    max-width:40vw;
+}
+
+body.dark{
+    --background:#0f172a;
+    --surface:#1e293b;
+    --text:#f8fafc;
+    --border:#334155;
+}
+
+body.dark input,
+body.dark textarea,
+body.dark select{
+    background:#0f172a;
+    color:#f8fafc;
+}
+
+@media(max-width:700px){
+
+    .topbar{
+        height:auto;
+        padding:12px;
+        flex-direction:column;
+        gap:10px;
+        align-items:stretch;
+    }
+
+    .topbar-right{
+        flex-wrap:wrap;
+    }
+
+    #globalSearch{
+        width:100%;
+        max-width:none;
+    }
+
+}
