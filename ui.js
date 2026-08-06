@@ -791,7 +791,84 @@ const UI = {
     `;
 
     },
-    renderCalendar(){},
+    renderCalendar(){
+
+    const reminders = Calendar.all();
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Calendar & Reminders</h2>
+
+    <button onclick="Calendar.create(); UI.renderCalendar();">
+        + Add Reminder
+    </button>
+
+    <br><br>
+
+    ${
+        reminders.length===0
+        ? "<p>No reminders created yet.</p>"
+        : reminders.map(r=>`
+
+        <div class="card">
+
+            <label>Title</label>
+
+            <input
+                value="${r.title}"
+                onchange="Calendar.update('${r.id}',{title:this.value})">
+
+            <label>Date</label>
+
+            <input
+                type="date"
+                value="${r.date}"
+                onchange="Calendar.update('${r.id}',{date:this.value})">
+
+            <label>Time</label>
+
+            <input
+                type="time"
+                value="${r.time}"
+                onchange="Calendar.update('${r.id}',{time:this.value})">
+
+            <label>Category</label>
+
+            <input
+                value="${r.category}"
+                onchange="Calendar.update('${r.id}',{category:this.value})">
+
+            <label>
+                <input
+                    type="checkbox"
+                    ${r.completed ? "checked" : ""}
+                    onchange="Calendar.update('${r.id}',{completed:this.checked})">
+
+                Completed
+            </label>
+
+            <br><br>
+
+            <button onclick="
+                if(confirm('Delete this reminder?')){
+                    Calendar.remove('${r.id}');
+                    UI.renderCalendar();
+                }">
+
+                Delete Reminder
+
+            </button>
+
+        </div>
+
+        <br>
+
+        `).join("")
+    }
+
+    `;
+
+},
     renderReports(){},
     renderSettings(){}
 
