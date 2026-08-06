@@ -235,7 +235,98 @@ const UI = {
     `;
 
     },
-    renderVenues(){},
+    renderVenues(){
+
+    const venues = Venues.all();
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Venues</h2>
+
+    <button onclick="Venues.create(); UI.renderVenues();">
+        + Add Venue
+    </button>
+
+    <br><br>
+
+    ${
+        venues.length===0
+        ? "<p>No venues added yet.</p>"
+        : venues.map(v=>`
+
+        <div class="card">
+
+            <label>Venue Name</label>
+            <input
+                value="${v.name}"
+                onchange="Venues.update('${v.id}',{name:this.value})">
+
+            <label>Address</label>
+            <input
+                value="${v.address}"
+                onchange="Venues.update('${v.id}',{address:this.value})">
+
+            <label>City</label>
+            <input
+                value="${v.city}"
+                onchange="Venues.update('${v.id}',{city:this.value})">
+
+            <label>State</label>
+            <input
+                value="${v.state}"
+                onchange="Venues.update('${v.id}',{state:this.value})">
+
+            <label>ZIP Code</label>
+            <input
+                value="${v.zip}"
+                onchange="Venues.update('${v.id}',{zip:this.value})">
+
+            <label>Capacity</label>
+            <input
+                type="number"
+                value="${v.capacity}"
+                onchange="Venues.update('${v.id}',{capacity:Number(this.value)})">
+
+            <label>Rental Cost</label>
+            <input
+                type="number"
+                value="${v.rentalCost}"
+                onchange="Venues.update('${v.id}',{rentalCost:Number(this.value)})">
+
+            <label>Deposit</label>
+            <input
+                type="number"
+                value="${v.deposit}"
+                onchange="Venues.update('${v.id}',{deposit:Number(this.value)})">
+
+            <label>
+                <input
+                    type="checkbox"
+                    ${v.depositRefundable ? "checked" : ""}
+                    onchange="Venues.update('${v.id}',{depositRefundable:this.checked})">
+                Deposit Refundable
+            </label>
+
+            <br><br>
+
+            <button onclick="
+                if(confirm('Delete this venue?')){
+                    Venues.remove('${v.id}');
+                    UI.renderVenues();
+                }">
+                Delete Venue
+            </button>
+
+        </div>
+
+        <br>
+
+        `).join("")
+    }
+
+    `;
+
+    },
     renderVendors(){},
     renderInventory(){},
     renderCRM(){},
