@@ -534,7 +534,92 @@ const UI = {
     `;
 
     },
-    renderCRM(){},
+    renderCRM(){
+
+    const customers = CRM.all();
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Customer CRM</h2>
+
+    <button onclick="CRM.create(); UI.renderCRM();">
+        + Add Customer
+    </button>
+
+    <br><br>
+
+    ${
+        customers.length===0
+        ? "<p>No customers added yet.</p>"
+        : customers.map(c=>`
+
+        <div class="card">
+
+            <label>First Name</label>
+
+            <input
+                value="${c.firstName}"
+                onchange="CRM.update('${c.id}',{firstName:this.value})">
+
+            <label>Last Name</label>
+
+            <input
+                value="${c.lastName}"
+                onchange="CRM.update('${c.id}',{lastName:this.value})">
+
+            <label>Email</label>
+
+            <input
+                value="${c.email}"
+                onchange="CRM.update('${c.id}',{email:this.value})">
+
+            <label>Phone</label>
+
+            <input
+                value="${c.phone}"
+                onchange="CRM.update('${c.id}',{phone:this.value})">
+
+            <label>Birthday</label>
+
+            <input
+                type="date"
+                value="${c.birthday}"
+                onchange="CRM.update('${c.id}',{birthday:this.value})">
+
+            <label>Loyalty Points</label>
+
+            <input
+                type="number"
+                value="${c.loyaltyPoints}"
+                onchange="CRM.update('${c.id}',{loyaltyPoints:Number(this.value)})">
+
+            <label>Notes</label>
+
+            <textarea
+                onchange="CRM.update('${c.id}',{notes:this.value})">${c.notes}</textarea>
+
+            <br><br>
+
+            <button onclick="
+                if(confirm('Delete this customer?')){
+                    CRM.remove('${c.id}');
+                    UI.renderCRM();
+                }">
+
+                Delete Customer
+
+            </button>
+
+        </div>
+
+        <br>
+
+        `).join("")
+    }
+
+    `;
+
+    },
     renderFinance(){},
     renderAssets(){},
     renderCalendar(){},
