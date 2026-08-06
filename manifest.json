@@ -1,1 +1,10 @@
-
+{
+  "name": "SNP Planner V5",
+  "short_name": "SNP Planner",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#2563eb",
+  "description": "Event planning and business management application",
+  "icons": []
+}
