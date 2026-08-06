@@ -705,7 +705,92 @@ const UI = {
     `;
 
     },
-    renderAssets(){},
+    renderAssets(){
+
+    const assets = Assets.all();
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Asset Management</h2>
+
+    <button onclick="Assets.create(); UI.renderAssets();">
+        + Add Asset
+    </button>
+
+    <br><br>
+
+    ${
+        assets.length===0
+        ? "<p>No assets added yet.</p>"
+        : assets.map(a=>`
+
+        <div class="card">
+
+            <label>Asset Name</label>
+
+            <input
+                value="${a.name}"
+                onchange="Assets.update('${a.id}',{name:this.value})">
+
+            <label>Category</label>
+
+            <input
+                value="${a.category}"
+                onchange="Assets.update('${a.id}',{category:this.value})">
+
+            <label>Serial Number</label>
+
+            <input
+                value="${a.serialNumber}"
+                onchange="Assets.update('${a.id}',{serialNumber:this.value})">
+
+            <label>Current Value</label>
+
+            <input
+                type="number"
+                value="${a.currentValue}"
+                onchange="Assets.update('${a.id}',{currentValue:Number(this.value)})">
+
+            <label>Location</label>
+
+            <input
+                value="${a.location}"
+                onchange="Assets.update('${a.id}',{location:this.value})">
+
+            <label>Status</label>
+
+            <select onchange="Assets.update('${a.id}',{status:this.value})">
+
+                <option value="Available" ${a.status==="Available"?"selected":""}>Available</option>
+
+                <option value="Assigned" ${a.status==="Assigned"?"selected":""}>Assigned</option>
+
+                <option value="Maintenance" ${a.status==="Maintenance"?"selected":""}>Maintenance</option>
+
+                <option value="Retired" ${a.status==="Retired"?"selected":""}>Retired</option>
+
+            </select>
+
+            <button onclick="
+                if(confirm('Delete this asset?')){
+                    Assets.remove('${a.id}');
+                    UI.renderAssets();
+                }">
+
+                Delete Asset
+
+            </button>
+
+        </div>
+
+        <br>
+
+        `).join("")
+    }
+
+    `;
+
+    },
     renderCalendar(){},
     renderReports(){},
     renderSettings(){}
