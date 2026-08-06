@@ -64,37 +64,80 @@ const UI = {
 
     renderDashboard() {
 
-        const report = Reports.summary();
+    const report = Reports.summary();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
-        <h2>Dashboard</h2>
+    <h2>Executive Dashboard</h2>
 
-        <div class="dashboard-grid">
+    <div class="dashboard-grid">
 
-            <div class="card">
-                <h3>Events</h3>
-                <p>${report.totalEvents}</p>
-            </div>
-
-            <div class="card">
-                <h3>Customers</h3>
-                <p>${report.totalCustomers}</p>
-            </div>
-
-            <div class="card">
-                <h3>Income</h3>
-                <p>${Utils.money(report.totalIncome)}</p>
-            </div>
-
-            <div class="card">
-                <h3>Profit</h3>
-                <p>${Utils.money(report.totalProfit)}</p>
-            </div>
-
+        <div class="card">
+            <h3>Events</h3>
+            <h1>${report.totalEvents}</h1>
         </div>
 
-        `;
+        <div class="card">
+            <h3>Customers</h3>
+            <h1>${report.totalCustomers}</h1>
+        </div>
+
+        <div class="card">
+            <h3>Vendors</h3>
+            <h1>${report.totalVendors}</h1>
+        </div>
+
+        <div class="card">
+            <h3>Venues</h3>
+            <h1>${report.totalVenues}</h1>
+        </div>
+
+        <div class="card">
+            <h3>Inventory</h3>
+            <h1>${report.totalInventoryItems}</h1>
+        </div>
+
+        <div class="card">
+            <h3>Assets</h3>
+            <h1>${report.totalAssets}</h1>
+        </div>
+
+        <div class="card">
+            <h3>Total Income</h3>
+            <h2>${Utils.money(report.totalIncome)}</h2>
+        </div>
+
+        <div class="card">
+            <h3>Total Expenses</h3>
+            <h2>${Utils.money(report.totalExpenses)}</h2>
+        </div>
+
+        <div class="card">
+            <h3>Net Profit</h3>
+            <h2>${Utils.money(report.totalProfit)}</h2>
+        </div>
+
+    </div>
+
+    <br>
+
+    <div class="card">
+
+        <h3>Quick Actions</h3>
+
+        <button onclick="UI.renderEvents()">New Event</button>
+
+        <button onclick="UI.renderCRM()">New Customer</button>
+
+        <button onclick="UI.renderFinance()">New Transaction</button>
+
+        <button onclick="UI.renderInventory()">Inventory</button>
+
+        <button onclick="UI.renderReports()">Reports</button>
+
+    </div>
+
+    `;
 
     },
 
