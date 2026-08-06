@@ -620,7 +620,91 @@ const UI = {
     `;
 
     },
-    renderFinance(){},
+    renderFinance(){
+
+    const transactions = Finance.all();
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Finance</h2>
+
+    <button onclick="Finance.create({type:'Expense'}); UI.renderFinance();">
+        + Add Transaction
+    </button>
+
+    <br><br>
+
+    <div class="card">
+
+        <strong>Total Income:</strong> ${Utils.money(Finance.income())}<br>
+        <strong>Total Expenses:</strong> ${Utils.money(Finance.expenses())}<br>
+        <strong>Net Profit:</strong> ${Utils.money(Finance.profit())}
+
+    </div>
+
+    <br>
+
+    ${
+        transactions.length===0
+        ? "<p>No transactions recorded yet.</p>"
+        : transactions.map(t=>`
+
+        <div class="card">
+
+            <label>Type</label>
+
+            <select onchange="Finance.update('${t.id}',{type:this.value});UI.renderFinance();">
+
+                <option value="Income" ${t.type==="Income"?"selected":""}>Income</option>
+                <option value="Expense" ${t.type==="Expense"?"selected":""}>Expense</option>
+
+            </select>
+
+            <label>Description</label>
+
+            <input
+                value="${t.description}"
+                onchange="Finance.update('${t.id}',{description:this.value})">
+
+            <label>Category</label>
+
+            <input
+                value="${t.category}"
+                onchange="Finance.update('${t.id}',{category:this.value})">
+
+            <label>Amount</label>
+
+            <input
+                type="number"
+                value="${t.amount}"
+                onchange="Finance.update('${t.id}',{amount:Number(this.value)});UI.renderFinance();">
+
+            <label>Payment Method</label>
+
+            <input
+                value="${t.paymentMethod}"
+                onchange="Finance.update('${t.id}',{paymentMethod:this.value})">
+
+            <button onclick="
+                if(confirm('Delete this transaction?')){
+                    Finance.remove('${t.id}');
+                    UI.renderFinance();
+                }">
+
+                Delete Transaction
+
+            </button>
+
+        </div>
+
+        <br>
+
+        `).join("")
+    }
+
+    `;
+
+    },
     renderAssets(){},
     renderCalendar(){},
     renderReports(){},
