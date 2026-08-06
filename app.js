@@ -3,13 +3,27 @@ const SNPPlanner = {
     initialized: false,
 
     init() {
-        console.log("SNP Planner V5 Starting...");
+
+        console.log(`Starting SNP Planner V${this.version}...`);
+
+        Settings.load();
+        Business.load();
+        Events.load();
+        Venues.load();
+        Vendors.load();
+        Inventory.load();
+        CRM.load();
+        Finance.load();
+        Assets.load();
+        Calendar.load();
+
+        UI.renderLayout();
+        UI.renderDashboard();
 
         this.initialized = true;
 
-        UI.renderLayout();
-
         console.log("SNP Planner Ready");
+
     }
 };
 
