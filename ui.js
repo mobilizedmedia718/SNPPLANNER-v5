@@ -5,16 +5,38 @@ const UI = {
         document.getElementById("app").innerHTML = `
 
         <header class="topbar">
+<header class="topbar">
 
-            <div class="logo">
-                <h1>SNP Planner V5</h1>
-            </div>
+    <div class="logo">
+        <h1>🎨 SNP Planner V5</h1>
+    </div>
 
-            <div class="topbar-right">
-                <span>Version ${SNPPlanner.version}</span>
-            </div>
+    <div class="topbar-right">
 
-        </header>
+        <input
+            id="globalSearch"
+            type="search"
+            placeholder="Search customers, events, vendors...">
+
+        <button onclick="UI.renderDashboard()">
+            Dashboard
+        </button>
+
+        <button onclick="alert('Notifications coming in Version 5.1')">
+            🔔
+        </button>
+
+        <button onclick="UI.renderSettings()">
+            ⚙️
+        </button>
+
+        <span>
+            Version ${SNPPlanner.version}
+        </span>
+
+    </div>
+
+</header>
 
         <div class="layout">
 
