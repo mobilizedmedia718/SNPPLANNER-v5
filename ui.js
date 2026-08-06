@@ -165,7 +165,76 @@ const UI = {
     `;
 
 },
-    renderEvents(){},
+    renderEvents(){
+
+    const events = Events.all();
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Events</h2>
+
+    <button onclick="Events.create(); UI.renderEvents();">
+        + New Event
+    </button>
+
+    <br><br>
+
+    ${
+        events.length === 0
+        ? "<p>No events created yet.</p>"
+        : events.map(event => `
+
+            <div class="card">
+
+                <label>Event Name</label>
+                <input
+                    value="${event.name}"
+                    onchange="Events.update('${event.id}',{name:this.value})">
+
+                <label>Date</label>
+                <input
+                    type="date"
+                    value="${event.date}"
+                    onchange="Events.update('${event.id}',{date:this.value})">
+
+                <label>Time</label>
+                <input
+                    type="time"
+                    value="${event.time}"
+                    onchange="Events.update('${event.id}',{time:this.value})">
+
+                <label>Status</label>
+
+                <select
+                    onchange="Events.update('${event.id}',{status:this.value})">
+
+                    <option ${event.status==="Draft"?"selected":""}>Draft</option>
+                    <option ${event.status==="Scheduled"?"selected":""}>Scheduled</option>
+                    <option ${event.status==="Completed"?"selected":""}>Completed</option>
+                    <option ${event.status==="Cancelled"?"selected":""}>Cancelled</option>
+
+                </select>
+
+                <br><br>
+
+                <button onclick="
+                    if(confirm('Delete this event?')){
+                        Events.remove('${event.id}');
+                        UI.renderEvents();
+                    }">
+                    Delete Event
+                </button>
+
+            </div>
+
+            <br>
+
+        `).join("")
+    }
+
+    `;
+
+    },
     renderVenues(){},
     renderVendors(){},
     renderInventory(){},
