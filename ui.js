@@ -98,7 +98,73 @@ const UI = {
 
     },
 
-    renderBusiness(){},
+    renderBusiness(){
+
+    const b = Business.data;
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Business Profile</h2>
+
+    <div class="card">
+
+        <label>Business Name</label>
+        <input id="businessName" value="${b.name}">
+
+        <label>Owner</label>
+        <input id="businessOwner" value="${b.owner}">
+
+        <label>Phone</label>
+        <input id="businessPhone" value="${b.phone}">
+
+        <label>Email</label>
+        <input id="businessEmail" value="${b.email}">
+
+        <label>Website</label>
+        <input id="businessWebsite" value="${b.website}">
+
+        <label>Address</label>
+        <input id="businessAddress" value="${b.address}">
+
+        <label>City</label>
+        <input id="businessCity" value="${b.city}">
+
+        <label>State</label>
+        <input id="businessState" value="${b.state}">
+
+        <label>ZIP Code</label>
+        <input id="businessZip" value="${b.zip}">
+
+        <label>Tax Rate (%)</label>
+        <input id="businessTax" type="number" value="${b.taxRate}">
+
+        <label>Notes</label>
+        <textarea id="businessNotes">${b.notes}</textarea>
+
+        <br><br>
+
+        <button onclick="Business.update('name',document.getElementById('businessName').value);
+        Business.update('owner',document.getElementById('businessOwner').value);
+        Business.update('phone',document.getElementById('businessPhone').value);
+        Business.update('email',document.getElementById('businessEmail').value);
+        Business.update('website',document.getElementById('businessWebsite').value);
+        Business.update('address',document.getElementById('businessAddress').value);
+        Business.update('city',document.getElementById('businessCity').value);
+        Business.update('state',document.getElementById('businessState').value);
+        Business.update('zip',document.getElementById('businessZip').value);
+        Business.update('taxRate',document.getElementById('businessTax').value);
+        Business.update('notes',document.getElementById('businessNotes').value);
+        alert('Business Profile Saved');">
+
+        Save Business Profile
+
+        </button>
+
+    </div>
+
+    `;
+
+},
     renderEvents(){},
     renderVenues(){},
     renderVendors(){},
