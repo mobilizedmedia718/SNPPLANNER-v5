@@ -14,9 +14,10 @@ const UI = {
     <div class="topbar-right">
 
         <input
-            id="globalSearch"
-            type="search"
-            placeholder="Search customers, events, vendors...">
+    id="globalSearch"
+    type="search"
+    placeholder="Search customers, events, vendors..."
+    oninput="UI.handleSearch(this.value)">
 
         <button onclick="UI.renderDashboard()">
             Dashboard
