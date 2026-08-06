@@ -327,7 +327,109 @@ const UI = {
     `;
 
     },
-    renderVendors(){},
+    renderVendors(){
+
+    const vendors = Vendors.all();
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Vendors</h2>
+
+    <button onclick="Vendors.create(); UI.renderVendors();">
+        + Add Vendor
+    </button>
+
+    <br><br>
+
+    ${
+        vendors.length===0
+        ? "<p>No vendors added yet.</p>"
+        : vendors.map(v=>`
+
+        <div class="card">
+
+            <label>Vendor Name</label>
+            <input
+                value="${v.name}"
+                onchange="Vendors.update('${v.id}',{name:this.value})">
+
+            <label>Category</label>
+            <input
+                value="${v.category}"
+                onchange="Vendors.update('${v.id}',{category:this.value})">
+
+            <label>Contact Person</label>
+            <input
+                value="${v.contact}"
+                onchange="Vendors.update('${v.id}',{contact:this.value})">
+
+            <label>Phone</label>
+            <input
+                value="${v.phone}"
+                onchange="Vendors.update('${v.id}',{phone:this.value})">
+
+            <label>Email</label>
+            <input
+                value="${v.email}"
+                onchange="Vendors.update('${v.id}',{email:this.value})">
+
+            <label>Payment Type</label>
+
+            <select onchange="Vendors.update('${v.id}',{paymentType:this.value}); UI.renderVendors();">
+
+                <option value="Flat Rate" ${v.paymentType==="Flat Rate"?"selected":""}>Flat Rate</option>
+
+                <option value="Percentage" ${v.paymentType==="Percentage"?"selected":""}>Percentage</option>
+
+            </select>
+
+            ${
+                v.paymentType==="Flat Rate"
+
+                ?`
+
+                <label>Flat Rate</label>
+
+                <input
+                    type="number"
+                    value="${v.flatRate}"
+                    onchange="Vendors.update('${v.id}',{flatRate:Number(this.value)})">
+
+                `
+
+                :`
+
+                <label>Percentage (%)</label>
+
+                <input
+                    type="number"
+                    value="${v.percentage}"
+                    onchange="Vendors.update('${v.id}',{percentage:Number(this.value)})">
+
+                `
+
+            }
+
+            <br><br>
+
+            <button onclick="
+                if(confirm('Delete this vendor?')){
+                    Vendors.remove('${v.id}');
+                    UI.renderVendors();
+                }">
+                Delete Vendor
+            </button>
+
+        </div>
+
+        <br>
+
+        `).join("")
+    }
+
+    `;
+
+    },
     renderInventory(){},
     renderCRM(){},
     renderFinance(){},
