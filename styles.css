@@ -1,29 +1,145 @@
 :root{
-  --primary:#2563eb;
-  --secondary:#1e293b;
-  --background:#f8fafc;
-  --surface:#ffffff;
-  --text:#111827;
-  --border:#d1d5db;
-  --success:#16a34a;
-  --warning:#f59e0b;
-  --danger:#dc2626;
-  --radius:12px;
-  --shadow:0 2px 10px rgba(0,0,0,.08);
+    --primary:#2563eb;
+    --primary-dark:#1d4ed8;
+    --background:#f5f7fb;
+    --surface:#ffffff;
+    --sidebar:#0f172a;
+    --sidebar-text:#ffffff;
+    --text:#111827;
+    --border:#dbe2ea;
+    --success:#22c55e;
+    --danger:#ef4444;
+    --radius:12px;
+    --shadow:0 10px 25px rgba(0,0,0,.08);
 }
 
 *{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
 body{
-  font-family:Arial,Helvetica,sans-serif;
-  background:var(--background);
-  color:var(--text);
+    font-family:Inter,Arial,sans-serif;
+    background:var(--background);
+    color:var(--text);
 }
 
-#app{
-  min-height:100vh;
+.topbar{
+    height:70px;
+    background:var(--surface);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 24px;
+    box-shadow:var(--shadow);
+}
+
+.layout{
+    display:grid;
+    grid-template-columns:260px 1fr;
+    min-height:calc(100vh - 70px);
+}
+
+#sidebar{
+    background:var(--sidebar);
+    padding:20px;
+}
+
+#sidebar button{
+    width:100%;
+    margin-bottom:10px;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:#1e293b;
+    color:white;
+    cursor:pointer;
+    text-align:left;
+    transition:.2s;
+}
+
+#sidebar button:hover{
+    background:var(--primary);
+}
+
+#workspace{
+    padding:30px;
+}
+
+.card{
+    background:var(--surface);
+    border-radius:var(--radius);
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:var(--shadow);
+}
+
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+}
+
+label{
+    display:block;
+    margin-top:14px;
+    margin-bottom:6px;
+    font-weight:600;
+}
+
+input,
+textarea,
+select{
+    width:100%;
+    padding:12px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:15px;
+}
+
+textarea{
+    min-height:120px;
+}
+
+button{
+    background:var(--primary);
+    color:white;
+    border:none;
+    padding:12px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+button:hover{
+    background:var(--primary-dark);
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+td{
+    padding:10px;
+    border-bottom:1px solid var(--border);
+}
+
+@media(max-width:900px){
+
+.layout{
+    grid-template-columns:1fr;
+}
+
+#sidebar{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+}
+
+#workspace{
+    padding:15px;
+}
+
 }
