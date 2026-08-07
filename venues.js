@@ -14,29 +14,47 @@ const Venues = {
 
         const venue = {
             id: Utils.id(),
+
             name: "",
+            contactPerson: "",
+            jobTitle: "",
+
+            phone: "",
+            alternatePhone: "",
+            email: "",
+
+            website: "",
+            instagram: "",
+            facebook: "",
+
             address: "",
+            address2: "",
             city: "",
             state: "",
             zip: "",
-            phone: "",
-            email: "",
-            website: "",
-            contactPerson: "",
+            country: "",
+
             capacity: 0,
             rentalCost: 0,
             deposit: 0,
             depositRefundable: true,
+
             parking: "",
             indoorOutdoor: "Indoor",
+
             alcoholAllowed: false,
             foodAllowed: true,
             outsideVendorsAllowed: true,
+
             setupTime: "",
             breakdownTime: "",
+
+            taxId: "",
             notes: "",
+
             active: true,
             created: Utils.date(),
+
             ...data
         };
 
@@ -74,9 +92,26 @@ const Venues = {
         return this.list.filter(v => v.active !== false);
     },
 
+    fullAddress(venue) {
+
+        if (!venue) return "";
+
+        return [
+            venue.address,
+            venue.address2,
+            venue.city,
+            venue.state,
+            venue.zip,
+            venue.country
+        ]
+        .filter(Boolean)
+        .join(", ");
+    },
+
     totalRentalCost() {
         return this.list.reduce(
-            (sum, v) => sum + Number(v.rentalCost || 0),
+            (sum, v) =>
+                sum + Number(v.rentalCost || 0),
             0
         );
     }
