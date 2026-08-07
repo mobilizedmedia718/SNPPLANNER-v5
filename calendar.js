@@ -20,6 +20,7 @@ const Calendar = {
             date: "",
             time: "",
             category: "General",
+            priority: "Normal",
             completed: false,
             created: Utils.date(),
             ...data
@@ -58,8 +59,18 @@ const Calendar = {
     },
 
     upcoming() {
-        const today = new Date().toISOString().split("T")[0];
-        return this.reminders.filter(r => r.date >= today && !r.completed);
+
+        const today = new Date().toISOString().slice(0,10);
+
+        return this.reminders
+            .filter(r => !r.completed && r.date && r.date >= today)
+            .sort((a,b) =>
+                `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)
+            );
+    },
+
+    completed() {
+        return this.reminders.filter(r => r.completed);
     }
 
 };
