@@ -233,7 +233,10 @@ const UI = {
 },
     renderEvents(){
 
+renderEvents(){
+
     const events = Events.all();
+    const venues = Venues.all();
 
     document.getElementById("workspace").innerHTML = `
 
@@ -269,10 +272,35 @@ const UI = {
                     value="${event.time}"
                     onchange="Events.update('${event.id}',{time:this.value})">
 
-                <label>Status</label>
+                <label>Venue</label>
+                <select onchange="Events.update('${event.id}',{venueId:this.value})">
 
-                <select
-                    onchange="Events.update('${event.id}',{status:this.value})">
+                    <option value="">Select Venue</option>
+
+                    ${venues.map(v => `
+                        <option
+                            value="${v.id}"
+                            ${event.venueId === v.id ? "selected" : ""}>
+                            ${v.name || "Unnamed Venue"}
+                        </option>
+                    `).join("")}
+
+                </select>
+
+                <label>Capacity</label>
+                <input
+                    type="number"
+                    value="${event.capacity}"
+                    onchange="Events.update('${event.id}',{capacity:Number(this.value)})">
+
+                <label>Tickets Sold</label>
+                <input
+                    type="number"
+                    value="${event.ticketsSold}"
+                    onchange="Events.update('${event.id}',{ticketsSold:Number(this.value)})">
+
+                <label>Status</label>
+                <select onchange="Events.update('${event.id}',{status:this.value})">
 
                     <option ${event.status==="Draft"?"selected":""}>Draft</option>
                     <option ${event.status==="Scheduled"?"selected":""}>Scheduled</option>
@@ -280,6 +308,10 @@ const UI = {
                     <option ${event.status==="Cancelled"?"selected":""}>Cancelled</option>
 
                 </select>
+
+                <label>Notes</label>
+                <textarea
+                    onchange="Events.update('${event.id}',{notes:this.value})">${event.notes}</textarea>
 
                 <br><br>
 
@@ -300,7 +332,7 @@ const UI = {
 
     `;
 
-    },
+},
     renderVenues(){
 
     const venues = Venues.all();
