@@ -488,4 +488,419 @@ const UI = {
                 <div class="card">
 
                     <label>Item Name</label>
-                    <
+                    <input value="${this.esc(item.name)}"
+                        onchange="Inventory.update('${item.id}',{name:this.value})">
+
+                    <label>Category</label>
+                    <input value="${this.esc(item.category)}"
+                        onchange="Inventory.update('${item.id}',{category:this.value})">
+
+                    <label>Vendor</label>
+
+                    <select onchange="Inventory.update('${item.id}',{vendorId:this.value})">
+
+                        <option value="">Select Vendor</option>
+
+                        ${vendors.map(v => `
+                            <option value="${v.id}"
+                                ${item.vendorId === v.id ? "selected" : ""}>
+                                ${this.esc(v.name || "Unnamed Vendor")}
+                            </option>
+                        `).join("")}
+
+                    </select>
+
+                    <label>Quantity</label>
+                    <input type="number" value="${Number(item.quantity || 0)}"
+                        onchange="Inventory.update('${item.id}',{quantity:Number(this.value)})">
+
+                    <label>Minimum Stock</label>
+                    <input type="number" value="${Number(item.minimum || 0)}"
+                        onchange="Inventory.update('${item.id}',{minimum:Number(this.value)})">
+
+                    <label>Unit Cost</label>
+                    <input type="number" step="0.01" value="${Number(item.cost || 0)}"
+                        onchange="Inventory.update('${item.id}',{cost:Number(this.value)})">
+
+                    <label>Selling Price</label>
+                    <input type="number" step="0.01" value="${Number(item.sellPrice || 0)}"
+                        onchange="Inventory.update('${item.id}',{sellPrice:Number(this.value)})">
+
+                    <label>Storage Location</label>
+                    <input value="${this.esc(item.storageLocation)}"
+                        onchange="Inventory.update('${item.id}',{storageLocation:this.value})">
+
+                    <label>Notes</label>
+                    <textarea onchange="Inventory.update('${item.id}',{notes:this.value})">${this.esc(item.notes)}</textarea>
+
+                    <br><br>
+
+                    <button onclick="
+                        if(confirm('Delete this inventory item?')){
+                            Inventory.remove('${item.id}');
+                            UI.renderInventory();
+                        }
+                    ">
+                        Delete Item
+                    </button>
+
+                </div>
+
+            `).join("")}
+        `;
+    },
+
+    renderCRM() {
+
+        const customers = CRM.all();
+
+        document.getElementById("workspace").innerHTML = `
+
+            <h2>Customer CRM</h2>
+
+            <button onclick="CRM.create();UI.renderCRM();">+ Add Customer</button>
+
+            <br><br>
+
+            ${customers.length === 0 ? "<p>No customers added yet.</p>" :
+
+            customers.map(c => `
+
+                <div class="card">
+
+                    <label>First Name</label>
+                    <input value="${this.esc(c.firstName)}"
+                        onchange="CRM.update('${c.id}',{firstName:this.value})">
+
+                    <label>Last Name</label>
+                    <input value="${this.esc(c.lastName)}"
+                        onchange="CRM.update('${c.id}',{lastName:this.value})">
+
+                    <label>Email</label>
+                    <input type="email" value="${this.esc(c.email)}"
+                        onchange="CRM.update('${c.id}',{email:this.value})">
+
+                    <label>Phone</label>
+                    <input value="${this.esc(c.phone)}"
+                        onchange="CRM.update('${c.id}',{phone:this.value})">
+
+                    <label>Birthday</label>
+                    <input type="date" value="${this.esc(c.birthday)}"
+                        onchange="CRM.update('${c.id}',{birthday:this.value})">
+
+                    <label>Address</label>
+                    <input value="${this.esc(c.address)}"
+                        onchange="CRM.update('${c.id}',{address:this.value})">
+
+                    <label>City</label>
+                    <input value="${this.esc(c.city)}"
+                        onchange="CRM.update('${c.id}',{city:this.value})">
+
+                    <label>State</label>
+                    <input value="${this.esc(c.state)}"
+                        onchange="CRM.update('${c.id}',{state:this.value})">
+
+                    <label>ZIP Code</label>
+                    <input value="${this.esc(c.zip)}"
+                        onchange="CRM.update('${c.id}',{zip:this.value})">
+
+                    <label>Loyalty Points</label>
+                    <input type="number" value="${Number(c.loyaltyPoints || 0)}"
+                        onchange="CRM.update('${c.id}',{loyaltyPoints:Number(this.value)})">
+
+                    <label>Total Spent</label>
+                    <input type="number" step="0.01" value="${Number(c.totalSpent || 0)}"
+                        onchange="CRM.update('${c.id}',{totalSpent:Number(this.value)})">
+
+                    <label>Total Visits</label>
+                    <input type="number" value="${Number(c.totalVisits || 0)}"
+                        onchange="CRM.update('${c.id}',{totalVisits:Number(this.value)})">
+
+                    <label>Notes</label>
+                    <textarea onchange="CRM.update('${c.id}',{notes:this.value})">${this.esc(c.notes)}</textarea>
+
+                    <br><br>
+
+                    <button onclick="
+                        if(confirm('Delete this customer?')){
+                            CRM.remove('${c.id}');
+                            UI.renderCRM();
+                        }
+                    ">
+                        Delete Customer
+                    </button>
+
+                </div>
+
+            `).join("")}
+        `;
+    },
+
+    renderFinance() {
+
+        const transactions = Finance.all();
+
+        document.getElementById("workspace").innerHTML = `
+
+            <h2>Finance</h2>
+
+            <button onclick="Finance.create({type:'Expense'});UI.renderFinance();">
+                + Add Transaction
+            </button>
+
+            <br><br>
+
+            <div class="card">
+                <strong>Total Income:</strong> ${Utils.money(Finance.income())}<br>
+                <strong>Total Expenses:</strong> ${Utils.money(Finance.expenses())}<br>
+                <strong>Net Profit:</strong> ${Utils.money(Finance.profit())}
+            </div>
+
+            ${transactions.map(t => `
+
+                <div class="card">
+
+                    <label>Type</label>
+
+                    <select onchange="Finance.update('${t.id}',{type:this.value});UI.renderFinance();">
+                        <option value="Income" ${t.type==="Income"?"selected":""}>Income</option>
+                        <option value="Expense" ${t.type==="Expense"?"selected":""}>Expense</option>
+                    </select>
+
+                    <label>Description</label>
+                    <input value="${this.esc(t.description)}"
+                        onchange="Finance.update('${t.id}',{description:this.value})">
+
+                    <label>Category</label>
+                    <input value="${this.esc(t.category)}"
+                        onchange="Finance.update('${t.id}',{category:this.value})">
+
+                    <label>Amount</label>
+                    <input type="number" step="0.01" value="${Number(t.amount || 0)}"
+                        onchange="Finance.update('${t.id}',{amount:Number(this.value)});UI.renderFinance();">
+
+                    <label>Payment Method</label>
+                    <input value="${this.esc(t.paymentMethod)}"
+                        onchange="Finance.update('${t.id}',{paymentMethod:this.value})">
+
+                    <br><br>
+
+                    <button onclick="
+                        if(confirm('Delete this transaction?')){
+                            Finance.remove('${t.id}');
+                            UI.renderFinance();
+                        }
+                    ">
+                        Delete Transaction
+                    </button>
+
+                </div>
+
+            `).join("")}
+        `;
+    },
+
+    renderAssets() {
+
+        const assets = Assets.all();
+
+        document.getElementById("workspace").innerHTML = `
+
+            <h2>Asset Management</h2>
+
+            <button onclick="Assets.create();UI.renderAssets();">+ Add Asset</button>
+
+            <br><br>
+
+            ${assets.length === 0 ? "<p>No assets added yet.</p>" :
+
+            assets.map(a => `
+
+                <div class="card">
+
+                    <label>Asset Name</label>
+                    <input value="${this.esc(a.name)}"
+                        onchange="Assets.update('${a.id}',{name:this.value})">
+
+                    <label>Category</label>
+                    <input value="${this.esc(a.category)}"
+                        onchange="Assets.update('${a.id}',{category:this.value})">
+
+                    <label>Serial Number</label>
+                    <input value="${this.esc(a.serialNumber)}"
+                        onchange="Assets.update('${a.id}',{serialNumber:this.value})">
+
+                    <label>Current Value</label>
+                    <input type="number" step="0.01" value="${Number(a.currentValue || 0)}"
+                        onchange="Assets.update('${a.id}',{currentValue:Number(this.value)})">
+
+                    <label>Location</label>
+                    <input value="${this.esc(a.location)}"
+                        onchange="Assets.update('${a.id}',{location:this.value})">
+
+                    <label>Status</label>
+
+                    <select onchange="Assets.update('${a.id}',{status:this.value})">
+                        <option value="Available" ${a.status==="Available"?"selected":""}>Available</option>
+                        <option value="Assigned" ${a.status==="Assigned"?"selected":""}>Assigned</option>
+                        <option value="Maintenance" ${a.status==="Maintenance"?"selected":""}>Maintenance</option>
+                        <option value="Retired" ${a.status==="Retired"?"selected":""}>Retired</option>
+                    </select>
+
+                    <br><br>
+
+                    <button onclick="
+                        if(confirm('Delete this asset?')){
+                            Assets.remove('${a.id}');
+                            UI.renderAssets();
+                        }
+                    ">
+                        Delete Asset
+                    </button>
+
+                </div>
+
+            `).join("")}
+        `;
+    },
+
+    renderCalendar() {
+
+        const reminders = Calendar.all();
+
+        document.getElementById("workspace").innerHTML = `
+
+            <h2>Calendar & Reminders</h2>
+
+            <button onclick="Calendar.create();UI.renderCalendar();">
+                + Add Reminder
+            </button>
+
+            <br><br>
+
+            ${reminders.length === 0 ? "<p>No reminders created yet.</p>" :
+
+            reminders.map(r => `
+
+                <div class="card">
+
+                    <label>Title</label>
+                    <input value="${this.esc(r.title)}"
+                        onchange="Calendar.update('${r.id}',{title:this.value})">
+
+                    <label>Date</label>
+                    <input type="date" value="${this.esc(r.date)}"
+                        onchange="Calendar.update('${r.id}',{date:this.value})">
+
+                    <label>Time</label>
+                    <input type="time" value="${this.esc(r.time)}"
+                        onchange="Calendar.update('${r.id}',{time:this.value})">
+
+                    <label>Category</label>
+                    <input value="${this.esc(r.category)}"
+                        onchange="Calendar.update('${r.id}',{category:this.value})">
+
+                    <label>
+                        <input type="checkbox"
+                            ${r.completed ? "checked" : ""}
+                            onchange="Calendar.update('${r.id}',{completed:this.checked})">
+                        Completed
+                    </label>
+
+                    <br><br>
+
+                    <button onclick="
+                        if(confirm('Delete this reminder?')){
+                            Calendar.remove('${r.id}');
+                            UI.renderCalendar();
+                        }
+                    ">
+                        Delete Reminder
+                    </button>
+
+                </div>
+
+            `).join("")}
+        `;
+    },
+
+    renderReports() {
+
+        const report = Reports.summary();
+
+        document.getElementById("workspace").innerHTML = `
+
+            <h2>Business Reports</h2>
+
+            <div class="card">
+
+                <table>
+                    <tr><td>Total Events</td><td>${report.totalEvents}</td></tr>
+                    <tr><td>Total Customers</td><td>${report.totalCustomers}</td></tr>
+                    <tr><td>Total Vendors</td><td>${report.totalVendors}</td></tr>
+                    <tr><td>Total Venues</td><td>${report.totalVenues}</td></tr>
+                    <tr><td>Total Inventory Items</td><td>${report.totalInventoryItems}</td></tr>
+                    <tr><td>Total Assets</td><td>${report.totalAssets}</td></tr>
+                    <tr><td>Total Income</td><td>${Utils.money(report.totalIncome)}</td></tr>
+                    <tr><td>Total Expenses</td><td>${Utils.money(report.totalExpenses)}</td></tr>
+                    <tr><td>Net Profit</td><td>${Utils.money(report.totalProfit)}</td></tr>
+                </table>
+
+            </div>
+        `;
+    },
+
+    renderSettings() {
+
+        const s = Settings.data;
+
+        document.getElementById("workspace").innerHTML = `
+
+            <h2>Settings</h2>
+
+            <div class="card">
+
+                <label>Theme</label>
+
+                <select id="theme">
+                    <option value="light" ${s.theme==="light"?"selected":""}>Light</option>
+                    <option value="dark" ${s.theme==="dark"?"selected":""}>Dark</option>
+                </select>
+
+                <label>Currency</label>
+                <input id="currency" value="${this.esc(s.currency)}">
+
+                <label>Language</label>
+                <input id="language" value="${this.esc(s.language)}">
+
+                <br><br>
+
+                <button onclick="
+                    Settings.update('theme',document.getElementById('theme').value);
+                    Settings.update('currency',document.getElementById('currency').value);
+                    Settings.update('language',document.getElementById('language').value);
+                    alert('Settings Saved');
+                ">
+                    Save Settings
+                </button>
+
+                <br><br>
+
+                <button onclick="Utils.downloadBackup()">
+                    Download Backup
+                </button>
+
+                <br><br>
+
+                <label>Restore Backup</label>
+
+                <input
+                    type="file"
+                    accept=".json,application/json"
+                    onchange="Utils.restoreBackup(this.files[0])">
+
+            </div>
+        `;
+    }
+
+};
