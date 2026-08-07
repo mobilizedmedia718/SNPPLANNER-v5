@@ -692,67 +692,160 @@ const UI = {
 
     renderFinance() {
 
-        const transactions = Finance.all();
+    const transactions = Finance.all();
+    const events = Events.all();
+    const vendors = Vendors.all();
+    const customers = CRM.all();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
-            <h2>Finance</h2>
+        <h2>Finance</h2>
 
-            <button onclick="Finance.create({type:'Expense'});UI.renderFinance();">
-                + Add Transaction
-            </button>
+        <button onclick="Finance.create({type:'Expense'});UI.renderFinance();">
+            + Add Transaction
+        </button>
 
-            <br><br>
+        <br><br>
+
+        <div class="dashboard-grid">
 
             <div class="card">
-                <strong>Total Income:</strong> ${Utils.money(Finance.income())}<br>
-                <strong>Total Expenses:</strong> ${Utils.money(Finance.expenses())}<br>
-                <strong>Net Profit:</strong> ${Utils.money(Finance.profit())}
+                <h3>Total Income</h3>
+                <h2>${Utils.money(Finance.income())}</h2>
             </div>
 
-            ${transactions.map(t => `
+            <div class="card">
+                <h3>Total Expenses</h3>
+                <h2>${Utils.money(Finance.expenses())}</h2>
+            </div>
 
-                <div class="card">
+            <div class="card">
+                <h3>Net Profit</h3>
+                <h2>${Utils.money(Finance.profit())}</h2>
+            </div>
 
-                    <label>Type</label>
+        </div>
 
-                    <select onchange="Finance.update('${t.id}',{type:this.value});UI.renderFinance();">
-                        <option value="Income" ${t.type==="Income"?"selected":""}>Income</option>
-                        <option value="Expense" ${t.type==="Expense"?"selected":""}>Expense</option>
-                    </select>
+        <br>
 
-                    <label>Description</label>
-                    <input value="${this.esc(t.description)}"
-                        onchange="Finance.update('${t.id}',{description:this.value})">
+        ${transactions.length === 0 ? "<p>No transactions recorded yet.</p>" :
 
-                    <label>Category</label>
-                    <input value="${this.esc(t.category)}"
-                        onchange="Finance.update('${t.id}',{category:this.value})">
+        transactions.map(t => `
 
-                    <label>Amount</label>
-                    <input type="number" step="0.01" value="${Number(t.amount || 0)}"
-                        onchange="Finance.update('${t.id}',{amount:Number(this.value)});UI.renderFinance();">
+            <div class="card">
 
-                    <label>Payment Method</label>
-                    <input value="${this.esc(t.paymentMethod)}"
-                        onchange="Finance.update('${t.id}',{paymentMethod:this.value})">
+                <label>Date</label>
+                <input
+                    type="date"
+                    value="${this.esc(t.date)}"
+                    onchange="Finance.update('${t.id}',{date:this.value})">
 
-                    <br><br>
+                <label>Type</label>
 
-                    <button onclick="
-                        if(confirm('Delete this transaction?')){
-                            Finance.remove('${t.id}');
-                            UI.renderFinance();
-                        }
-                    ">
-                        Delete Transaction
-                    </button>
+                <select onchange="Finance.update('${t.id}',{type:this.value});UI.renderFinance();">
+                    <option value="Income" ${t.type==="Income"?"selected":""}>Income</option>
+                    <option value="Expense" ${t.type==="Expense"?"selected":""}>Expense</option>
+                </select>
 
-                </div>
+                <label>Description</label>
+                <input
+                    value="${this.esc(t.description)}"
+                    onchange="Finance.update('${t.id}',{description:this.value})">
 
-            `).join("")}
-        `;
-    },
+                <label>Category</label>
+                <input
+                    value="${this.esc(t.category)}"
+                    onchange="Finance.update('${t.id}',{category:this.value})">
+
+                <label>Amount</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(t.amount || 0)}"
+                    onchange="Finance.update('${t.id}',{amount:Number(this.value)});UI.renderFinance();">
+
+                <label>Event</label>
+                <select onchange="Finance.update('${t.id}',{eventId:this.value})">
+
+                    <option value="">No Event</option>
+
+                    ${events.map(event => `
+                        <option
+                            value="${event.id}"
+                            ${t.eventId === event.id ? "selected" : ""}>
+                            ${this.esc(event.name || "Unnamed Event")}
+                        </option>
+                    `).join("")}
+
+                </select>
+
+                <label>Vendor</label>
+                <select onchange="Finance.update('${t.id}',{vendorId:this.value})">
+
+                    <option value="">No Vendor</option>
+
+                    ${vendors.map(vendor => `
+                        <option
+                            value="${vendor.id}"
+                            ${t.vendorId === vendor.id ? "selected" : ""}>
+                            ${this.esc(vendor.name || "Unnamed Vendor")}
+                        </option>
+                    `).join("")}
+
+                </select>
+
+                <label>Customer</label>
+                <select onchange="Finance.update('${t.id}',{customerId:this.value})">
+
+                    <option value="">No Customer</option>
+
+                    ${customers.map(customer => `
+                        <option
+                            value="${customer.id}"
+                            ${t.customerId === customer.id ? "selected" : ""}>
+                            ${this.esc(
+                                `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "Unnamed Customer"
+                            )}
+                        </option>
+                    `).join("")}
+
+                </select>
+
+                <label>Payment Method</label>
+                <select onchange="Finance.update('${t.id}',{paymentMethod:this.value})">
+                    <option value="Cash" ${t.paymentMethod==="Cash"?"selected":""}>Cash</option>
+                    <option value="Card" ${t.paymentMethod==="Card"?"selected":""}>Card</option>
+                    <option value="Bank Transfer" ${t.paymentMethod==="Bank Transfer"?"selected":""}>Bank Transfer</option>
+                    <option value="Check" ${t.paymentMethod==="Check"?"selected":""}>Check</option>
+                    <option value="Other" ${t.paymentMethod==="Other"?"selected":""}>Other</option>
+                </select>
+
+                <label>Status</label>
+                <select onchange="Finance.update('${t.id}',{status:this.value})">
+                    <option value="Completed" ${t.status==="Completed"?"selected":""}>Completed</option>
+                    <option value="Pending" ${t.status==="Pending"?"selected":""}>Pending</option>
+                    <option value="Cancelled" ${t.status==="Cancelled"?"selected":""}>Cancelled</option>
+                </select>
+
+                <label>Notes</label>
+                <textarea onchange="Finance.update('${t.id}',{notes:this.value})">${this.esc(t.notes)}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    if(confirm('Delete this transaction?')){
+                        Finance.remove('${t.id}');
+                        UI.renderFinance();
+                    }
+                ">
+                    Delete Transaction
+                </button>
+
+            </div>
+
+        `).join("")}
+    `;
+},
 
     renderAssets() {
 
