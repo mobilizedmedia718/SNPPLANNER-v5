@@ -14,24 +14,41 @@ const Vendors = {
 
         const vendor = {
             id: Utils.id(),
+
             name: "",
             category: "",
+
             contact: "",
+            jobTitle: "",
+
             phone: "",
+            alternatePhone: "",
             email: "",
+
             website: "",
+            instagram: "",
+            facebook: "",
+
             address: "",
+            address2: "",
             city: "",
             state: "",
             zip: "",
+            country: "",
+
             paymentType: "Flat Rate",
             flatRate: 0,
             percentage: 0,
             minimumGuarantee: 0,
+
             payoutStatus: "Unpaid",
+
+            taxId: "",
             notes: "",
+
             active: true,
             created: Utils.date(),
+
             ...data
         };
 
@@ -69,6 +86,22 @@ const Vendors = {
         return this.list.filter(v => v.active !== false);
     },
 
+    fullAddress(vendor) {
+
+        if (!vendor) return "";
+
+        return [
+            vendor.address,
+            vendor.address2,
+            vendor.city,
+            vendor.state,
+            vendor.zip,
+            vendor.country
+        ]
+        .filter(Boolean)
+        .join(", ");
+    },
+
     calculatePayout(vendorId, revenue = 0) {
 
         const vendor = this.get(vendorId);
@@ -78,7 +111,8 @@ const Vendors = {
         if (vendor.paymentType === "Percentage") {
             return Math.max(
                 Number(vendor.minimumGuarantee || 0),
-                Number(revenue || 0) * Number(vendor.percentage || 0) / 100
+                Number(revenue || 0) *
+                Number(vendor.percentage || 0) / 100
             );
         }
 
