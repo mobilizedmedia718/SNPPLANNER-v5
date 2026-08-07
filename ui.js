@@ -468,6 +468,12 @@ renderEvents(){
     `;
 
 },
+renderVendors(){
+
+    const vendors = Vendors.all();
+
+    document.getElementById("workspace").innerHTML = `
+
     <h2>Vendors</h2>
 
     <button onclick="Vendors.create(); UI.renderVendors();">
@@ -477,9 +483,9 @@ renderEvents(){
     <br><br>
 
     ${
-        vendors.length===0
+        vendors.length === 0
         ? "<p>No vendors added yet.</p>"
-        : vendors.map(v=>`
+        : vendors.map(v => `
 
         <div class="card">
 
@@ -508,42 +514,68 @@ renderEvents(){
                 value="${v.email}"
                 onchange="Vendors.update('${v.id}',{email:this.value})">
 
+            <label>Website</label>
+            <input
+                value="${v.website}"
+                onchange="Vendors.update('${v.id}',{website:this.value})">
+
+            <label>Address</label>
+            <input
+                value="${v.address}"
+                onchange="Vendors.update('${v.id}',{address:this.value})">
+
+            <label>City</label>
+            <input
+                value="${v.city}"
+                onchange="Vendors.update('${v.id}',{city:this.value})">
+
+            <label>State</label>
+            <input
+                value="${v.state}"
+                onchange="Vendors.update('${v.id}',{state:this.value})">
+
+            <label>ZIP Code</label>
+            <input
+                value="${v.zip}"
+                onchange="Vendors.update('${v.id}',{zip:this.value})">
+
             <label>Payment Type</label>
-
             <select onchange="Vendors.update('${v.id}',{paymentType:this.value}); UI.renderVendors();">
-
                 <option value="Flat Rate" ${v.paymentType==="Flat Rate"?"selected":""}>Flat Rate</option>
-
                 <option value="Percentage" ${v.paymentType==="Percentage"?"selected":""}>Percentage</option>
-
             </select>
 
             ${
-                v.paymentType==="Flat Rate"
-
-                ?`
-
-                <label>Flat Rate</label>
-
-                <input
-                    type="number"
-                    value="${v.flatRate}"
-                    onchange="Vendors.update('${v.id}',{flatRate:Number(this.value)})">
-
+                v.paymentType === "Flat Rate"
+                ? `
+                    <label>Flat Rate</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        value="${v.flatRate}"
+                        onchange="Vendors.update('${v.id}',{flatRate:Number(this.value)})">
                 `
-
-                :`
-
-                <label>Percentage (%)</label>
-
-                <input
-                    type="number"
-                    value="${v.percentage}"
-                    onchange="Vendors.update('${v.id}',{percentage:Number(this.value)})">
-
+                : `
+                    <label>Percentage (%)</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        value="${v.percentage}"
+                        onchange="Vendors.update('${v.id}',{percentage:Number(this.value)})">
                 `
-
             }
+
+            <label>Notes</label>
+            <textarea
+                onchange="Vendors.update('${v.id}',{notes:this.value})">${v.notes}</textarea>
+
+            <label>
+                <input
+                    type="checkbox"
+                    ${v.active ? "checked" : ""}
+                    onchange="Vendors.update('${v.id}',{active:this.checked})">
+                Active Vendor
+            </label>
 
             <br><br>
 
@@ -564,13 +596,7 @@ renderEvents(){
 
     `;
 
-    },
-    renderInventory(){
-
-    const items = Inventory.all();
-    const vendors = Vendors.all();
-
-    document.getElementById("workspace").innerHTML = `
+},`
 
     <h2>Inventory</h2>
 
