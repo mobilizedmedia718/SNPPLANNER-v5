@@ -337,3 +337,22 @@ body.dark .badge-info{
     background:#1e3a8a;
     color:#dbeafe;
 }
+.badge.badge-success{
+    background-color:#dcfce7 !important;
+    color:#166534 !important;
+}
+
+.badge.badge-warning{
+    background-color:#fef3c7 !important;
+    color:#92400e !important;
+}
+
+.badge.badge-danger{
+    background-color:#fee2e2 !important;
+    color:#991b1b !important;
+}
+
+.badge.badge-info{
+    background-color:#dbeafe !important;
+    color:#1e40af !important;
+}
