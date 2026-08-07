@@ -6,17 +6,24 @@ const Settings = {
         language: "en",
         autosave: true,
         notifications: true,
-        compactMode: false
+        compactMode: false,
+        dateFormat: "MM/DD/YYYY",
+        timeFormat: "12",
+        defaultTaxRate: 0,
+        lowStockAlerts: true,
+        reminderAlerts: true
     },
 
     load() {
-        this.data = Utils.load("settings", this.data);
 
-        if (this.data.theme === "dark") {
-            document.body.classList.add("dark");
-        } else {
-            document.body.classList.remove("dark");
-        }
+        const saved = Utils.load("settings", {});
+
+        this.data = {
+            ...this.data,
+            ...saved
+        };
+
+        this.apply();
     },
 
     save() {
@@ -30,17 +37,22 @@ const Settings = {
         this.data[key] = value;
 
         this.save();
+        this.apply();
+    },
 
-        if (key === "theme") {
+    apply() {
 
-            if (value === "dark") {
-                document.body.classList.add("dark");
-            } else {
-                document.body.classList.remove("dark");
-            }
-
+        if (this.data.theme === "dark") {
+            document.body.classList.add("dark");
+        } else {
+            document.body.classList.remove("dark");
         }
 
+        if (this.data.compactMode) {
+            document.body.classList.add("compact");
+        } else {
+            document.body.classList.remove("compact");
+        }
     },
 
     reset() {
@@ -51,10 +63,16 @@ const Settings = {
             language: "en",
             autosave: true,
             notifications: true,
-            compactMode: false
+            compactMode: false,
+            dateFormat: "MM/DD/YYYY",
+            timeFormat: "12",
+            defaultTaxRate: 0,
+            lowStockAlerts: true,
+            reminderAlerts: true
         };
 
         this.save();
+        this.apply();
     }
 
 };
