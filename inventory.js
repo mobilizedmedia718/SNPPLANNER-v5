@@ -63,7 +63,9 @@ const Inventory = {
     },
 
     lowStock() {
-        return this.items.filter(i => i.quantity <= i.minimum);
+        return this.items.filter(i =>
+            Number(i.quantity || 0) <= Number(i.minimum || 0)
+        );
     }
 
 };
