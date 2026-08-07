@@ -28,6 +28,7 @@ const CRM = {
             totalVisits: 0,
             tags: [],
             notes: "",
+            lastVisit: "",
             created: Utils.date(),
             ...data
         };
@@ -69,10 +70,40 @@ const CRM = {
         term = String(term || "").toLowerCase().trim();
 
         return this.customers.filter(c =>
-            `${c.firstName} ${c.lastName} ${c.email} ${c.phone}`
+            `${c.firstName} ${c.lastName} ${c.email} ${c.phone} ${(c.tags || []).join(" ")}`
                 .toLowerCase()
                 .includes(term)
         );
+    },
+
+    totalSpend() {
+        return this.customers.reduce(
+            (sum, c) => sum + Number(c.totalSpent || 0),
+            0
+        );
+    },
+
+    totalVisits() {
+        return this.customers.reduce(
+            (sum, c) => sum + Number(c.totalVisits || 0),
+            0
+        );
+    },
+
+    averageSpend() {
+        return this.customers.length
+            ? this.totalSpend() / this.customers.length
+            : 0;
+    },
+
+    topCustomers(limit = 5) {
+        return [...this.customers]
+            .sort(
+                (a, b) =>
+                    Number(b.totalSpent || 0) -
+                    Number(a.totalSpent || 0)
+            )
+            .slice(0, limit);
     }
 
 };
