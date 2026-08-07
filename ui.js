@@ -409,7 +409,51 @@ renderEvents() {
                     type="number"
                     value="${Number(event.ticketsSold || 0)}"
                     onchange="Events.update('${event.id}',{ticketsSold:Number(this.value)})">
-
+<p>
+    Capacity Used:
+    ${
+        Number(event.capacity || 0) > 0
+            ? Math.min(
+                100,
+                Math.round(
+                    Number(event.ticketsSold || 0) /
+                    Number(event.capacity || 0) * 100
+                )
+            )
+            : 0
+    }%
+</p>
+<div class="progress-bar">
+    <div
+        class="progress-fill"
+        style="width:${
+            Number(event.capacity || 0) > 0
+                ? Math.max(
+                    0,
+                    Math.min(
+                        100,
+                        Math.round(
+                            Number(event.ticketsSold || 0) /
+                            Number(event.capacity || 0) * 100
+                        )
+                    )
+                )
+                : 0
+        }%">
+    </div>
+    <p>
+    Capacity Status:
+    ${
+        Number(event.capacity || 0) <= 0
+            ? this.statusBadge("Pending")
+            : Number(event.ticketsSold || 0) >= Number(event.capacity || 0)
+                ? this.statusBadge("Completed")
+                : Number(event.ticketsSold || 0) >= Number(event.capacity || 0) * 0.8
+                    ? this.statusBadge("High")
+                    : this.statusBadge("Good")
+    }
+</p>
+</div>
                 <label>Ticket Price</label>
                 <input
                     type="number"
