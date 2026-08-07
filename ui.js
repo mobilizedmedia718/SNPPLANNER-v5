@@ -424,6 +424,91 @@ ${
     ? `<p>${this.statusBadge("Low Stock")}</p>`
     : ""
 }
+<div class="card">
+
+    <h4>Event Financial Summary</h4>
+
+    <p>
+        Income:
+        ${Utils.money(
+            Finance.byEvent(event.id)
+                .filter(t => t.type === "Income" && t.status !== "Cancelled")
+                .reduce((sum, t) => sum + Number(t.amount || 0), 0)
+        )}
+    </p>
+
+    <p>
+        Expenses:
+        ${Utils.money(
+            Finance.byEvent(event.id)
+                .filter(t => t.type === "Expense" && t.status !== "Cancelled")
+                .reduce((sum, t) => sum + Number(t.amount || 0), 0)
+        )}
+    </p>
+
+    <p>
+        Profit:
+        ${Utils.money(Finance.eventProfit(event.id))}
+    </p>
+    <p>
+    Profit Status:
+    ${
+        Finance.eventProfit(event.id) >= 0
+            ? this.statusBadge("Good")
+            : this.statusBadge("Needs Repair")
+    }
+</p>
+
+
+</div>
+<div class="card">
+
+    <h4>Revenue Goal Progress</h4>
+
+    <p>
+        Goal:
+        ${Utils.money(event.revenueGoal)}
+    </p>
+
+    <p>
+        Actual Revenue:
+        ${Utils.money(event.actualRevenue)}
+    </p>
+
+    <p>
+        Progress:
+        ${
+            Number(event.revenueGoal || 0) > 0
+                ? Math.min(
+                    100,
+                    Math.round(
+                        Number(event.actualRevenue || 0) /
+                        Number(event.revenueGoal || 0) *
+                        100
+                    )
+                )
+                : 0
+        }%
+    </p>
+    <div class="progress-bar">
+    <div
+        class="progress-fill"
+        style="width:${
+            Number(event.revenueGoal || 0) > 0
+                ? Math.min(
+                    100,
+                    Math.round(
+                        Number(event.actualRevenue || 0) /
+                        Number(event.revenueGoal || 0) *
+                        100
+                    )
+                )
+                : 0
+        }%">
+    </div>
+</div>
+
+</div>
                     
 
                     <label>Notes</label>
