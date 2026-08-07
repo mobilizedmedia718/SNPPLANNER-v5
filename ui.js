@@ -634,508 +634,849 @@ renderEvents() {
 
     renderVenues() {
 
-        const venues = Venues.all();
+    const venues = Venues.all();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
-            <h2>Venues</h2>
+        <h2>Venues</h2>
 
-            <button onclick="Venues.create();UI.renderVenues();">+ Add Venue</button>
+        <button onclick="Venues.create();UI.renderVenues();">
+            + Add Venue
+        </button>
 
-            <br><br>
+        <br><br>
 
-            ${venues.length === 0 ? "<p>No venues added yet.</p>" :
+        ${venues.length === 0 ? "<p>No venues added yet.</p>" :
 
-            venues.map(v => `
-
-                <div class="card">
-
-                    <label>Venue Name</label>
-                    <input value="${this.esc(v.name)}"
-                        onchange="Venues.update('${v.id}',{name:this.value})">
-
-                    <label>Contact Person</label>
-                    <input value="${this.esc(v.contactPerson)}"
-                        onchange="Venues.update('${v.id}',{contactPerson:this.value})">
-
-                    <label>Address</label>
-                    <input value="${this.esc(v.address)}"
-                        onchange="Venues.update('${v.id}',{address:this.value})">
-
-                    <label>City</label>
-                    <input value="${this.esc(v.city)}"
-                        onchange="Venues.update('${v.id}',{city:this.value})">
-
-                    <label>State</label>
-                    <input value="${this.esc(v.state)}"
-                        onchange="Venues.update('${v.id}',{state:this.value})">
-
-                    <label>ZIP Code</label>
-                    <input value="${this.esc(v.zip)}"
-                        onchange="Venues.update('${v.id}',{zip:this.value})">
-
-                    <label>Phone</label>
-                    <input value="${this.esc(v.phone)}"
-                        onchange="Venues.update('${v.id}',{phone:this.value})">
-
-                    <label>Email</label>
-                    <input value="${this.esc(v.email)}"
-                        onchange="Venues.update('${v.id}',{email:this.value})">
-
-                    <label>Website</label>
-                    <input value="${this.esc(v.website)}"
-                        onchange="Venues.update('${v.id}',{website:this.value})">
-
-                    <label>Capacity</label>
-                    <input type="number" value="${Number(v.capacity || 0)}"
-                        onchange="Venues.update('${v.id}',{capacity:Number(this.value)})">
-
-                    <label>Rental Cost</label>
-                    <input type="number" step="0.01" value="${Number(v.rentalCost || 0)}"
-                        onchange="Venues.update('${v.id}',{rentalCost:Number(this.value)})">
-
-                    <label>Deposit</label>
-                    <input type="number" step="0.01" value="${Number(v.deposit || 0)}"
-                        onchange="Venues.update('${v.id}',{deposit:Number(this.value)})">
-
-                    <label>
-                        <input type="checkbox"
-                            ${v.depositRefundable ? "checked" : ""}
-                            onchange="Venues.update('${v.id}',{depositRefundable:this.checked})">
-                        Deposit Refundable
-                    </label>
-
-                    <label>Parking</label>
-                    <input value="${this.esc(v.parking)}"
-                        onchange="Venues.update('${v.id}',{parking:this.value})">
-
-                    <label>Indoor / Outdoor</label>
-                    <select onchange="Venues.update('${v.id}',{indoorOutdoor:this.value})">
-                        <option value="Indoor" ${v.indoorOutdoor==="Indoor"?"selected":""}>Indoor</option>
-                        <option value="Outdoor" ${v.indoorOutdoor==="Outdoor"?"selected":""}>Outdoor</option>
-                        <option value="Both" ${v.indoorOutdoor==="Both"?"selected":""}>Both</option>
-                    </select>
-
-                    <label>
-                        <input type="checkbox"
-                            ${v.alcoholAllowed ? "checked" : ""}
-                            onchange="Venues.update('${v.id}',{alcoholAllowed:this.checked})">
-                        Alcohol Allowed
-                    </label>
-
-                    <label>
-                        <input type="checkbox"
-                            ${v.foodAllowed ? "checked" : ""}
-                            onchange="Venues.update('${v.id}',{foodAllowed:this.checked})">
-                        Food Allowed
-                    </label>
-
-                    <label>
-                        <input type="checkbox"
-                            ${v.outsideVendorsAllowed ? "checked" : ""}
-                            onchange="Venues.update('${v.id}',{outsideVendorsAllowed:this.checked})">
-                        Outside Vendors Allowed
-                    </label>
-
-                    <label>Setup Time</label>
-                    <input type="time" value="${this.esc(v.setupTime)}"
-                        onchange="Venues.update('${v.id}',{setupTime:this.value})">
-
-                    <label>Breakdown Time</label>
-                    <input type="time" value="${this.esc(v.breakdownTime)}"
-                        onchange="Venues.update('${v.id}',{breakdownTime:this.value})">
-
-                    <label>
-                        <input type="checkbox"
-                            ${v.active ? "checked" : ""}
-                            onchange="Venues.update('${v.id}',{active:this.checked})">
-                        Active Venue
-                    </label>
-
-                    <label>Notes</label>
-                    <textarea onchange="Venues.update('${v.id}',{notes:this.value})">${this.esc(v.notes)}</textarea>
-
-                    <br><br>
-
-                    <button onclick="
-                        if(confirm('Delete this venue?')){
-                            Venues.remove('${v.id}');
-                            UI.renderVenues();
-                        }
-                    ">
-                        Delete Venue
-                    </button>
-
-                </div>
-
-            `).join("")}
-        `;
-    },
-
-    renderVendors() {
-
-        const vendors = Vendors.all();
-
-        document.getElementById("workspace").innerHTML = `
-
-            <h2>Vendors</h2>
-
-            <button onclick="Vendors.create();UI.renderVendors();">+ Add Vendor</button>
-
-            <br><br>
-
-            ${vendors.length === 0 ? "<p>No vendors added yet.</p>" :
-
-            vendors.map(v => `
-
-                <div class="card">
-
-                    <label>Vendor Name</label>
-                    <input value="${this.esc(v.name)}"
-                        onchange="Vendors.update('${v.id}',{name:this.value})">
-
-                    <label>Category</label>
-                    <input value="${this.esc(v.category)}"
-                        onchange="Vendors.update('${v.id}',{category:this.value})">
-
-                    <label>Contact Person</label>
-                    <input value="${this.esc(v.contact)}"
-                        onchange="Vendors.update('${v.id}',{contact:this.value})">
-
-                    <label>Phone</label>
-                    <input value="${this.esc(v.phone)}"
-                        onchange="Vendors.update('${v.id}',{phone:this.value})">
-
-                    <label>Email</label>
-                    <input value="${this.esc(v.email)}"
-                        onchange="Vendors.update('${v.id}',{email:this.value})">
-
-                    <label>Website</label>
-                    <input value="${this.esc(v.website)}"
-                        onchange="Vendors.update('${v.id}',{website:this.value})">
-
-                    <label>Address</label>
-                    <input value="${this.esc(v.address)}"
-                        onchange="Vendors.update('${v.id}',{address:this.value})">
-
-                    <label>City</label>
-                    <input value="${this.esc(v.city)}"
-                        onchange="Vendors.update('${v.id}',{city:this.value})">
-
-                    <label>State</label>
-                    <input value="${this.esc(v.state)}"
-                        onchange="Vendors.update('${v.id}',{state:this.value})">
-
-                    <label>ZIP Code</label>
-                    <input value="${this.esc(v.zip)}"
-                        onchange="Vendors.update('${v.id}',{zip:this.value})">
-
-                    <label>Payment Type</label>
-                    <select onchange="Vendors.update('${v.id}',{paymentType:this.value});UI.renderVendors();">
-                        <option value="Flat Rate" ${v.paymentType==="Flat Rate"?"selected":""}>Flat Rate</option>
-                        <option value="Percentage" ${v.paymentType==="Percentage"?"selected":""}>Percentage</option>
-                    </select>
-
-                    ${v.paymentType === "Percentage" ? `
-
-                        <label>Percentage (%)</label>
-                        <input type="number" step="0.01" value="${Number(v.percentage || 0)}"
-                            onchange="Vendors.update('${v.id}',{percentage:Number(this.value)})">
-
-                        <label>Minimum Guarantee</label>
-                        <input type="number" step="0.01" value="${Number(v.minimumGuarantee || 0)}"
-                            onchange="Vendors.update('${v.id}',{minimumGuarantee:Number(this.value)})">
-
-                    ` : `
-
-                        <label>Flat Rate</label>
-                        <input type="number" step="0.01" value="${Number(v.flatRate || 0)}"
-                            onchange="Vendors.update('${v.id}',{flatRate:Number(this.value)})">
-                    `}
-
-                    <label>Payout Status</label>
-                    <select onchange="Vendors.update('${v.id}',{payoutStatus:this.value})">
-                        <option value="Unpaid" ${v.payoutStatus==="Unpaid"?"selected":""}>Unpaid</option>
-                        <option value="Pending" ${v.payoutStatus==="Pending"?"selected":""}>Pending</option>
-                        <option value="Paid" ${v.payoutStatus==="Paid"?"selected":""}>Paid</option>
-                    </select>
-
-                    <label>
-                        <input type="checkbox"
-                            ${v.active ? "checked" : ""}
-                            onchange="Vendors.update('${v.id}',{active:this.checked})">
-                        Active Vendor
-                    </label>
-
-                    <label>Notes</label>
-                    <textarea onchange="Vendors.update('${v.id}',{notes:this.value})">${this.esc(v.notes)}</textarea>
-
-                    <br><br>
-
-                    <button onclick="
-                        if(confirm('Delete this vendor?')){
-                            Vendors.remove('${v.id}');
-                            UI.renderVendors();
-                        }
-                    ">
-                        Delete Vendor
-                    </button>
-
-                </div>
-
-            `).join("")}
-        `;
-    },
-
-    renderInventory() {
-
-        const items = Inventory.all();
-        const vendors = Vendors.active();
-
-        document.getElementById("workspace").innerHTML = `
-
-            <h2>Inventory</h2>
-
-            <button onclick="Inventory.create();UI.renderInventory();">
-                + Add Inventory Item
-            </button>
-
-            <br><br>
-
-            <div class="dashboard-grid">
-
-                <div class="card"><h3>Inventory Items</h3><h2>${items.length}</h2></div>
-                <div class="card"><h3>Total Units</h3><h2>${Inventory.totalUnits()}</h2></div>
-                <div class="card"><h3>Low Stock</h3><h2>${Inventory.lowStock().length}</h2></div>
-                <div class="card"><h3>Inventory Cost</h3><h2>${Utils.money(Inventory.totalCostValue())}</h2></div>
-                <div class="card"><h3>Retail Value</h3><h2>${Utils.money(Inventory.totalRetailValue())}</h2></div>
-                <div class="card"><h3>Potential Profit</h3><h2>${Utils.money(Inventory.potentialProfit())}</h2></div>
-
-            </div>
-
-            <br>
-
-            ${items.length === 0 ? "<p>No inventory items added yet.</p>" :
-
-            items.map(item => `
-
-                <div class="card">
-
-                    <label>Item Name</label>
-                    <input value="${this.esc(item.name)}"
-                        onchange="Inventory.update('${item.id}',{name:this.value})">
-
-                    <label>Category</label>
-                    <input value="${this.esc(item.category)}"
-                        onchange="Inventory.update('${item.id}',{category:this.value})">
-
-                    <label>SKU</label>
-                    <input value="${this.esc(item.sku)}"
-                        onchange="Inventory.update('${item.id}',{sku:this.value})">
-
-                    <label>Vendor</label>
-                    <select onchange="Inventory.update('${item.id}',{vendorId:this.value})">
-
-                        <option value="">No Vendor</option>
-
-                        ${vendors.map(v => `
-                            <option value="${v.id}"
-                                ${item.vendorId === v.id ? "selected" : ""}>
-                                ${this.esc(v.name || "Unnamed Vendor")}
-                            </option>
-                        `).join("")}
-
-                    </select>
-
-                    <label>Quantity</label>
-                    <input type="number" value="${Number(item.quantity || 0)}"
-                        onchange="Inventory.update('${item.id}',{quantity:Number(this.value)});UI.renderInventory();">
-
-                    <label>Minimum Stock</label>
-                    <input type="number" value="${Number(item.minimum || 0)}"
-                        onchange="Inventory.update('${item.id}',{minimum:Number(this.value)});UI.renderInventory();">
-
-                    <label>Unit Cost</label>
-                    <input type="number" step="0.01" value="${Number(item.cost || 0)}"
-                        onchange="Inventory.update('${item.id}',{cost:Number(this.value)});UI.renderInventory();">
-
-                    <label>Selling Price</label>
-                    <input type="number" step="0.01" value="${Number(item.sellPrice || 0)}"
-                        onchange="Inventory.update('${item.id}',{sellPrice:Number(this.value)});UI.renderInventory();">
-
-                    <label>Storage Location</label>
-                    <input value="${this.esc(item.storageLocation)}"
-                        onchange="Inventory.update('${item.id}',{storageLocation:this.value})">
-
-                    <label>Status</label>
-                    <select onchange="Inventory.update('${item.id}',{status:this.value});UI.renderInventory();">
-                        <option value="Active" ${item.status==="Active"?"selected":""}>Active</option>
-                        <option value="Inactive" ${item.status==="Inactive"?"selected":""}>Inactive</option>
-                    </select>
-                    <p>
-    Status: ${this.statusBadge(item.status)}
-</p>
-
-${
-    Number(item.quantity || 0) <= Number(item.minimum || 0)
-    ? `<p>${this.statusBadge("Low Stock")}</p>`
-    : ""
-}
-
-                    <label>Notes</label>
-                    <textarea onchange="Inventory.update('${item.id}',{notes:this.value})">${this.esc(item.notes)}</textarea>
-
-                    <br><br>
-
-                    <button onclick="
-                        if(confirm('Delete this inventory item?')){
-                            Inventory.remove('${item.id}');
-                            UI.renderInventory();
-                        }
-                    ">
-                        Delete Item
-                    </button>
-
-                </div>
-
-            `).join("")}
-        `;
-    },
-
-    renderCRM() {
-
-        const customers = CRM.all();
-        const topCustomers = CRM.topCustomers();
-
-        document.getElementById("workspace").innerHTML = `
-
-            <h2>Customer CRM</h2>
-
-            <button onclick="CRM.create();UI.renderCRM();">
-                + Add Customer
-            </button>
-
-            <br><br>
-
-            <div class="dashboard-grid">
-
-                <div class="card"><h3>Total Customers</h3><h2>${customers.length}</h2></div>
-                <div class="card"><h3>Total Customer Spend</h3><h2>${Utils.money(CRM.totalSpend())}</h2></div>
-                <div class="card"><h3>Total Visits</h3><h2>${CRM.totalVisits()}</h2></div>
-                <div class="card"><h3>Average Spend</h3><h2>${Utils.money(CRM.averageSpend())}</h2></div>
-
-            </div>
-
-            <br>
+        venues.map(v => `
 
             <div class="card">
 
-                <h3>Top Customers</h3>
+                <label>Venue Name</label>
+                <input
+                    value="${this.esc(v.name)}"
+                    onchange="Venues.update('${v.id}',{name:this.value})">
+
+                <label>Contact Person</label>
+                <input
+                    value="${this.esc(v.contactPerson)}"
+                    onchange="Venues.update('${v.id}',{contactPerson:this.value})">
+
+                <label>Job Title</label>
+                <input
+                    value="${this.esc(v.jobTitle)}"
+                    onchange="Venues.update('${v.id}',{jobTitle:this.value})">
+
+                <label>Phone</label>
+                <input
+                    value="${this.esc(v.phone)}"
+                    onchange="Venues.update('${v.id}',{phone:this.value})">
+
+                <label>Alternate Phone</label>
+                <input
+                    value="${this.esc(v.alternatePhone)}"
+                    onchange="Venues.update('${v.id}',{alternatePhone:this.value})">
+
+                <label>Email</label>
+                <input
+                    type="email"
+                    value="${this.esc(v.email)}"
+                    onchange="Venues.update('${v.id}',{email:this.value})">
+
+                <label>Website</label>
+                <input
+                    value="${this.esc(v.website)}"
+                    onchange="Venues.update('${v.id}',{website:this.value})">
+
+                <label>Instagram</label>
+                <input
+                    value="${this.esc(v.instagram)}"
+                    onchange="Venues.update('${v.id}',{instagram:this.value})">
+
+                <label>Facebook</label>
+                <input
+                    value="${this.esc(v.facebook)}"
+                    onchange="Venues.update('${v.id}',{facebook:this.value})">
+
+                <label>Address</label>
+                <input
+                    value="${this.esc(v.address)}"
+                    onchange="Venues.update('${v.id}',{address:this.value})">
+
+                <label>Address Line 2</label>
+                <input
+                    value="${this.esc(v.address2)}"
+                    onchange="Venues.update('${v.id}',{address2:this.value})">
+
+                <label>City</label>
+                <input
+                    value="${this.esc(v.city)}"
+                    onchange="Venues.update('${v.id}',{city:this.value})">
+
+                <label>State</label>
+                <input
+                    value="${this.esc(v.state)}"
+                    onchange="Venues.update('${v.id}',{state:this.value})">
+
+                <label>ZIP Code</label>
+                <input
+                    value="${this.esc(v.zip)}"
+                    onchange="Venues.update('${v.id}',{zip:this.value})">
+
+                <label>Country</label>
+                <input
+                    value="${this.esc(v.country)}"
+                    onchange="Venues.update('${v.id}',{country:this.value})">
+
+                <label>Capacity</label>
+                <input
+                    type="number"
+                    value="${Number(v.capacity || 0)}"
+                    onchange="Venues.update('${v.id}',{capacity:Number(this.value)})">
+
+                <label>Rental Cost</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(v.rentalCost || 0)}"
+                    onchange="Venues.update('${v.id}',{rentalCost:Number(this.value)})">
+
+                <label>Deposit</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(v.deposit || 0)}"
+                    onchange="Venues.update('${v.id}',{deposit:Number(this.value)})">
+
+                <label>
+                    <input
+                        type="checkbox"
+                        ${v.depositRefundable ? "checked" : ""}
+                        onchange="Venues.update('${v.id}',{depositRefundable:this.checked})">
+                    Deposit Refundable
+                </label>
+
+                <label>Parking</label>
+                <input
+                    value="${this.esc(v.parking)}"
+                    onchange="Venues.update('${v.id}',{parking:this.value})">
+
+                <label>Indoor / Outdoor</label>
+                <select onchange="Venues.update('${v.id}',{indoorOutdoor:this.value})">
+                    <option value="Indoor" ${v.indoorOutdoor==="Indoor"?"selected":""}>Indoor</option>
+                    <option value="Outdoor" ${v.indoorOutdoor==="Outdoor"?"selected":""}>Outdoor</option>
+                    <option value="Both" ${v.indoorOutdoor==="Both"?"selected":""}>Both</option>
+                </select>
+
+                <label>
+                    <input
+                        type="checkbox"
+                        ${v.alcoholAllowed ? "checked" : ""}
+                        onchange="Venues.update('${v.id}',{alcoholAllowed:this.checked})">
+                    Alcohol Allowed
+                </label>
+
+                <label>
+                    <input
+                        type="checkbox"
+                        ${v.foodAllowed ? "checked" : ""}
+                        onchange="Venues.update('${v.id}',{foodAllowed:this.checked})">
+                    Food Allowed
+                </label>
+
+                <label>
+                    <input
+                        type="checkbox"
+                        ${v.outsideVendorsAllowed ? "checked" : ""}
+                        onchange="Venues.update('${v.id}',{outsideVendorsAllowed:this.checked})">
+                    Outside Vendors Allowed
+                </label>
+
+                <label>Setup Time</label>
+                <input
+                    type="time"
+                    value="${this.esc(v.setupTime)}"
+                    onchange="Venues.update('${v.id}',{setupTime:this.value})">
+
+                <label>Breakdown Time</label>
+                <input
+                    type="time"
+                    value="${this.esc(v.breakdownTime)}"
+                    onchange="Venues.update('${v.id}',{breakdownTime:this.value})">
+
+                <label>Tax ID</label>
+                <input
+                    value="${this.esc(v.taxId)}"
+                    onchange="Venues.update('${v.id}',{taxId:this.value})">
+
+                <label>
+                    <input
+                        type="checkbox"
+                        ${v.active ? "checked" : ""}
+                        onchange="Venues.update('${v.id}',{active:this.checked})">
+                    Active Venue
+                </label>
+
+                <label>Notes</label>
+                <textarea
+                    onchange="Venues.update('${v.id}',{notes:this.value})">${this.esc(v.notes)}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    if(confirm('Delete this venue?')){
+                        Venues.remove('${v.id}');
+                        UI.renderVenues();
+                    }
+                ">
+                    Delete Venue
+                </button>
+
+            </div>
+
+        `).join("")}
+    `;
+},
+
+    renderVendors() {
+
+    const vendors = Vendors.all();
+
+    document.getElementById("workspace").innerHTML = `
+
+        <h2>Vendors</h2>
+
+        <button onclick="Vendors.create();UI.renderVendors();">
+            + Add Vendor
+        </button>
+
+        <br><br>
+
+        ${vendors.length === 0 ? "<p>No vendors added yet.</p>" :
+
+        vendors.map(v => `
+
+            <div class="card">
+
+                <label>Vendor Name</label>
+                <input
+                    value="${this.esc(v.name)}"
+                    onchange="Vendors.update('${v.id}',{name:this.value})">
+
+                <label>Category</label>
+                <input
+                    value="${this.esc(v.category)}"
+                    onchange="Vendors.update('${v.id}',{category:this.value})">
+
+                <label>Contact Person</label>
+                <input
+                    value="${this.esc(v.contact)}"
+                    onchange="Vendors.update('${v.id}',{contact:this.value})">
+
+                <label>Job Title</label>
+                <input
+                    value="${this.esc(v.jobTitle)}"
+                    onchange="Vendors.update('${v.id}',{jobTitle:this.value})">
+
+                <label>Phone</label>
+                <input
+                    value="${this.esc(v.phone)}"
+                    onchange="Vendors.update('${v.id}',{phone:this.value})">
+
+                <label>Alternate Phone</label>
+                <input
+                    value="${this.esc(v.alternatePhone)}"
+                    onchange="Vendors.update('${v.id}',{alternatePhone:this.value})">
+
+                <label>Email</label>
+                <input
+                    type="email"
+                    value="${this.esc(v.email)}"
+                    onchange="Vendors.update('${v.id}',{email:this.value})">
+
+                <label>Website</label>
+                <input
+                    value="${this.esc(v.website)}"
+                    onchange="Vendors.update('${v.id}',{website:this.value})">
+
+                <label>Instagram</label>
+                <input
+                    value="${this.esc(v.instagram)}"
+                    onchange="Vendors.update('${v.id}',{instagram:this.value})">
+
+                <label>Facebook</label>
+                <input
+                    value="${this.esc(v.facebook)}"
+                    onchange="Vendors.update('${v.id}',{facebook:this.value})">
+
+                <label>Address</label>
+                <input
+                    value="${this.esc(v.address)}"
+                    onchange="Vendors.update('${v.id}',{address:this.value})">
+
+                <label>Address Line 2</label>
+                <input
+                    value="${this.esc(v.address2)}"
+                    onchange="Vendors.update('${v.id}',{address2:this.value})">
+
+                <label>City</label>
+                <input
+                    value="${this.esc(v.city)}"
+                    onchange="Vendors.update('${v.id}',{city:this.value})">
+
+                <label>State</label>
+                <input
+                    value="${this.esc(v.state)}"
+                    onchange="Vendors.update('${v.id}',{state:this.value})">
+
+                <label>ZIP Code</label>
+                <input
+                    value="${this.esc(v.zip)}"
+                    onchange="Vendors.update('${v.id}',{zip:this.value})">
+
+                <label>Country</label>
+                <input
+                    value="${this.esc(v.country)}"
+                    onchange="Vendors.update('${v.id}',{country:this.value})">
+
+                <label>Payment Type</label>
+                <select onchange="Vendors.update('${v.id}',{paymentType:this.value});UI.renderVendors();">
+                    <option value="Flat Rate" ${v.paymentType==="Flat Rate"?"selected":""}>Flat Rate</option>
+                    <option value="Percentage" ${v.paymentType==="Percentage"?"selected":""}>Percentage</option>
+                </select>
+
+                ${v.paymentType === "Percentage" ? `
+
+                    <label>Percentage (%)</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        value="${Number(v.percentage || 0)}"
+                        onchange="Vendors.update('${v.id}',{percentage:Number(this.value)})">
+
+                    <label>Minimum Guarantee</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        value="${Number(v.minimumGuarantee || 0)}"
+                        onchange="Vendors.update('${v.id}',{minimumGuarantee:Number(this.value)})">
+
+                ` : `
+
+                    <label>Flat Rate</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        value="${Number(v.flatRate || 0)}"
+                        onchange="Vendors.update('${v.id}',{flatRate:Number(this.value)})">
+                `}
+
+                <label>Payout Status</label>
+                <select onchange="Vendors.update('${v.id}',{payoutStatus:this.value})">
+                    <option value="Unpaid" ${v.payoutStatus==="Unpaid"?"selected":""}>Unpaid</option>
+                    <option value="Pending" ${v.payoutStatus==="Pending"?"selected":""}>Pending</option>
+                    <option value="Paid" ${v.payoutStatus==="Paid"?"selected":""}>Paid</option>
+                </select>
+
+                <p>
+                    Payout Status: ${this.statusBadge(v.payoutStatus)}
+                </p>
+
+                <label>Tax ID</label>
+                <input
+                    value="${this.esc(v.taxId)}"
+                    onchange="Vendors.update('${v.id}',{taxId:this.value})">
+
+                <label>
+                    <input
+                        type="checkbox"
+                        ${v.active ? "checked" : ""}
+                        onchange="Vendors.update('${v.id}',{active:this.checked});UI.renderVendors();">
+                    Active Vendor
+                </label>
+
+                <p>
+                    Status:
+                    ${this.statusBadge(v.active ? "Active" : "Inactive")}
+                </p>
+
+                <label>Notes</label>
+                <textarea
+                    onchange="Vendors.update('${v.id}',{notes:this.value})">${this.esc(v.notes)}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    if(confirm('Delete this vendor?')){
+                        Vendors.remove('${v.id}');
+                        UI.renderVendors();
+                    }
+                ">
+                    Delete Vendor
+                </button>
+
+            </div>
+
+        `).join("")}
+    `;
+},
+    
+renderInventory() {
+
+    const items = Inventory.all();
+    const vendors = Vendors.active();
+
+    document.getElementById("workspace").innerHTML = `
+
+        <h2>Inventory</h2>
+
+        <button onclick="Inventory.create();UI.renderInventory();">
+            + Add Inventory Item
+        </button>
+
+        <br><br>
+
+        <div class="dashboard-grid">
+
+            <div class="card">
+                <h3>Inventory Items</h3>
+                <h2>${items.length}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Total Units</h3>
+                <h2>${Inventory.totalUnits()}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Low Stock</h3>
+                <h2>${Inventory.lowStock().length}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Inventory Cost</h3>
+                <h2>${Utils.money(Inventory.totalCostValue())}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Retail Value</h3>
+                <h2>${Utils.money(Inventory.totalRetailValue())}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Potential Profit</h3>
+                <h2>${Utils.money(Inventory.potentialProfit())}</h2>
+            </div>
+
+        </div>
+
+        <br>
+
+        ${items.length === 0 ? "<p>No inventory items added yet.</p>" :
+
+        items.map(item => `
+
+            <div class="card">
+
+                <label>Item Name</label>
+                <input
+                    value="${this.esc(item.name)}"
+                    onchange="Inventory.update('${item.id}',{name:this.value})">
+
+                <label>Category</label>
+                <input
+                    value="${this.esc(item.category)}"
+                    onchange="Inventory.update('${item.id}',{category:this.value})">
+
+                <label>SKU</label>
+                <input
+                    value="${this.esc(item.sku)}"
+                    onchange="Inventory.update('${item.id}',{sku:this.value})">
+
+                <label>Vendor</label>
+                <select onchange="Inventory.update('${item.id}',{vendorId:this.value})">
+
+                    <option value="">No Vendor</option>
+
+                    ${vendors.map(v => `
+                        <option
+                            value="${v.id}"
+                            ${item.vendorId === v.id ? "selected" : ""}>
+                            ${this.esc(v.name || "Unnamed Vendor")}
+                        </option>
+                    `).join("")}
+
+                </select>
+
+                <hr>
+
+                <h4>Purchase Information</h4>
+
+                <label>Purchase Unit</label>
+                <select onchange="Inventory.update('${item.id}',{purchaseUnit:this.value});UI.renderInventory();">
+
+                    <option value="Piece" ${item.purchaseUnit==="Piece"?"selected":""}>Piece</option>
+                    <option value="Pack" ${item.purchaseUnit==="Pack"?"selected":""}>Pack</option>
+                    <option value="Box" ${item.purchaseUnit==="Box"?"selected":""}>Box</option>
+                    <option value="Case" ${item.purchaseUnit==="Case"?"selected":""}>Case</option>
+                    <option value="Bundle" ${item.purchaseUnit==="Bundle"?"selected":""}>Bundle</option>
+                    <option value="Dozen" ${item.purchaseUnit==="Dozen"?"selected":""}>Dozen</option>
+                    <option value="Roll" ${item.purchaseUnit==="Roll"?"selected":""}>Roll</option>
+                    <option value="Set" ${item.purchaseUnit==="Set"?"selected":""}>Set</option>
+                    <option value="Other" ${item.purchaseUnit==="Other"?"selected":""}>Other</option>
+
+                </select>
+
+                <label>Number of ${this.esc(item.purchaseUnit || "Purchase Units")} Purchased</label>
+                <input
+                    type="number"
+                    min="0"
+                    value="${Number(item.purchaseQuantity || 0)}"
+                    onchange="Inventory.update('${item.id}',{purchaseQuantity:Number(this.value)});UI.renderInventory();">
+
+                <label>Individual Units Per ${this.esc(item.purchaseUnit || "Purchase Unit")}</label>
+                <input
+                    type="number"
+                    min="1"
+                    value="${Number(item.unitsPerPurchase || 1)}"
+                    onchange="Inventory.update('${item.id}',{unitsPerPurchase:Number(this.value)});UI.renderInventory();">
+
+                <label>Cost Entry Type</label>
+                <select onchange="Inventory.update('${item.id}',{purchaseCostType:this.value});UI.renderInventory();">
+
+                    <option
+                        value="Total Purchase"
+                        ${item.purchaseCostType==="Total Purchase"?"selected":""}>
+                        Total Purchase
+                    </option>
+
+                    <option
+                        value="Per Purchase Unit"
+                        ${item.purchaseCostType==="Per Purchase Unit"?"selected":""}>
+                        Per ${this.esc(item.purchaseUnit || "Purchase Unit")}
+                    </option>
+
+                    <option
+                        value="Per Individual Unit"
+                        ${item.purchaseCostType==="Per Individual Unit"?"selected":""}>
+                        Per Individual Unit
+                    </option>
+
+                </select>
+
+                <label>Purchase Cost</label>
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value="${Number(item.purchaseCost || 0)}"
+                    onchange="Inventory.update('${item.id}',{purchaseCost:Number(this.value)});UI.renderInventory();">
+
+                <div class="card">
+
+                    <h4>Purchase Calculation</h4>
+
+                    <p>
+                        Total Individual Units Purchased:
+                        <strong>${Inventory.purchaseUnits(item.id)}</strong>
+                    </p>
+
+                    <p>
+                        Total Purchase Cost:
+                        <strong>${Utils.money(item.totalPurchaseCost || 0)}</strong>
+                    </p>
+
+                    <p>
+                        Calculated Cost Per Individual Unit:
+                        <strong>${Utils.money(item.calculatedUnitCost || 0)}</strong>
+                    </p>
+
+                </div>
+
+                <hr>
+
+                <h4>Current Inventory</h4>
+
+                <label>Quantity Currently In Stock</label>
+                <input
+                    type="number"
+                    min="0"
+                    value="${Number(item.quantity || 0)}"
+                    onchange="Inventory.update('${item.id}',{quantity:Number(this.value)});UI.renderInventory();">
+
+                <label>Minimum Stock</label>
+                <input
+                    type="number"
+                    min="0"
+                    value="${Number(item.minimum || 0)}"
+                    onchange="Inventory.update('${item.id}',{minimum:Number(this.value)});UI.renderInventory();">
+
+                <label>Selling Price Per Individual Unit</label>
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value="${Number(item.sellPrice || 0)}"
+                    onchange="Inventory.update('${item.id}',{sellPrice:Number(this.value)});UI.renderInventory();">
+
+                <label>Storage Location</label>
+                <input
+                    value="${this.esc(item.storageLocation)}"
+                    onchange="Inventory.update('${item.id}',{storageLocation:this.value})">
+
+                <label>Status</label>
+                <select onchange="Inventory.update('${item.id}',{status:this.value});UI.renderInventory();">
+
+                    <option value="Active" ${item.status==="Active"?"selected":""}>
+                        Active
+                    </option>
+
+                    <option value="Inactive" ${item.status==="Inactive"?"selected":""}>
+                        Inactive
+                    </option>
+
+                </select>
+
+                <p>
+                    Status:
+                    ${this.statusBadge(item.status)}
+                </p>
 
                 ${
-                    topCustomers.length === 0
+                    Number(item.quantity || 0) <= Number(item.minimum || 0)
+                        ? `<p>${this.statusBadge("Low Stock")}</p>`
+                        : ""
+                }
+
+                <label>Notes</label>
+                <textarea
+                    onchange="Inventory.update('${item.id}',{notes:this.value})">${this.esc(item.notes)}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    if(confirm('Delete this inventory item?')){
+                        Inventory.remove('${item.id}');
+                        UI.renderInventory();
+                    }
+                ">
+                    Delete Item
+                </button>
+
+            </div>
+
+        `).join("")}
+    `;
+},
+    renderCRM() {
+
+    const customers = CRM.all();
+    const topCustomers = CRM.topCustomers();
+
+    document.getElementById("workspace").innerHTML = `
+
+        <h2>Customer CRM</h2>
+
+        <button onclick="CRM.create();UI.renderCRM();">
+            + Add Customer
+        </button>
+
+        <br><br>
+
+        <div class="dashboard-grid">
+
+            <div class="card">
+                <h3>Total Customers</h3>
+                <h2>${customers.length}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Total Customer Spend</h3>
+                <h2>${Utils.money(CRM.totalSpend())}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Total Visits</h3>
+                <h2>${CRM.totalVisits()}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Average Spend</h3>
+                <h2>${Utils.money(CRM.averageSpend())}</h2>
+            </div>
+
+        </div>
+
+        <br>
+
+        <div class="card">
+
+            <h3>Top Customers</h3>
+
+            ${
+                topCustomers.length === 0
                     ? "<p>No customer data yet.</p>"
                     : topCustomers.map(c => `
                         <p>
                             ${this.esc(
-                                `${c.firstName || ""} ${c.lastName || ""}`.trim() || "Unnamed Customer"
+                                CRM.fullName(c) || "Unnamed Customer"
                             )}
                             — ${Utils.money(c.totalSpent)}
                         </p>
                     `).join("")
-                }
+            }
+
+        </div>
+
+        ${customers.length === 0 ? "<p>No customers added yet.</p>" :
+
+        customers.map(c => `
+
+            <div class="card">
+
+                <label>First Name</label>
+                <input
+                    value="${this.esc(c.firstName)}"
+                    onchange="CRM.update('${c.id}',{firstName:this.value})">
+
+                <label>Last Name</label>
+                <input
+                    value="${this.esc(c.lastName)}"
+                    onchange="CRM.update('${c.id}',{lastName:this.value})">
+
+                <label>Company</label>
+                <input
+                    value="${this.esc(c.company)}"
+                    onchange="CRM.update('${c.id}',{company:this.value})">
+
+                <label>Job Title</label>
+                <input
+                    value="${this.esc(c.jobTitle)}"
+                    onchange="CRM.update('${c.id}',{jobTitle:this.value})">
+
+                <label>Email</label>
+                <input
+                    type="email"
+                    value="${this.esc(c.email)}"
+                    onchange="CRM.update('${c.id}',{email:this.value})">
+
+                <label>Phone</label>
+                <input
+                    value="${this.esc(c.phone)}"
+                    onchange="CRM.update('${c.id}',{phone:this.value})">
+
+                <label>Alternate Phone</label>
+                <input
+                    value="${this.esc(c.alternatePhone)}"
+                    onchange="CRM.update('${c.id}',{alternatePhone:this.value})">
+
+                <label>Birthday</label>
+                <input
+                    type="date"
+                    value="${this.esc(c.birthday)}"
+                    onchange="CRM.update('${c.id}',{birthday:this.value})">
+
+                <label>Address</label>
+                <input
+                    value="${this.esc(c.address)}"
+                    onchange="CRM.update('${c.id}',{address:this.value})">
+
+                <label>Address Line 2</label>
+                <input
+                    value="${this.esc(c.address2)}"
+                    onchange="CRM.update('${c.id}',{address2:this.value})">
+
+                <label>City</label>
+                <input
+                    value="${this.esc(c.city)}"
+                    onchange="CRM.update('${c.id}',{city:this.value})">
+
+                <label>State</label>
+                <input
+                    value="${this.esc(c.state)}"
+                    onchange="CRM.update('${c.id}',{state:this.value})">
+
+                <label>ZIP Code</label>
+                <input
+                    value="${this.esc(c.zip)}"
+                    onchange="CRM.update('${c.id}',{zip:this.value})">
+
+                <label>Country</label>
+                <input
+                    value="${this.esc(c.country)}"
+                    onchange="CRM.update('${c.id}',{country:this.value})">
+
+                <label>Website</label>
+                <input
+                    value="${this.esc(c.website)}"
+                    onchange="CRM.update('${c.id}',{website:this.value})">
+
+                <label>Instagram</label>
+                <input
+                    value="${this.esc(c.instagram)}"
+                    onchange="CRM.update('${c.id}',{instagram:this.value})">
+
+                <label>Facebook</label>
+                <input
+                    value="${this.esc(c.facebook)}"
+                    onchange="CRM.update('${c.id}',{facebook:this.value})">
+
+                <label>Loyalty Points</label>
+                <input
+                    type="number"
+                    value="${Number(c.loyaltyPoints || 0)}"
+                    onchange="CRM.update('${c.id}',{loyaltyPoints:Number(this.value)})">
+
+                <label>Total Spent</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(c.totalSpent || 0)}"
+                    onchange="CRM.update('${c.id}',{totalSpent:Number(this.value)});UI.renderCRM();">
+
+                <label>Total Visits</label>
+                <input
+                    type="number"
+                    value="${Number(c.totalVisits || 0)}"
+                    onchange="CRM.update('${c.id}',{totalVisits:Number(this.value)});UI.renderCRM();">
+
+                <label>Last Visit</label>
+                <input
+                    type="date"
+                    value="${this.esc(c.lastVisit)}"
+                    onchange="CRM.update('${c.id}',{lastVisit:this.value})">
+
+                <label>Tags</label>
+                <input
+                    value="${this.esc((c.tags || []).join(", "))}"
+                    placeholder="VIP, Birthday Club, Corporate"
+                    onchange="CRM.update('${c.id}',{
+                        tags:this.value
+                            .split(',')
+                            .map(tag => tag.trim())
+                            .filter(Boolean)
+                    })">
+
+                <label>Notes</label>
+                <textarea
+                    onchange="CRM.update('${c.id}',{notes:this.value})">${this.esc(c.notes)}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    if(confirm('Delete this customer?')){
+                        CRM.remove('${c.id}');
+                        UI.renderCRM();
+                    }
+                ">
+                    Delete Customer
+                </button>
 
             </div>
 
-            ${customers.length === 0 ? "<p>No customers added yet.</p>" :
-
-            customers.map(c => `
-
-                <div class="card">
-
-                    <label>First Name</label>
-                    <input value="${this.esc(c.firstName)}"
-                        onchange="CRM.update('${c.id}',{firstName:this.value})">
-
-                    <label>Last Name</label>
-                    <input value="${this.esc(c.lastName)}"
-                        onchange="CRM.update('${c.id}',{lastName:this.value})">
-
-                    <label>Email</label>
-                    <input type="email" value="${this.esc(c.email)}"
-                        onchange="CRM.update('${c.id}',{email:this.value})">
-
-                    <label>Phone</label>
-                    <input value="${this.esc(c.phone)}"
-                        onchange="CRM.update('${c.id}',{phone:this.value})">
-
-                    <label>Birthday</label>
-                    <input type="date" value="${this.esc(c.birthday)}"
-                        onchange="CRM.update('${c.id}',{birthday:this.value})">
-
-                    <label>Address</label>
-                    <input value="${this.esc(c.address)}"
-                        onchange="CRM.update('${c.id}',{address:this.value})">
-
-                    <label>City</label>
-                    <input value="${this.esc(c.city)}"
-                        onchange="CRM.update('${c.id}',{city:this.value})">
-
-                    <label>State</label>
-                    <input value="${this.esc(c.state)}"
-                        onchange="CRM.update('${c.id}',{state:this.value})">
-
-                    <label>ZIP Code</label>
-                    <input value="${this.esc(c.zip)}"
-                        onchange="CRM.update('${c.id}',{zip:this.value})">
-
-                    <label>Loyalty Points</label>
-                    <input type="number" value="${Number(c.loyaltyPoints || 0)}"
-                        onchange="CRM.update('${c.id}',{loyaltyPoints:Number(this.value)})">
-
-                    <label>Total Spent</label>
-                    <input type="number" step="0.01" value="${Number(c.totalSpent || 0)}"
-                        onchange="CRM.update('${c.id}',{totalSpent:Number(this.value)});UI.renderCRM();">
-
-                    <label>Total Visits</label>
-                    <input type="number" value="${Number(c.totalVisits || 0)}"
-                        onchange="CRM.update('${c.id}',{totalVisits:Number(this.value)});UI.renderCRM();">
-
-                    <label>Last Visit</label>
-                    <input type="date" value="${this.esc(c.lastVisit)}"
-                        onchange="CRM.update('${c.id}',{lastVisit:this.value})">
-
-                    <label>Tags</label>
-                    <input
-                        value="${this.esc((c.tags || []).join(", "))}"
-                        placeholder="VIP, Birthday Club, Corporate"
-                        onchange="CRM.update('${c.id}',{
-                            tags:this.value
-                                .split(',')
-                                .map(tag => tag.trim())
-                                .filter(Boolean)
-                        })">
-
-                    <label>Notes</label>
-                    <textarea onchange="CRM.update('${c.id}',{notes:this.value})">${this.esc(c.notes)}</textarea>
-
-                    <br><br>
-
-                    <button onclick="
-                        if(confirm('Delete this customer?')){
-                            CRM.remove('${c.id}');
-                            UI.renderCRM();
-                        }
-                    ">
-                        Delete Customer
-                    </button>
-
-                </div>
-
-            `).join("")}
-        `;
-    },
-
+        `).join("")}
+    `;
+},
     renderFinance() {
 
         const transactions = Finance.all();
