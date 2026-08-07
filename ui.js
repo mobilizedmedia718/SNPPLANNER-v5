@@ -495,23 +495,22 @@ renderEvents() {
                         ${Utils.money(event.actualRevenue)}
                     </p>
 
-                    <p>
-                        Progress:
-                        ${Math.max(
-    0,
-    Math.min(
-        100,
-        Number(event.revenueGoal || 0) > 0
-            ? Math.round(
-                Number(event.actualRevenue || 0) /
-                Number(event.revenueGoal || 0) *
-                100
-            )
-            : 0
-    )
-)}%">
-</div>
-                    </p>
+                   <p>
+    Progress:
+    ${Math.max(
+        0,
+        Math.min(
+            100,
+            Number(event.revenueGoal || 0) > 0
+                ? Math.round(
+                    Number(event.actualRevenue || 0) /
+                    Number(event.revenueGoal || 0) *
+                    100
+                )
+                : 0
+        )
+    )}%
+</p>
 
                     <div class="progress-bar">
                         <div
