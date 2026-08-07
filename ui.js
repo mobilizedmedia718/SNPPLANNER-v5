@@ -497,35 +497,38 @@ renderEvents() {
 
                     <p>
                         Progress:
-                        ${
-                            Number(event.revenueGoal || 0) > 0
-                                ? Math.min(
-                                    100,
-                                    Math.round(
-                                        Number(event.actualRevenue || 0) /
-                                        Number(event.revenueGoal || 0) *
-                                        100
-                                    )
-                                )
-                                : 0
-                        }%
+                        ${Math.max(
+    0,
+    Math.min(
+        100,
+        Number(event.revenueGoal || 0) > 0
+            ? Math.round(
+                Number(event.actualRevenue || 0) /
+                Number(event.revenueGoal || 0) *
+                100
+            )
+            : 0
+    )
+)}%">
+</div>
                     </p>
 
                     <div class="progress-bar">
                         <div
                             class="progress-fill"
-                            style="width:${
-                                Number(event.revenueGoal || 0) > 0
-                                    ? Math.min(
-                                        100,
-                                        Math.round(
-                                            Number(event.actualRevenue || 0) /
-                                            Number(event.revenueGoal || 0) *
-                                            100
-                                        )
-                                    )
-                                    : 0
-                            }%">
+                            style="width:${Math.max(
+    0,
+    Math.min(
+        100,
+        Number(event.revenueGoal || 0) > 0
+            ? Math.round(
+                Number(event.actualRevenue || 0) /
+                Number(event.revenueGoal || 0) *
+                100
+            )
+            : 0
+    )
+)}%">
                         </div>
                     </div>
 
