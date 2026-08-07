@@ -102,4 +102,82 @@ searchAll(term){
 
     URL.revokeObjectURL(url);
     },
+
+    restoreBackup(file) {
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = event => {
+
+        try {
+
+            const backup = JSON.parse(event.target.result);
+
+            if (backup.business) {
+                Business.data = backup.business;
+                Business.save();
+            }
+
+            if (backup.events) {
+                Events.data = backup.events;
+                Events.save();
+            }
+
+            if (backup.venues) {
+                Venues.list = backup.venues;
+                Venues.save();
+            }
+
+            if (backup.vendors) {
+                Vendors.list = backup.vendors;
+                Vendors.save();
+            }
+
+            if (backup.inventory) {
+                Inventory.items = backup.inventory;
+                Inventory.save();
+            }
+
+            if (backup.customers) {
+                CRM.customers = backup.customers;
+                CRM.save();
+            }
+
+            if (backup.transactions) {
+                Finance.transactions = backup.transactions;
+                Finance.save();
+            }
+
+            if (backup.assets) {
+                Assets.assets = backup.assets;
+                Assets.save();
+            }
+
+            if (backup.calendar) {
+                Calendar.reminders = backup.calendar;
+                Calendar.save();
+            }
+
+            if (backup.settings) {
+                Settings.data = backup.settings;
+                Settings.save();
+            }
+
+            alert("Backup restored successfully.");
+
+            location.reload();
+
+        } catch (error) {
+
+            alert("Unable to restore backup. The file may be invalid.");
+
+            console.error(error);
+        }
+
+    };
+
+    reader.readAsText(file);
+    }
 };
