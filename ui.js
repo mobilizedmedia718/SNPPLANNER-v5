@@ -416,14 +416,8 @@ const UI = {
                         <option ${event.status==="Cancelled"?"selected":""}>Cancelled</option>
                     </select>
                     <p>
-    Status: ${this.statusBadge(item.status)}
+    Status: ${this.statusBadge(event.status)}
 </p>
-
-${
-    Number(item.quantity || 0) <= Number(item.minimum || 0)
-    ? `<p>${this.statusBadge("Low Stock")}</p>`
-    : ""
-}
 <div class="card">
 
     <h4>Event Financial Summary</h4>
