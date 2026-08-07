@@ -524,85 +524,148 @@ const UI = {
 
     renderInventory() {
 
-        const items = Inventory.all();
-        const vendors = Vendors.all();
+    const items = Inventory.all();
+    const vendors = Vendors.all();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
-            <h2>Inventory</h2>
+        <h2>Inventory</h2>
 
-            <button onclick="Inventory.create();UI.renderInventory();">+ Add Inventory Item</button>
+        <button onclick="Inventory.create();UI.renderInventory();">
+            + Add Inventory Item
+        </button>
 
-            <br><br>
+        <br><br>
 
-            ${items.length === 0 ? "<p>No inventory items added yet.</p>" :
+        <div class="dashboard-grid">
 
-            items.map(item => `
+            <div class="card">
+                <h3>Inventory Items</h3>
+                <h2>${items.length}</h2>
+            </div>
 
-                <div class="card">
+            <div class="card">
+                <h3>Total Units</h3>
+                <h2>${Inventory.totalUnits()}</h2>
+            </div>
 
-                    <label>Item Name</label>
-                    <input value="${this.esc(item.name)}"
-                        onchange="Inventory.update('${item.id}',{name:this.value})">
+            <div class="card">
+                <h3>Low Stock</h3>
+                <h2>${Inventory.lowStock().length}</h2>
+            </div>
 
-                    <label>Category</label>
-                    <input value="${this.esc(item.category)}"
-                        onchange="Inventory.update('${item.id}',{category:this.value})">
+            <div class="card">
+                <h3>Inventory Cost</h3>
+                <h2>${Utils.money(Inventory.totalCostValue())}</h2>
+            </div>
 
-                    <label>Vendor</label>
+            <div class="card">
+                <h3>Retail Value</h3>
+                <h2>${Utils.money(Inventory.totalRetailValue())}</h2>
+            </div>
 
-                    <select onchange="Inventory.update('${item.id}',{vendorId:this.value})">
+            <div class="card">
+                <h3>Potential Profit</h3>
+                <h2>${Utils.money(Inventory.potentialProfit())}</h2>
+            </div>
 
-                        <option value="">Select Vendor</option>
+        </div>
 
-                        ${vendors.map(v => `
-                            <option value="${v.id}"
-                                ${item.vendorId === v.id ? "selected" : ""}>
-                                ${this.esc(v.name || "Unnamed Vendor")}
-                            </option>
-                        `).join("")}
+        <br>
 
-                    </select>
+        ${items.length === 0 ? "<p>No inventory items added yet.</p>" :
 
-                    <label>Quantity</label>
-                    <input type="number" value="${Number(item.quantity || 0)}"
-                        onchange="Inventory.update('${item.id}',{quantity:Number(this.value)})">
+        items.map(item => `
 
-                    <label>Minimum Stock</label>
-                    <input type="number" value="${Number(item.minimum || 0)}"
-                        onchange="Inventory.update('${item.id}',{minimum:Number(this.value)})">
+            <div class="card">
 
-                    <label>Unit Cost</label>
-                    <input type="number" step="0.01" value="${Number(item.cost || 0)}"
-                        onchange="Inventory.update('${item.id}',{cost:Number(this.value)})">
+                <label>Item Name</label>
+                <input
+                    value="${this.esc(item.name)}"
+                    onchange="Inventory.update('${item.id}',{name:this.value})">
 
-                    <label>Selling Price</label>
-                    <input type="number" step="0.01" value="${Number(item.sellPrice || 0)}"
-                        onchange="Inventory.update('${item.id}',{sellPrice:Number(this.value)})">
+                <label>Category</label>
+                <input
+                    value="${this.esc(item.category)}"
+                    onchange="Inventory.update('${item.id}',{category:this.value})">
 
-                    <label>Storage Location</label>
-                    <input value="${this.esc(item.storageLocation)}"
-                        onchange="Inventory.update('${item.id}',{storageLocation:this.value})">
+                <label>SKU</label>
+                <input
+                    value="${this.esc(item.sku)}"
+                    onchange="Inventory.update('${item.id}',{sku:this.value})">
 
-                    <label>Notes</label>
-                    <textarea onchange="Inventory.update('${item.id}',{notes:this.value})">${this.esc(item.notes)}</textarea>
+                <label>Vendor</label>
+                <select onchange="Inventory.update('${item.id}',{vendorId:this.value})">
 
-                    <br><br>
+                    <option value="">No Vendor</option>
 
-                    <button onclick="
-                        if(confirm('Delete this inventory item?')){
-                            Inventory.remove('${item.id}');
-                            UI.renderInventory();
-                        }
-                    ">
-                        Delete Item
-                    </button>
+                    ${vendors.map(v => `
+                        <option
+                            value="${v.id}"
+                            ${item.vendorId === v.id ? "selected" : ""}>
+                            ${this.esc(v.name || "Unnamed Vendor")}
+                        </option>
+                    `).join("")}
 
-                </div>
+                </select>
 
-            `).join("")}
-        `;
-    },
+                <label>Quantity</label>
+                <input
+                    type="number"
+                    value="${Number(item.quantity || 0)}"
+                    onchange="Inventory.update('${item.id}',{quantity:Number(this.value)});UI.renderInventory();">
+
+                <label>Minimum Stock</label>
+                <input
+                    type="number"
+                    value="${Number(item.minimum || 0)}"
+                    onchange="Inventory.update('${item.id}',{minimum:Number(this.value)});UI.renderInventory();">
+
+                <label>Unit Cost</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(item.cost || 0)}"
+                    onchange="Inventory.update('${item.id}',{cost:Number(this.value)});UI.renderInventory();">
+
+                <label>Selling Price</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(item.sellPrice || 0)}"
+                    onchange="Inventory.update('${item.id}',{sellPrice:Number(this.value)});UI.renderInventory();">
+
+                <label>Storage Location</label>
+                <input
+                    value="${this.esc(item.storageLocation)}"
+                    onchange="Inventory.update('${item.id}',{storageLocation:this.value})">
+
+                <label>Status</label>
+                <select onchange="Inventory.update('${item.id}',{status:this.value});UI.renderInventory();">
+                    <option value="Active" ${item.status==="Active"?"selected":""}>Active</option>
+                    <option value="Inactive" ${item.status==="Inactive"?"selected":""}>Inactive</option>
+                </select>
+
+                <label>Notes</label>
+                <textarea
+                    onchange="Inventory.update('${item.id}',{notes:this.value})">${this.esc(item.notes)}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    if(confirm('Delete this inventory item?')){
+                        Inventory.remove('${item.id}');
+                        UI.renderInventory();
+                    }
+                ">
+                    Delete Item
+                </button>
+
+            </div>
+
+        `).join("")}
+    `;
+},
 
     renderCRM() {
 
