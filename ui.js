@@ -17,6 +17,7 @@ const UI = {
     type="search"
     placeholder="Search customers, events, vendors..."
     oninput="UI.handleSearch(this.value)">
+    >
 
         <button onclick="UI.renderDashboard()">
             Dashboard
