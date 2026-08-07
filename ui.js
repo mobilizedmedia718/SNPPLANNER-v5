@@ -356,6 +356,15 @@ const UI = {
                         <option ${event.status==="Completed"?"selected":""}>Completed</option>
                         <option ${event.status==="Cancelled"?"selected":""}>Cancelled</option>
                     </select>
+                    <p>
+    Status: ${this.statusBadge(item.status)}
+</p>
+
+${
+    Number(item.quantity || 0) <= Number(item.minimum || 0)
+    ? `<p>${this.statusBadge("Low Stock")}</p>`
+    : ""
+}
 
                     <label>Notes</label>
                     <textarea onchange="Events.update('${event.id}',{notes:this.value})">${this.esc(event.notes)}</textarea>
