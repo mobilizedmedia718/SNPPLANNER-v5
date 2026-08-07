@@ -27,7 +27,9 @@ const Assets = {
             condition: "Good",
             warrantyExpires: "",
             maintenanceDue: "",
+            maintenanceNotes: "",
             notes: "",
+            created: Utils.date(),
             ...data
         };
 
@@ -44,14 +46,12 @@ const Assets = {
         if (!asset) return;
 
         Object.assign(asset, updates);
-
         this.save();
     },
 
     remove(id) {
 
         this.assets = this.assets.filter(a => a.id !== id);
-
         this.save();
     },
 
@@ -73,7 +73,22 @@ const Assets = {
 
     maintenance() {
         return this.assets.filter(a =>
-            a.status === "Maintenance" || a.condition === "Needs Repair"
+            a.status === "Maintenance" ||
+            a.condition === "Needs Repair"
+        );
+    },
+
+    totalValue() {
+        return this.assets.reduce(
+            (sum, asset) =>
+                sum + Number(asset.currentValue || 0),
+            0
+        );
+    },
+
+    assignedToEvent(eventId) {
+        return this.assets.filter(
+            asset => asset.assignedEventId === eventId
         );
     }
 
