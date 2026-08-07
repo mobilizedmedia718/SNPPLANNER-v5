@@ -14,7 +14,7 @@ const Finance = {
 
         const transaction = {
             id: Utils.id(),
-            date: Utils.date(),
+            date: new Date().toISOString().slice(0,10),
             type: "Expense",
             category: "",
             description: "",
@@ -25,6 +25,7 @@ const Finance = {
             paymentMethod: "Cash",
             status: "Completed",
             notes: "",
+            created: Utils.date(),
             ...data
         };
 
@@ -74,6 +75,18 @@ const Finance = {
 
     profit() {
         return this.income() - this.expenses();
+    },
+
+    byEvent(eventId) {
+        return this.transactions.filter(t => t.eventId === eventId);
+    },
+
+    byVendor(vendorId) {
+        return this.transactions.filter(t => t.vendorId === vendorId);
+    },
+
+    byCustomer(customerId) {
+        return this.transactions.filter(t => t.customerId === customerId);
     }
 
 };
