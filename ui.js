@@ -922,9 +922,15 @@ const UI = {
     Download Backup
 </button><br><br>
 
-<button onclick="Utils.downloadBackup()">
-    Download Backup
-</button>
+
+<br><br>
+
+<label>Restore Backup</label>
+
+<input
+    type="file"
+    accept=".json,application/json"
+    onchange="Utils.restoreBackup(this.files[0])">
 
             </div>
         `;
