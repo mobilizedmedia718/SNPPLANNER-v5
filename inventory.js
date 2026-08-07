@@ -33,6 +33,10 @@ const Inventory = {
             totalPurchaseCost: 0,
             calculatedUnitCost: 0,
 
+            purchaseDate: "",
+invoiceNumber: "",
+purchaseNotes: "",
+
             /* Existing cost field remains for reports */
             cost: 0,
 
