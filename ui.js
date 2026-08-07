@@ -606,89 +606,173 @@ const UI = {
 
     renderCRM() {
 
-        const customers = CRM.all();
+    const customers = CRM.all();
+    const topCustomers = CRM.topCustomers();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
-            <h2>Customer CRM</h2>
+        <h2>Customer CRM</h2>
 
-            <button onclick="CRM.create();UI.renderCRM();">+ Add Customer</button>
+        <button onclick="CRM.create();UI.renderCRM();">
+            + Add Customer
+        </button>
 
-            <br><br>
+        <br><br>
 
-            ${customers.length === 0 ? "<p>No customers added yet.</p>" :
+        <div class="dashboard-grid">
 
-            customers.map(c => `
+            <div class="card">
+                <h3>Total Customers</h3>
+                <h2>${customers.length}</h2>
+            </div>
 
-                <div class="card">
+            <div class="card">
+                <h3>Total Customer Spend</h3>
+                <h2>${Utils.money(CRM.totalSpend())}</h2>
+            </div>
 
-                    <label>First Name</label>
-                    <input value="${this.esc(c.firstName)}"
-                        onchange="CRM.update('${c.id}',{firstName:this.value})">
+            <div class="card">
+                <h3>Total Visits</h3>
+                <h2>${CRM.totalVisits()}</h2>
+            </div>
 
-                    <label>Last Name</label>
-                    <input value="${this.esc(c.lastName)}"
-                        onchange="CRM.update('${c.id}',{lastName:this.value})">
+            <div class="card">
+                <h3>Average Spend</h3>
+                <h2>${Utils.money(CRM.averageSpend())}</h2>
+            </div>
 
-                    <label>Email</label>
-                    <input type="email" value="${this.esc(c.email)}"
-                        onchange="CRM.update('${c.id}',{email:this.value})">
+        </div>
 
-                    <label>Phone</label>
-                    <input value="${this.esc(c.phone)}"
-                        onchange="CRM.update('${c.id}',{phone:this.value})">
+        <br>
 
-                    <label>Birthday</label>
-                    <input type="date" value="${this.esc(c.birthday)}"
-                        onchange="CRM.update('${c.id}',{birthday:this.value})">
+        <div class="card">
 
-                    <label>Address</label>
-                    <input value="${this.esc(c.address)}"
-                        onchange="CRM.update('${c.id}',{address:this.value})">
+            <h3>Top Customers</h3>
 
-                    <label>City</label>
-                    <input value="${this.esc(c.city)}"
-                        onchange="CRM.update('${c.id}',{city:this.value})">
+            ${
+                topCustomers.length === 0
+                ? "<p>No customer data yet.</p>"
+                : topCustomers.map(c => `
+                    <p>
+                        ${this.esc(
+                            `${c.firstName || ""} ${c.lastName || ""}`.trim() || "Unnamed Customer"
+                        )}
+                        — ${Utils.money(c.totalSpent)}
+                    </p>
+                `).join("")
+            }
 
-                    <label>State</label>
-                    <input value="${this.esc(c.state)}"
-                        onchange="CRM.update('${c.id}',{state:this.value})">
+        </div>
 
-                    <label>ZIP Code</label>
-                    <input value="${this.esc(c.zip)}"
-                        onchange="CRM.update('${c.id}',{zip:this.value})">
+        ${customers.length === 0 ? "<p>No customers added yet.</p>" :
 
-                    <label>Loyalty Points</label>
-                    <input type="number" value="${Number(c.loyaltyPoints || 0)}"
-                        onchange="CRM.update('${c.id}',{loyaltyPoints:Number(this.value)})">
+        customers.map(c => `
 
-                    <label>Total Spent</label>
-                    <input type="number" step="0.01" value="${Number(c.totalSpent || 0)}"
-                        onchange="CRM.update('${c.id}',{totalSpent:Number(this.value)})">
+            <div class="card">
 
-                    <label>Total Visits</label>
-                    <input type="number" value="${Number(c.totalVisits || 0)}"
-                        onchange="CRM.update('${c.id}',{totalVisits:Number(this.value)})">
+                <label>First Name</label>
+                <input
+                    value="${this.esc(c.firstName)}"
+                    onchange="CRM.update('${c.id}',{firstName:this.value})">
 
-                    <label>Notes</label>
-                    <textarea onchange="CRM.update('${c.id}',{notes:this.value})">${this.esc(c.notes)}</textarea>
+                <label>Last Name</label>
+                <input
+                    value="${this.esc(c.lastName)}"
+                    onchange="CRM.update('${c.id}',{lastName:this.value})">
 
-                    <br><br>
+                <label>Email</label>
+                <input
+                    type="email"
+                    value="${this.esc(c.email)}"
+                    onchange="CRM.update('${c.id}',{email:this.value})">
 
-                    <button onclick="
-                        if(confirm('Delete this customer?')){
-                            CRM.remove('${c.id}');
-                            UI.renderCRM();
-                        }
-                    ">
-                        Delete Customer
-                    </button>
+                <label>Phone</label>
+                <input
+                    value="${this.esc(c.phone)}"
+                    onchange="CRM.update('${c.id}',{phone:this.value})">
 
-                </div>
+                <label>Birthday</label>
+                <input
+                    type="date"
+                    value="${this.esc(c.birthday)}"
+                    onchange="CRM.update('${c.id}',{birthday:this.value})">
 
-            `).join("")}
-        `;
-    },
+                <label>Address</label>
+                <input
+                    value="${this.esc(c.address)}"
+                    onchange="CRM.update('${c.id}',{address:this.value})">
+
+                <label>City</label>
+                <input
+                    value="${this.esc(c.city)}"
+                    onchange="CRM.update('${c.id}',{city:this.value})">
+
+                <label>State</label>
+                <input
+                    value="${this.esc(c.state)}"
+                    onchange="CRM.update('${c.id}',{state:this.value})">
+
+                <label>ZIP Code</label>
+                <input
+                    value="${this.esc(c.zip)}"
+                    onchange="CRM.update('${c.id}',{zip:this.value})">
+
+                <label>Loyalty Points</label>
+                <input
+                    type="number"
+                    value="${Number(c.loyaltyPoints || 0)}"
+                    onchange="CRM.update('${c.id}',{loyaltyPoints:Number(this.value)})">
+
+                <label>Total Spent</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(c.totalSpent || 0)}"
+                    onchange="CRM.update('${c.id}',{totalSpent:Number(this.value)});UI.renderCRM();">
+
+                <label>Total Visits</label>
+                <input
+                    type="number"
+                    value="${Number(c.totalVisits || 0)}"
+                    onchange="CRM.update('${c.id}',{totalVisits:Number(this.value)});UI.renderCRM();">
+
+                <label>Last Visit</label>
+                <input
+                    type="date"
+                    value="${this.esc(c.lastVisit)}"
+                    onchange="CRM.update('${c.id}',{lastVisit:this.value})">
+
+                <label>Tags</label>
+                <input
+                    value="${this.esc((c.tags || []).join(", "))}"
+                    placeholder="VIP, Birthday Club, Corporate"
+                    onchange="CRM.update('${c.id}',{
+                        tags:this.value
+                            .split(',')
+                            .map(tag => tag.trim())
+                            .filter(Boolean)
+                    })">
+
+                <label>Notes</label>
+                <textarea
+                    onchange="CRM.update('${c.id}',{notes:this.value})">${this.esc(c.notes)}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    if(confirm('Delete this customer?')){
+                        CRM.remove('${c.id}');
+                        UI.renderCRM();
+                    }
+                ">
+                    Delete Customer
+                </button>
+
+            </div>
+
+        `).join("")}
+    `;
+},
 
     renderFinance() {
 
