@@ -17,10 +17,16 @@ const Events = {
             name: "",
             date: "",
             time: "",
+            endTime: "",
             venueId: "",
             status: "Draft",
             capacity: 0,
             ticketsSold: 0,
+            ticketPrice: 0,
+            revenueGoal: 0,
+            actualRevenue: 0,
+            theme: "",
+            instructor: "",
             notes: "",
             created: Utils.date(),
             ...eventData
@@ -43,6 +49,7 @@ const Events = {
     },
 
     remove(id) {
+
         this.data = this.data.filter(e => e.id !== id);
         this.save();
     },
@@ -53,6 +60,28 @@ const Events = {
 
     all() {
         return this.data;
+    },
+
+    scheduled() {
+        return this.data.filter(e => e.status === "Scheduled");
+    },
+
+    completed() {
+        return this.data.filter(e => e.status === "Completed");
+    },
+
+    totalTicketsSold() {
+        return this.data.reduce(
+            (sum, event) => sum + Number(event.ticketsSold || 0),
+            0
+        );
+    },
+
+    totalRevenue() {
+        return this.data.reduce(
+            (sum, event) => sum + Number(event.actualRevenue || 0),
+            0
+        );
     }
 
 };
