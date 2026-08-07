@@ -120,29 +120,83 @@ const UI = {
         `;
     },
 
-    renderDashboard() {
+   renderDashboard() {
 
-        const report = Reports.summary();
+    const report = Reports.summary();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
-            <h2>Executive Dashboard</h2>
+        <h2>Executive Dashboard</h2>
 
-            <div class="dashboard-grid">
+        <div class="dashboard-grid">
 
-                <div class="card"><h3>Events</h3><h1>${report.totalEvents}</h1></div>
-                <div class="card"><h3>Customers</h3><h1>${report.totalCustomers}</h1></div>
-                <div class="card"><h3>Vendors</h3><h1>${report.totalVendors}</h1></div>
-                <div class="card"><h3>Venues</h3><h1>${report.totalVenues}</h1></div>
-                <div class="card"><h3>Inventory</h3><h1>${report.totalInventoryItems}</h1></div>
-                <div class="card"><h3>Assets</h3><h1>${report.totalAssets}</h1></div>
-                <div class="card"><h3>Income</h3><h2>${Utils.money(report.totalIncome)}</h2></div>
-                <div class="card"><h3>Expenses</h3><h2>${Utils.money(report.totalExpenses)}</h2></div>
-                <div class="card"><h3>Net Profit</h3><h2>${Utils.money(report.totalProfit)}</h2></div>
-
+            <div class="card">
+                <h3>Events</h3>
+                <h1>${report.totalEvents}</h1>
             </div>
-        `;
-    },
+
+            <div class="card">
+                <h3>Tickets Sold</h3>
+                <h1>${report.totalTicketsSold}</h1>
+            </div>
+
+            <div class="card">
+                <h3>Customers</h3>
+                <h1>${report.totalCustomers}</h1>
+            </div>
+
+            <div class="card">
+                <h3>Active Vendors</h3>
+                <h1>${report.activeVendors}</h1>
+            </div>
+
+            <div class="card">
+                <h3>Venues</h3>
+                <h1>${report.totalVenues}</h1>
+            </div>
+
+            <div class="card">
+                <h3>Low Stock</h3>
+                <h1>${report.lowStockItems}</h1>
+            </div>
+
+            <div class="card">
+                <h3>Available Assets</h3>
+                <h1>${report.availableAssets}</h1>
+            </div>
+
+            <div class="card">
+                <h3>Total Income</h3>
+                <h2>${Utils.money(report.totalIncome)}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Total Expenses</h3>
+                <h2>${Utils.money(report.totalExpenses)}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Net Profit</h3>
+                <h2>${Utils.money(report.totalProfit)}</h2>
+            </div>
+
+        </div>
+
+        <br>
+
+        <div class="card">
+
+            <h3>Quick Actions</h3>
+
+            <button onclick="UI.renderEvents()">Events</button>
+            <button onclick="UI.renderCRM()">Customers</button>
+            <button onclick="UI.renderInventory()">Inventory</button>
+            <button onclick="UI.renderFinance()">Finance</button>
+            <button onclick="UI.renderReports()">Reports</button>
+
+        </div>
+    `;
+},
 
     renderBusiness() {
 
@@ -826,29 +880,150 @@ const UI = {
 
     renderReports() {
 
-        const report = Reports.summary();
+    const summary = Reports.summary();
+    const financial = Reports.financial();
+    const inventory = Reports.inventory();
+    const customers = Reports.customers();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
-            <h2>Business Reports</h2>
+        <h2>Business Reports</h2>
+
+        <div class="dashboard-grid">
 
             <div class="card">
-
-                <table>
-                    <tr><td>Total Events</td><td>${report.totalEvents}</td></tr>
-                    <tr><td>Total Customers</td><td>${report.totalCustomers}</td></tr>
-                    <tr><td>Total Vendors</td><td>${report.totalVendors}</td></tr>
-                    <tr><td>Total Venues</td><td>${report.totalVenues}</td></tr>
-                    <tr><td>Total Inventory Items</td><td>${report.totalInventoryItems}</td></tr>
-                    <tr><td>Total Assets</td><td>${report.totalAssets}</td></tr>
-                    <tr><td>Total Income</td><td>${Utils.money(report.totalIncome)}</td></tr>
-                    <tr><td>Total Expenses</td><td>${Utils.money(report.totalExpenses)}</td></tr>
-                    <tr><td>Net Profit</td><td>${Utils.money(report.totalProfit)}</td></tr>
-                </table>
-
+                <h3>Events</h3>
+                <h2>${summary.totalEvents}</h2>
             </div>
-        `;
-    },
+
+            <div class="card">
+                <h3>Tickets Sold</h3>
+                <h2>${summary.totalTicketsSold}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Customers</h3>
+                <h2>${summary.totalCustomers}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Low Stock Items</h3>
+                <h2>${summary.lowStockItems}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Total Income</h3>
+                <h2>${Utils.money(financial.income)}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Total Expenses</h3>
+                <h2>${Utils.money(financial.expenses)}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Net Profit</h3>
+                <h2>${Utils.money(financial.profit)}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Inventory Retail Value</h3>
+                <h2>${Utils.money(inventory.totalInventoryRetailValue)}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Customer Spend</h3>
+                <h2>${Utils.money(customers.totalCustomerSpend)}</h2>
+            </div>
+
+        </div>
+
+        <br>
+
+        <div class="card">
+
+            <h3>Event Performance</h3>
+
+            <table>
+                <tr>
+                    <td>Total Event Capacity</td>
+                    <td>${summary.totalEventCapacity}</td>
+                </tr>
+
+                <tr>
+                    <td>Total Tickets Sold</td>
+                    <td>${summary.totalTicketsSold}</td>
+                </tr>
+
+                <tr>
+                    <td>Average Tickets Sold per Event</td>
+                    <td>${summary.averageEventAttendance.toFixed(1)}</td>
+                </tr>
+            </table>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Inventory Performance</h3>
+
+            <table>
+                <tr>
+                    <td>Inventory Cost</td>
+                    <td>${Utils.money(inventory.totalInventoryCost)}</td>
+                </tr>
+
+                <tr>
+                    <td>Retail Value</td>
+                    <td>${Utils.money(inventory.totalInventoryRetailValue)}</td>
+                </tr>
+
+                <tr>
+                    <td>Potential Inventory Profit</td>
+                    <td>${Utils.money(inventory.potentialInventoryProfit)}</td>
+                </tr>
+
+                <tr>
+                    <td>Low Stock Items</td>
+                    <td>${inventory.lowStock.length}</td>
+                </tr>
+            </table>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Customer Performance</h3>
+
+            <table>
+                <tr>
+                    <td>Total Customers</td>
+                    <td>${customers.totalCustomers}</td>
+                </tr>
+
+                <tr>
+                    <td>Total Customer Spend</td>
+                    <td>${Utils.money(customers.totalCustomerSpend)}</td>
+                </tr>
+
+                <tr>
+                    <td>Total Visits</td>
+                    <td>${customers.totalVisits}</td>
+                </tr>
+
+                <tr>
+                    <td>Average Customer Spend</td>
+                    <td>${Utils.money(customers.averageCustomerSpend)}</td>
+                </tr>
+            </table>
+
+        </div>
+
+        <button onclick="Reports.export()">
+            Download Full Report
+        </button>
+    `;
+},
 
     renderSettings() {
 
