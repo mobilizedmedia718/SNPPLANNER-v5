@@ -847,69 +847,161 @@ const UI = {
     `;
 },
 
-    renderAssets() {
+   renderAssets() {
 
-        const assets = Assets.all();
+    const assets = Assets.all();
+    const events = Events.all();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
-            <h2>Asset Management</h2>
+        <h2>Asset Management</h2>
 
-            <button onclick="Assets.create();UI.renderAssets();">+ Add Asset</button>
+        <button onclick="Assets.create();UI.renderAssets();">
+            + Add Asset
+        </button>
 
-            <br><br>
+        <br><br>
 
-            ${assets.length === 0 ? "<p>No assets added yet.</p>" :
+        <div class="dashboard-grid">
 
-            assets.map(a => `
+            <div class="card">
+                <h3>Total Assets</h3>
+                <h2>${assets.length}</h2>
+            </div>
 
-                <div class="card">
+            <div class="card">
+                <h3>Available</h3>
+                <h2>${Assets.available().length}</h2>
+            </div>
 
-                    <label>Asset Name</label>
-                    <input value="${this.esc(a.name)}"
-                        onchange="Assets.update('${a.id}',{name:this.value})">
+            <div class="card">
+                <h3>Assigned</h3>
+                <h2>${Assets.assigned().length}</h2>
+            </div>
 
-                    <label>Category</label>
-                    <input value="${this.esc(a.category)}"
-                        onchange="Assets.update('${a.id}',{category:this.value})">
+            <div class="card">
+                <h3>Maintenance</h3>
+                <h2>${Assets.maintenance().length}</h2>
+            </div>
 
-                    <label>Serial Number</label>
-                    <input value="${this.esc(a.serialNumber)}"
-                        onchange="Assets.update('${a.id}',{serialNumber:this.value})">
+        </div>
 
-                    <label>Current Value</label>
-                    <input type="number" step="0.01" value="${Number(a.currentValue || 0)}"
-                        onchange="Assets.update('${a.id}',{currentValue:Number(this.value)})">
+        <br>
 
-                    <label>Location</label>
-                    <input value="${this.esc(a.location)}"
-                        onchange="Assets.update('${a.id}',{location:this.value})">
+        ${assets.length === 0 ? "<p>No assets added yet.</p>" :
 
-                    <label>Status</label>
+        assets.map(a => `
 
-                    <select onchange="Assets.update('${a.id}',{status:this.value})">
-                        <option value="Available" ${a.status==="Available"?"selected":""}>Available</option>
-                        <option value="Assigned" ${a.status==="Assigned"?"selected":""}>Assigned</option>
-                        <option value="Maintenance" ${a.status==="Maintenance"?"selected":""}>Maintenance</option>
-                        <option value="Retired" ${a.status==="Retired"?"selected":""}>Retired</option>
-                    </select>
+            <div class="card">
 
-                    <br><br>
+                <label>Asset Name</label>
+                <input
+                    value="${this.esc(a.name)}"
+                    onchange="Assets.update('${a.id}',{name:this.value})">
 
-                    <button onclick="
-                        if(confirm('Delete this asset?')){
-                            Assets.remove('${a.id}');
-                            UI.renderAssets();
-                        }
-                    ">
-                        Delete Asset
-                    </button>
+                <label>Category</label>
+                <input
+                    value="${this.esc(a.category)}"
+                    onchange="Assets.update('${a.id}',{category:this.value})">
 
-                </div>
+                <label>Serial Number</label>
+                <input
+                    value="${this.esc(a.serialNumber)}"
+                    onchange="Assets.update('${a.id}',{serialNumber:this.value})">
 
-            `).join("")}
-        `;
-    },
+                <label>Purchase Date</label>
+                <input
+                    type="date"
+                    value="${this.esc(a.purchaseDate)}"
+                    onchange="Assets.update('${a.id}',{purchaseDate:this.value})">
+
+                <label>Purchase Price</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(a.purchasePrice || 0)}"
+                    onchange="Assets.update('${a.id}',{purchasePrice:Number(this.value)})">
+
+                <label>Current Value</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(a.currentValue || 0)}"
+                    onchange="Assets.update('${a.id}',{currentValue:Number(this.value)})">
+
+                <label>Location</label>
+                <input
+                    value="${this.esc(a.location)}"
+                    onchange="Assets.update('${a.id}',{location:this.value})">
+
+                <label>Assigned To</label>
+                <input
+                    value="${this.esc(a.assignedTo)}"
+                    onchange="Assets.update('${a.id}',{assignedTo:this.value})">
+
+                <label>Assigned Event</label>
+                <select onchange="Assets.update('${a.id}',{assignedEventId:this.value})">
+
+                    <option value="">No Event</option>
+
+                    ${events.map(event => `
+                        <option
+                            value="${event.id}"
+                            ${a.assignedEventId === event.id ? "selected" : ""}>
+                            ${this.esc(event.name || "Unnamed Event")}
+                        </option>
+                    `).join("")}
+
+                </select>
+
+                <label>Status</label>
+                <select onchange="Assets.update('${a.id}',{status:this.value});UI.renderAssets();">
+                    <option value="Available" ${a.status==="Available"?"selected":""}>Available</option>
+                    <option value="Assigned" ${a.status==="Assigned"?"selected":""}>Assigned</option>
+                    <option value="Maintenance" ${a.status==="Maintenance"?"selected":""}>Maintenance</option>
+                    <option value="Retired" ${a.status==="Retired"?"selected":""}>Retired</option>
+                </select>
+
+                <label>Condition</label>
+                <select onchange="Assets.update('${a.id}',{condition:this.value});UI.renderAssets();">
+                    <option value="Excellent" ${a.condition==="Excellent"?"selected":""}>Excellent</option>
+                    <option value="Good" ${a.condition==="Good"?"selected":""}>Good</option>
+                    <option value="Fair" ${a.condition==="Fair"?"selected":""}>Fair</option>
+                    <option value="Needs Repair" ${a.condition==="Needs Repair"?"selected":""}>Needs Repair</option>
+                </select>
+
+                <label>Warranty Expires</label>
+                <input
+                    type="date"
+                    value="${this.esc(a.warrantyExpires)}"
+                    onchange="Assets.update('${a.id}',{warrantyExpires:this.value})">
+
+                <label>Maintenance Due</label>
+                <input
+                    type="date"
+                    value="${this.esc(a.maintenanceDue)}"
+                    onchange="Assets.update('${a.id}',{maintenanceDue:this.value})">
+
+                <label>Notes</label>
+                <textarea
+                    onchange="Assets.update('${a.id}',{notes:this.value})">${this.esc(a.notes)}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    if(confirm('Delete this asset?')){
+                        Assets.remove('${a.id}');
+                        UI.renderAssets();
+                    }
+                ">
+                    Delete Asset
+                </button>
+
+            </div>
+
+        `).join("")}
+    `;
+},
 
     renderCalendar() {
 
