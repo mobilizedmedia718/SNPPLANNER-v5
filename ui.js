@@ -597,92 +597,120 @@ renderVendors(){
     `;
 
 },`
+renderInventory(){
+
+    const items = Inventory.all();
+    const vendors = Vendors.all();
+
+    document.getElementById("workspace").innerHTML = `
 
     <h2>Inventory</h2>
 
     <button onclick="Inventory.create(); UI.renderInventory();">
-        + Add Item
+        + Add Inventory Item
     </button>
 
     <br><br>
 
     ${
-        items.length===0
+        items.length === 0
         ? "<p>No inventory items added yet.</p>"
-        : items.map(item=>`
+        : items.map(item => `
 
         <div class="card">
 
             <label>Item Name</label>
-
             <input
                 value="${item.name}"
                 onchange="Inventory.update('${item.id}',{name:this.value})">
 
             <label>Category</label>
-
             <input
                 value="${item.category}"
                 onchange="Inventory.update('${item.id}',{category:this.value})">
 
-            <label>Vendor</label>
+            <label>SKU</label>
+            <input
+                value="${item.sku}"
+                onchange="Inventory.update('${item.id}',{sku:this.value})">
 
+            <label>Vendor</label>
             <select onchange="Inventory.update('${item.id}',{vendorId:this.value})">
 
                 <option value="">Select Vendor</option>
 
-                ${vendors.map(v=>`
-
+                ${vendors.map(v => `
                     <option
                         value="${v.id}"
-                        ${item.vendorId===v.id?"selected":""}>
-
-                        ${v.name}
-
+                        ${item.vendorId === v.id ? "selected" : ""}>
+                        ${v.name || "Unnamed Vendor"}
                     </option>
-
                 `).join("")}
 
             </select>
 
-            <label>Quantity</label>
+            <label>Unit</label>
+            <input
+                value="${item.unit}"
+                onchange="Inventory.update('${item.id}',{unit:this.value})">
 
+            <label>Quantity</label>
             <input
                 type="number"
                 value="${item.quantity}"
                 onchange="Inventory.update('${item.id}',{quantity:Number(this.value)})">
 
             <label>Minimum Stock</label>
-
             <input
                 type="number"
                 value="${item.minimum}"
                 onchange="Inventory.update('${item.id}',{minimum:Number(this.value)})">
 
-            <label>Unit Cost</label>
-
+            <label>Reorder Amount</label>
             <input
                 type="number"
+                value="${item.reorder}"
+                onchange="Inventory.update('${item.id}',{reorder:Number(this.value)})">
+
+            <label>Unit Cost</label>
+            <input
+                type="number"
+                step="0.01"
                 value="${item.cost}"
                 onchange="Inventory.update('${item.id}',{cost:Number(this.value)})">
 
             <label>Selling Price</label>
-
             <input
                 type="number"
+                step="0.01"
                 value="${item.sellPrice}"
                 onchange="Inventory.update('${item.id}',{sellPrice:Number(this.value)})">
+
+            <label>Storage Location</label>
+            <input
+                value="${item.storageLocation}"
+                onchange="Inventory.update('${item.id}',{storageLocation:this.value})">
+
+            <label>Notes</label>
+            <textarea
+                onchange="Inventory.update('${item.id}',{notes:this.value})">${item.notes}</textarea>
+
+            <label>
+                <input
+                    type="checkbox"
+                    ${item.active ? "checked" : ""}
+                    onchange="Inventory.update('${item.id}',{active:this.checked})">
+                Active Item
+            </label>
 
             <br><br>
 
             <button onclick="
-                if(confirm('Delete this item?')){
+                if(confirm('Delete this inventory item?')){
                     Inventory.remove('${item.id}');
                     UI.renderInventory();
                 }">
-
                 Delete Item
-
             </button>
 
         </div>
@@ -694,13 +722,8 @@ renderVendors(){
 
     `;
 
-    },
-    renderCRM(){
-
-    const customers = CRM.all();
-
-    document.getElementById("workspace").innerHTML = `
-
+},
+    
     <h2>Customer CRM</h2>
 
     <button onclick="CRM.create(); UI.renderCRM();">
