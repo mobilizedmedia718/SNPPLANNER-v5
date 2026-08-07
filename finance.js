@@ -24,6 +24,7 @@ const Finance = {
             customerId: "",
             paymentMethod: "Cash",
             status: "Completed",
+            taxAmount: 0,
             notes: "",
             created: Utils.date(),
             ...data
@@ -42,14 +43,12 @@ const Finance = {
         if (!transaction) return;
 
         Object.assign(transaction, updates);
-
         this.save();
     },
 
     remove(id) {
 
         this.transactions = this.transactions.filter(t => t.id !== id);
-
         this.save();
     },
 
@@ -63,14 +62,20 @@ const Finance = {
 
     income() {
         return this.transactions
-            .filter(t => t.type === "Income")
+            .filter(t => t.type === "Income" && t.status !== "Cancelled")
             .reduce((sum, t) => sum + Number(t.amount || 0), 0);
     },
 
     expenses() {
         return this.transactions
-            .filter(t => t.type === "Expense")
+            .filter(t => t.type === "Expense" && t.status !== "Cancelled")
             .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    },
+
+    taxes() {
+        return this.transactions
+            .filter(t => t.status !== "Cancelled")
+            .reduce((sum, t) => sum + Number(t.taxAmount || 0), 0);
     },
 
     profit() {
@@ -87,6 +92,21 @@ const Finance = {
 
     byCustomer(customerId) {
         return this.transactions.filter(t => t.customerId === customerId);
+    },
+
+    eventProfit(eventId) {
+
+        const items = this.byEvent(eventId);
+
+        const income = items
+            .filter(t => t.type === "Income" && t.status !== "Cancelled")
+            .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+        const expenses = items
+            .filter(t => t.type === "Expense" && t.status !== "Cancelled")
+            .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+        return income - expenses;
     }
 
 };
