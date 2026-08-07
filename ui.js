@@ -14,19 +14,44 @@ const UI = {
     let type = "info";
 
     if (
-        ["Completed", "Paid", "Available", "Active", "Excellent", "Good"].includes(value)
+        [
+            "Completed",
+            "Paid",
+            "Available",
+            "Active",
+            "Excellent",
+            "Good",
+            "Low"
+        ].includes(value)
     ) {
         type = "success";
     }
 
     if (
-        ["Pending", "Scheduled", "Fair", "Maintenance"].includes(value)
+        [
+            "Pending",
+            "Scheduled",
+            "Fair",
+            "Maintenance",
+            "Normal",
+            "High",
+            "Assigned",
+            "Retired"
+        ].includes(value)
     ) {
         type = "warning";
     }
 
     if (
-        ["Cancelled", "Overdue", "Needs Repair", "Inactive", "Unpaid"].includes(value)
+        [
+            "Cancelled",
+            "Overdue",
+            "Needs Repair",
+            "Inactive",
+            "Unpaid",
+            "Urgent",
+            "Low Stock"
+        ].includes(value)
     ) {
         type = "danger";
     }
@@ -399,6 +424,7 @@ ${
     ? `<p>${this.statusBadge("Low Stock")}</p>`
     : ""
 }
+                    
 
                     <label>Notes</label>
                     <textarea onchange="Events.update('${event.id}',{notes:this.value})">${this.esc(event.notes)}</textarea>
@@ -1155,6 +1181,9 @@ ${
                         <option value="Fair" ${a.condition==="Fair"?"selected":""}>Fair</option>
                         <option value="Needs Repair" ${a.condition==="Needs Repair"?"selected":""}>Needs Repair</option>
                     </select>
+                    <p>
+    Condition: ${this.statusBadge(a.condition)}
+</p>
 
                     <label>Warranty Expires</label>
                     <input type="date" value="${this.esc(a.warrantyExpires)}"
