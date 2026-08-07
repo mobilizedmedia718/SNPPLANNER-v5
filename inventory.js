@@ -18,15 +18,14 @@ const Inventory = {
             category: "",
             vendorId: "",
             sku: "",
-            unit: "Each",
             quantity: 0,
             minimum: 0,
-            reorder: 0,
             cost: 0,
             sellPrice: 0,
             storageLocation: "",
+            status: "Active",
             notes: "",
-            active: true,
+            created: Utils.date(),
             ...data
         };
 
@@ -43,14 +42,11 @@ const Inventory = {
         if (!item) return;
 
         Object.assign(item, updates);
-
         this.save();
     },
 
     remove(id) {
-
         this.items = this.items.filter(i => i.id !== id);
-
         this.save();
     },
 
@@ -63,9 +59,42 @@ const Inventory = {
     },
 
     lowStock() {
-        return this.items.filter(i =>
-            Number(i.quantity || 0) <= Number(i.minimum || 0)
+        return this.items.filter(
+            item =>
+                item.status !== "Inactive" &&
+                Number(item.quantity || 0) <= Number(item.minimum || 0)
         );
+    },
+
+    totalUnits() {
+        return this.items.reduce(
+            (sum, item) => sum + Number(item.quantity || 0),
+            0
+        );
+    },
+
+    totalCostValue() {
+        return this.items.reduce(
+            (sum, item) =>
+                sum +
+                Number(item.quantity || 0) *
+                Number(item.cost || 0),
+            0
+        );
+    },
+
+    totalRetailValue() {
+        return this.items.reduce(
+            (sum, item) =>
+                sum +
+                Number(item.quantity || 0) *
+                Number(item.sellPrice || 0),
+            0
+        );
+    },
+
+    potentialProfit() {
+        return this.totalRetailValue() - this.totalCostValue();
     }
 
 };
