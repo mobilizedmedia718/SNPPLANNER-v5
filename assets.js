@@ -65,6 +65,16 @@ const Assets = {
 
     available() {
         return this.assets.filter(a => a.status === "Available");
+    },
+
+    assigned() {
+        return this.assets.filter(a => a.status === "Assigned");
+    },
+
+    maintenance() {
+        return this.assets.filter(a =>
+            a.status === "Maintenance" || a.condition === "Needs Repair"
+        );
     }
 
 };
