@@ -173,6 +173,40 @@ const UI = {
             </div>
 
             <br>
+            <div class="card">
+
+    <h3>Current Status</h3>
+
+    <p>
+        Inventory:
+        ${
+            report.lowStockItems > 0
+                ? this.statusBadge("Low Stock")
+                : this.statusBadge("Good")
+        }
+    </p>
+
+    <p>
+        Reminders:
+        ${
+            report.overdueReminders > 0
+                ? this.statusBadge("Overdue")
+                : this.statusBadge("Good")
+        }
+    </p>
+
+    <p>
+        Profit:
+        ${
+            report.totalProfit >= 0
+                ? this.statusBadge("Good")
+                : this.statusBadge("Needs Repair")
+        }
+    </p>
+
+</div>
+
+<br>
 
             <div class="card">
 
@@ -1231,6 +1265,9 @@ ${
                         <option value="High" ${r.priority==="High"?"selected":""}>High</option>
                         <option value="Urgent" ${r.priority==="Urgent"?"selected":""}>Urgent</option>
                     </select>
+                    <p>
+    Priority: ${this.statusBadge(r.priority)}
+</p>
 
                     <label>
                         <input type="checkbox"
@@ -1257,6 +1294,17 @@ ${
                             onchange="Calendar.update('${r.id}',{completed:this.checked});UI.renderCalendar();">
                         Completed
                     </label>
+                    <p>
+    ${r.completed
+        ? this.statusBadge("Completed")
+        : (
+            r.date &&
+            r.date < new Date().toISOString().slice(0,10)
+                ? this.statusBadge("Overdue")
+                : this.statusBadge("Pending")
+        )
+    }
+</p>
 
                     <br><br>
 
