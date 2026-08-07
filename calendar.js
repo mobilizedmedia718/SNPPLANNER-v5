@@ -22,6 +22,8 @@ const Calendar = {
             category: "General",
             priority: "Normal",
             completed: false,
+            recurring: false,
+            recurrence: "None",
             created: Utils.date(),
             ...data
         };
@@ -39,14 +41,12 @@ const Calendar = {
         if (!reminder) return;
 
         Object.assign(reminder, updates);
-
         this.save();
     },
 
     remove(id) {
 
         this.reminders = this.reminders.filter(r => r.id !== id);
-
         this.save();
     },
 
@@ -63,14 +63,35 @@ const Calendar = {
         const today = new Date().toISOString().slice(0,10);
 
         return this.reminders
-            .filter(r => !r.completed && r.date && r.date >= today)
+            .filter(r =>
+                !r.completed &&
+                r.date &&
+                r.date >= today
+            )
             .sort((a,b) =>
-                `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)
+                `${a.date} ${a.time}`.localeCompare(
+                    `${b.date} ${b.time}`
+                )
             );
+    },
+
+    overdue() {
+
+        const today = new Date().toISOString().slice(0,10);
+
+        return this.reminders.filter(r =>
+            !r.completed &&
+            r.date &&
+            r.date < today
+        );
     },
 
     completed() {
         return this.reminders.filter(r => r.completed);
+    },
+
+    byEvent(eventId) {
+        return this.reminders.filter(r => r.eventId === eventId);
     }
 
 };
