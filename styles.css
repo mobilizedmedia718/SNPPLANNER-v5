@@ -371,3 +371,23 @@ body.dark .badge-info{
     border-radius: 999px;
     transition: width 0.3s ease;
 }
+
+.progress-bar {
+    display: block !important;
+    width: 100% !important;
+    height: 16px !important;
+    background-color: #d1d5db !important;
+    border: 1px solid #9ca3af !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+    margin-top: 10px !important;
+    margin-bottom: 10px !important;
+}
+
+.progress-fill {
+    display: block !important;
+    height: 100% !important;
+    background-color: #22c55e !important;
+    border-radius: 999px !important;
+    min-width: 0;
+}
