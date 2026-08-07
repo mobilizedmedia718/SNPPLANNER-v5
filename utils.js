@@ -67,7 +67,7 @@ searchAll(term){
 
     };
 
-}
+},
     downloadBackup() {
 
     const backup = {
