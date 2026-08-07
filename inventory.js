@@ -14,22 +14,41 @@ const Inventory = {
 
         const item = {
             id: Utils.id(),
+
             name: "",
             category: "",
             vendorId: "",
             sku: "",
+
+            /* Current stock */
             quantity: 0,
             minimum: 0,
+
+            /* Purchasing */
+            purchaseUnit: "Piece",
+            purchaseQuantity: 0,
+            unitsPerPurchase: 1,
+            purchaseCostType: "Total Purchase",
+            purchaseCost: 0,
+            totalPurchaseCost: 0,
+            calculatedUnitCost: 0,
+
+            /* Existing cost field remains for reports */
             cost: 0,
+
             sellPrice: 0,
             storageLocation: "",
             status: "Active",
             notes: "",
             created: Utils.date(),
+
             ...data
         };
 
         this.items.push(item);
+
+        this.recalculatePurchase(item.id);
+
         this.save();
 
         return item;
@@ -42,7 +61,84 @@ const Inventory = {
         if (!item) return;
 
         Object.assign(item, updates);
+
+        this.recalculatePurchase(id);
+
         this.save();
+    },
+
+    recalculatePurchase(id) {
+
+        const item = this.get(id);
+
+        if (!item) return;
+
+        const purchaseQuantity =
+            Math.max(0, Number(item.purchaseQuantity || 0));
+
+        const unitsPerPurchase =
+            Math.max(1, Number(item.unitsPerPurchase || 1));
+
+        const purchaseCost =
+            Math.max(0, Number(item.purchaseCost || 0));
+
+        const totalUnits =
+            purchaseQuantity * unitsPerPurchase;
+
+        let totalPurchaseCost = 0;
+        let unitCost = 0;
+
+        if (item.purchaseCostType === "Per Purchase Unit") {
+
+            totalPurchaseCost =
+                purchaseCost * purchaseQuantity;
+
+            unitCost =
+                unitsPerPurchase > 0
+                    ? purchaseCost / unitsPerPurchase
+                    : 0;
+
+        } else if (
+            item.purchaseCostType === "Per Individual Unit"
+        ) {
+
+            totalPurchaseCost =
+                purchaseCost * totalUnits;
+
+            unitCost = purchaseCost;
+
+        } else {
+
+            /* Total Purchase */
+
+            totalPurchaseCost = purchaseCost;
+
+            unitCost =
+                totalUnits > 0
+                    ? totalPurchaseCost / totalUnits
+                    : 0;
+        }
+
+        item.totalPurchaseCost = totalPurchaseCost;
+        item.calculatedUnitCost = unitCost;
+
+        /*
+         Keep the existing cost field synchronized
+         so reports continue working.
+        */
+        item.cost = unitCost;
+    },
+
+    purchaseUnits(id) {
+
+        const item = this.get(id);
+
+        if (!item) return 0;
+
+        return (
+            Number(item.purchaseQuantity || 0) *
+            Number(item.unitsPerPurchase || 1)
+        );
     },
 
     remove(id) {
@@ -62,13 +158,15 @@ const Inventory = {
         return this.items.filter(
             item =>
                 item.status !== "Inactive" &&
-                Number(item.quantity || 0) <= Number(item.minimum || 0)
+                Number(item.quantity || 0) <=
+                Number(item.minimum || 0)
         );
     },
 
     totalUnits() {
         return this.items.reduce(
-            (sum, item) => sum + Number(item.quantity || 0),
+            (sum, item) =>
+                sum + Number(item.quantity || 0),
             0
         );
     },
@@ -94,7 +192,10 @@ const Inventory = {
     },
 
     potentialProfit() {
-        return this.totalRetailValue() - this.totalCostValue();
+        return (
+            this.totalRetailValue() -
+            this.totalCostValue()
+        );
     }
 
 };
