@@ -1000,6 +1000,9 @@ ${
                         <option value="Pending" ${t.status==="Pending"?"selected":""}>Pending</option>
                         <option value="Cancelled" ${t.status==="Cancelled"?"selected":""}>Cancelled</option>
                     </select>
+                    <p>
+    Status: ${this.statusBadge(t.status)}
+</p>
 
                     <label>Notes</label>
                     <textarea onchange="Finance.update('${t.id}',{notes:this.value})">${this.esc(t.notes)}</textarea>
@@ -1107,6 +1110,9 @@ ${
                         <option value="Maintenance" ${a.status==="Maintenance"?"selected":""}>Maintenance</option>
                         <option value="Retired" ${a.status==="Retired"?"selected":""}>Retired</option>
                     </select>
+                    <p>
+    Status: ${this.statusBadge(a.status)}
+</p>
 
                     <label>Condition</label>
                     <select onchange="Assets.update('${a.id}',{condition:this.value});UI.renderAssets();">
