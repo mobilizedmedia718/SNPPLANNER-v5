@@ -2,82 +2,123 @@ const Reports = {
 
     summary() {
 
+        const events = Events.all();
+        const customers = CRM.all();
+        const vendors = Vendors.all();
+        const venues = Venues.all();
+        const inventory = Inventory.all();
+        const assets = Assets.all();
+
         return {
-            totalEvents: Events.all().length,
-            totalCustomers: CRM.all().length,
-            totalVendors: Vendors.all().length,
-            totalVenues: Venues.all().length,
-            totalInventoryItems: Inventory.all().length,
-            totalAssets: Assets.all().length,
+            totalEvents: events.length,
+            scheduledEvents: Events.scheduled().length,
+            completedEvents: Events.completed().length,
+            totalTicketsSold: Events.totalTicketsSold(),
+            totalEventRevenue: Events.totalRevenue(),
+
+            totalCustomers: customers.length,
+            totalCustomerSpend: CRM.totalSpend(),
+            totalCustomerVisits: CRM.totalVisits(),
+            averageCustomerSpend: CRM.averageSpend(),
+
+            totalVendors: vendors.length,
+            activeVendors: Vendors.active().length,
+
+            totalVenues: venues.length,
+            activeVenues: Venues.active().length,
+
+            totalInventoryItems: inventory.length,
+            totalInventoryUnits: Inventory.totalUnits(),
+            lowStockItems: Inventory.lowStock().length,
+            totalInventoryCost: Inventory.totalCostValue(),
+            totalInventoryRetailValue: Inventory.totalRetailValue(),
+            potentialInventoryProfit: Inventory.potentialProfit(),
+
+            totalAssets: assets.length,
+            availableAssets: Assets.available().length,
+            assignedAssets: Assets.assigned().length,
+            maintenanceAssets: Assets.maintenance().length,
+            totalAssetValue: Assets.totalValue(),
+
             totalIncome: Finance.income(),
             totalExpenses: Finance.expenses(),
-            totalProfit: Finance.profit()
+            totalTaxes: Finance.taxes(),
+            totalProfit: Finance.profit(),
+
+            upcomingReminders: Calendar.upcoming().length,
+            overdueReminders: Calendar.overdue().length,
+            completedReminders: Calendar.completed().length
         };
     },
 
-    byEvent() {
+    financial() {
 
-        return Events.all().map(event => {
-
-            const venue = Venues.get(event.venueId);
-
-            return {
-                id: event.id,
-                name: event.name || "Unnamed Event",
-                date: event.date || "",
-                status: event.status || "Draft",
-                venue: venue ? venue.name : "",
-                capacity: Number(event.capacity || 0),
-                ticketsSold: Number(event.ticketsSold || 0)
-            };
-        });
-    },
-
-    customerSummary() {
-
-        return CRM.all().map(customer => ({
-            id: customer.id,
-            name: `${customer.firstName || ""} ${customer.lastName || ""}`.trim(),
-            email: customer.email || "",
-            visits: Number(customer.totalVisits || 0),
-            spent: Number(customer.totalSpent || 0),
-            loyaltyPoints: Number(customer.loyaltyPoints || 0)
-        }));
-    },
-
-    inventorySummary() {
-
-        return Inventory.all().map(item => ({
-            id: item.id,
-            name: item.name || "Unnamed Item",
-            category: item.category || "",
-            quantity: Number(item.quantity || 0),
-            minimum: Number(item.minimum || 0),
-            cost: Number(item.cost || 0),
-            sellPrice: Number(item.sellPrice || 0),
-            lowStock: Number(item.quantity || 0) <= Number(item.minimum || 0)
-        }));
-    },
-
-    financeSummary() {
+        const transactions = Finance.all();
 
         return {
+            transactions,
             income: Finance.income(),
             expenses: Finance.expenses(),
-            profit: Finance.profit(),
-            transactions: Finance.all()
+            taxes: Finance.taxes(),
+            profit: Finance.profit()
         };
     },
 
-    exportSummary() {
+    inventory() {
+
+        return {
+            items: Inventory.all(),
+            lowStock: Inventory.lowStock(),
+            totalUnits: Inventory.totalUnits(),
+            totalCostValue: Inventory.totalCostValue(),
+            totalRetailValue: Inventory.totalRetailValue(),
+            potentialProfit: Inventory.potentialProfit()
+        };
+    },
+
+    customers() {
+
+        return {
+            customers: CRM.all(),
+            topCustomers: CRM.topCustomers(),
+            totalSpend: CRM.totalSpend(),
+            totalVisits: CRM.totalVisits(),
+            averageSpend: CRM.averageSpend()
+        };
+    },
+
+    assets() {
+
+        return {
+            assets: Assets.all(),
+            available: Assets.available(),
+            assigned: Assets.assigned(),
+            maintenance: Assets.maintenance(),
+            totalValue: Assets.totalValue()
+        };
+    },
+
+    calendar() {
+
+        return {
+            all: Calendar.all(),
+            upcoming: Calendar.upcoming(),
+            overdue: Calendar.overdue(),
+            completed: Calendar.completed()
+        };
+    },
+
+    export() {
 
         const report = {
             generated: new Date().toISOString(),
+            version: "5.0",
             summary: this.summary(),
-            events: this.byEvent(),
-            customers: this.customerSummary(),
-            inventory: this.inventorySummary(),
-            finance: this.financeSummary()
+            financial: this.financial(),
+            inventory: this.inventory(),
+            customers: this.customers(),
+            assets: this.assets(),
+            calendar: this.calendar()
         };
 
         const blob = new Blob(
@@ -86,11 +127,13 @@ const Reports = {
         );
 
         const url = URL.createObjectURL(blob);
-
         const link = document.createElement("a");
 
         link.href = url;
-        link.download = `snp-planner-report-${new Date().toISOString().slice(0,10)}.json`;
+        link.download =
+            `snp-planner-report-${new Date()
+                .toISOString()
+                .slice(0,10)}.json`;
 
         link.click();
 
