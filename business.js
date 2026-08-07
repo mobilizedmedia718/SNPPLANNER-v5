@@ -3,18 +3,28 @@ const Business = {
     data: {
         name: "",
         owner: "",
+        ownerTitle: "",
+
         logo: "",
-        address: "",
-        city: "",
-        state: "",
-        zip: "",
+
         phone: "",
+        alternatePhone: "",
         email: "",
+
         website: "",
         instagram: "",
         facebook: "",
+
+        address: "",
+        address2: "",
+        city: "",
+        state: "",
+        zip: "",
+        country: "",
+
         taxRate: 0,
         taxId: "",
+
         notes: ""
     },
 
@@ -44,9 +54,11 @@ const Business = {
 
         return [
             this.data.address,
+            this.data.address2,
             this.data.city,
             this.data.state,
-            this.data.zip
+            this.data.zip,
+            this.data.country
         ]
         .filter(Boolean)
         .join(", ");
@@ -57,18 +69,28 @@ const Business = {
         this.data = {
             name: "",
             owner: "",
+            ownerTitle: "",
+
             logo: "",
-            address: "",
-            city: "",
-            state: "",
-            zip: "",
+
             phone: "",
+            alternatePhone: "",
             email: "",
+
             website: "",
             instagram: "",
             facebook: "",
+
+            address: "",
+            address2: "",
+            city: "",
+            state: "",
+            zip: "",
+            country: "",
+
             taxRate: 0,
             taxId: "",
+
             notes: ""
         };
 
