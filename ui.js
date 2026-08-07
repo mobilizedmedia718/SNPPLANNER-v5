@@ -247,87 +247,111 @@ const UI = {
         `;
     },
 
-    renderBusiness() {
+  renderBusiness() {
 
-        const b = Business.data;
+    const b = Business.data;
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
-            <h2>Business Profile</h2>
+        <h2>Business Profile</h2>
 
-            <div class="card">
+        <div class="card">
 
-                <label>Business Name</label>
-                <input id="businessName" value="${this.esc(b.name)}">
+            <label>Business Name</label>
+            <input id="businessName" value="${this.esc(b.name)}">
 
-                <label>Owner</label>
-                <input id="businessOwner" value="${this.esc(b.owner)}">
+            <label>Owner</label>
+            <input id="businessOwner" value="${this.esc(b.owner)}">
 
-                <label>Logo URL</label>
-                <input id="businessLogo" value="${this.esc(b.logo)}">
+            <label>Owner Title</label>
+            <input id="businessOwnerTitle" value="${this.esc(b.ownerTitle)}">
 
-                <label>Phone</label>
-                <input id="businessPhone" value="${this.esc(b.phone)}">
+            <label>Logo URL</label>
+            <input id="businessLogo" value="${this.esc(b.logo)}">
 
-                <label>Email</label>
-                <input id="businessEmail" type="email" value="${this.esc(b.email)}">
+            <label>Phone</label>
+            <input id="businessPhone" value="${this.esc(b.phone)}">
 
-                <label>Website</label>
-                <input id="businessWebsite" value="${this.esc(b.website)}">
+            <label>Alternate Phone</label>
+            <input id="businessAlternatePhone" value="${this.esc(b.alternatePhone)}">
 
-                <label>Instagram</label>
-                <input id="businessInstagram" value="${this.esc(b.instagram)}">
+            <label>Email</label>
+            <input
+                id="businessEmail"
+                type="email"
+                value="${this.esc(b.email)}">
 
-                <label>Facebook</label>
-                <input id="businessFacebook" value="${this.esc(b.facebook)}">
+            <label>Website</label>
+            <input id="businessWebsite" value="${this.esc(b.website)}">
 
-                <label>Address</label>
-                <input id="businessAddress" value="${this.esc(b.address)}">
+            <label>Instagram</label>
+            <input id="businessInstagram" value="${this.esc(b.instagram)}">
 
-                <label>City</label>
-                <input id="businessCity" value="${this.esc(b.city)}">
+            <label>Facebook</label>
+            <input id="businessFacebook" value="${this.esc(b.facebook)}">
 
-                <label>State</label>
-                <input id="businessState" value="${this.esc(b.state)}">
+            <label>Address</label>
+            <input id="businessAddress" value="${this.esc(b.address)}">
 
-                <label>ZIP Code</label>
-                <input id="businessZip" value="${this.esc(b.zip)}">
+            <label>Address Line 2</label>
+            <input id="businessAddress2" value="${this.esc(b.address2)}">
 
-                <label>Tax Rate (%)</label>
-                <input id="businessTax" type="number" step="0.01" value="${Number(b.taxRate || 0)}">
+            <label>City</label>
+            <input id="businessCity" value="${this.esc(b.city)}">
 
-                <label>Tax ID</label>
-                <input id="businessTaxId" value="${this.esc(b.taxId)}">
+            <label>State</label>
+            <input id="businessState" value="${this.esc(b.state)}">
 
-                <label>Notes</label>
-                <textarea id="businessNotes">${this.esc(b.notes)}</textarea>
+            <label>ZIP Code</label>
+            <input id="businessZip" value="${this.esc(b.zip)}">
 
-                <br><br>
+            <label>Country</label>
+            <input id="businessCountry" value="${this.esc(b.country)}">
 
-                <button onclick="
-                    Business.update('name',document.getElementById('businessName').value);
-                    Business.update('owner',document.getElementById('businessOwner').value);
-                    Business.update('logo',document.getElementById('businessLogo').value);
-                    Business.update('phone',document.getElementById('businessPhone').value);
-                    Business.update('email',document.getElementById('businessEmail').value);
-                    Business.update('website',document.getElementById('businessWebsite').value);
-                    Business.update('instagram',document.getElementById('businessInstagram').value);
-                    Business.update('facebook',document.getElementById('businessFacebook').value);
-                    Business.update('address',document.getElementById('businessAddress').value);
-                    Business.update('city',document.getElementById('businessCity').value);
-                    Business.update('state',document.getElementById('businessState').value);
-                    Business.update('zip',document.getElementById('businessZip').value);
-                    Business.update('taxRate',Number(document.getElementById('businessTax').value));
-                    Business.update('taxId',document.getElementById('businessTaxId').value);
-                    Business.update('notes',document.getElementById('businessNotes').value);
-                    alert('Business Profile Saved');
-                ">
-                    Save Business Profile
-                </button>
+            <label>Tax Rate (%)</label>
+            <input
+                id="businessTax"
+                type="number"
+                step="0.01"
+                value="${Number(b.taxRate || 0)}">
 
-            </div>
-        `;
-    },
+            <label>Tax ID</label>
+            <input id="businessTaxId" value="${this.esc(b.taxId)}">
+
+            <label>Notes</label>
+            <textarea id="businessNotes">${this.esc(b.notes)}</textarea>
+
+            <br><br>
+
+            <button onclick="
+                Business.update('name',document.getElementById('businessName').value);
+                Business.update('owner',document.getElementById('businessOwner').value);
+                Business.update('ownerTitle',document.getElementById('businessOwnerTitle').value);
+                Business.update('logo',document.getElementById('businessLogo').value);
+                Business.update('phone',document.getElementById('businessPhone').value);
+                Business.update('alternatePhone',document.getElementById('businessAlternatePhone').value);
+                Business.update('email',document.getElementById('businessEmail').value);
+                Business.update('website',document.getElementById('businessWebsite').value);
+                Business.update('instagram',document.getElementById('businessInstagram').value);
+                Business.update('facebook',document.getElementById('businessFacebook').value);
+                Business.update('address',document.getElementById('businessAddress').value);
+                Business.update('address2',document.getElementById('businessAddress2').value);
+                Business.update('city',document.getElementById('businessCity').value);
+                Business.update('state',document.getElementById('businessState').value);
+                Business.update('zip',document.getElementById('businessZip').value);
+                Business.update('country',document.getElementById('businessCountry').value);
+                Business.update('taxRate',Number(document.getElementById('businessTax').value));
+                Business.update('taxId',document.getElementById('businessTaxId').value);
+                Business.update('notes',document.getElementById('businessNotes').value);
+                alert('Business Profile Saved');
+            ">
+                Save Business Profile
+            </button>
+
+        </div>
+    `;
+},  
+                
 
 renderEvents() {
 
