@@ -1,63 +1,28 @@
 const Events = {
 
-    list: [],
+    data: [],
 
     load() {
-        this.list = Utils.load("events", []);
+        this.data = Utils.load("events", []);
     },
 
     save() {
-        Utils.save("events", this.list);
+        Utils.save("events", this.data);
     },
 
-    create(eventData = {}) {
-
-        const event = {
-            id: Utils.id(),
-            name: "",
-            date: "",
-            time: "",
-            venueId: "",
-            status: "Draft",
-            capacity: 0,
-            ticketsSold: 0,
-            notes: "",
-            created: Utils.date(),
-            ...eventData
-        };
-
-        this.list.push(event);
-        this.save();
-
-        return event;
+    all() {
+        return this.data;
     },
 
-    update(id, updates) {
-
-        const event = this.list.find(e => e.id === id);
-
-        if (!event) return;
-
-        Object.assign(event, updates);
-
+    add(event) {
+        event.id = Utils.id();
+        this.data.push(event);
         this.save();
     },
 
     remove(id) {
-
-        this.list = this.list.filter(e => e.id !== id);
-
+        this.data = this.data.filter(e => e.id !== id);
         this.save();
-    },
-
-    get(id) {
-        return this.list.find(e => e.id === id);
-    },
-
-    all() {
-        return this.list;
     }
 
 };
-
-Events.load();
