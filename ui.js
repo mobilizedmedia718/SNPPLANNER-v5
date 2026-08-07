@@ -5,7 +5,6 @@ const UI = {
         document.getElementById("app").innerHTML = `
 
         <header class="topbar">
-<header class="topbar">
 
     <div class="logo">
         <h1>🎨 SNP Planner V5</h1>
