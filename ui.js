@@ -1180,8 +1180,9 @@ ${
                         <option value="Good" ${a.condition==="Good"?"selected":""}>Good</option>
                         <option value="Fair" ${a.condition==="Fair"?"selected":""}>Fair</option>
                         <option value="Needs Repair" ${a.condition==="Needs Repair"?"selected":""}>Needs Repair</option>
-                    </select>
-                    <p>
+ </select>
+                    
+ <p>
     Condition: ${this.statusBadge(a.condition)}
 </p>
 
