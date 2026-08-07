@@ -329,201 +329,228 @@ const UI = {
         `;
     },
 
-    renderEvents() {
+renderEvents() {
 
-        const events = Events.all();
-        const venues = Venues.active();
+    const events = Events.all();
+    const venues = Venues.active();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
-            <h2>Events</h2>
+        <h2>Events</h2>
 
-            <button onclick="Events.create();UI.renderEvents();">+ New Event</button>
+        <button onclick="Events.create();UI.renderEvents();">
+            + New Event
+        </button>
 
-            <br><br>
+        <br><br>
 
-            ${events.length === 0 ? "<p>No events created yet.</p>" :
+        ${events.length === 0 ? "<p>No events created yet.</p>" :
 
-            events.map(event => `
+        events.map(event => `
+
+            <div class="card">
+
+                <label>Event Name</label>
+                <input
+                    value="${this.esc(event.name)}"
+                    onchange="Events.update('${event.id}',{name:this.value})">
+
+                <label>Date</label>
+                <input
+                    type="date"
+                    value="${this.esc(event.date)}"
+                    onchange="Events.update('${event.id}',{date:this.value})">
+
+                <label>Start Time</label>
+                <input
+                    type="time"
+                    value="${this.esc(event.time)}"
+                    onchange="Events.update('${event.id}',{time:this.value})">
+
+                <label>End Time</label>
+                <input
+                    type="time"
+                    value="${this.esc(event.endTime)}"
+                    onchange="Events.update('${event.id}',{endTime:this.value})">
+
+                <label>Venue</label>
+                <select onchange="Events.update('${event.id}',{venueId:this.value})">
+
+                    <option value="">Select Venue</option>
+
+                    ${venues.map(v => `
+                        <option
+                            value="${v.id}"
+                            ${event.venueId === v.id ? "selected" : ""}>
+                            ${this.esc(v.name || "Unnamed Venue")}
+                        </option>
+                    `).join("")}
+
+                </select>
+
+                <label>Theme</label>
+                <input
+                    value="${this.esc(event.theme)}"
+                    onchange="Events.update('${event.id}',{theme:this.value})">
+
+                <label>Instructor</label>
+                <input
+                    value="${this.esc(event.instructor)}"
+                    onchange="Events.update('${event.id}',{instructor:this.value})">
+
+                <label>Capacity</label>
+                <input
+                    type="number"
+                    value="${Number(event.capacity || 0)}"
+                    onchange="Events.update('${event.id}',{capacity:Number(this.value)})">
+
+                <label>Tickets Sold</label>
+                <input
+                    type="number"
+                    value="${Number(event.ticketsSold || 0)}"
+                    onchange="Events.update('${event.id}',{ticketsSold:Number(this.value)})">
+
+                <label>Ticket Price</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(event.ticketPrice || 0)}"
+                    onchange="Events.update('${event.id}',{ticketPrice:Number(this.value)})">
+
+                <label>Revenue Goal</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(event.revenueGoal || 0)}"
+                    onchange="Events.update('${event.id}',{revenueGoal:Number(this.value)});UI.renderEvents();">
+
+                <label>Actual Revenue</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    value="${Number(event.actualRevenue || 0)}"
+                    onchange="Events.update('${event.id}',{actualRevenue:Number(this.value)});UI.renderEvents();">
+
+                <label>Status</label>
+                <select onchange="Events.update('${event.id}',{status:this.value});UI.renderEvents();">
+                    <option value="Draft" ${event.status==="Draft"?"selected":""}>Draft</option>
+                    <option value="Scheduled" ${event.status==="Scheduled"?"selected":""}>Scheduled</option>
+                    <option value="Completed" ${event.status==="Completed"?"selected":""}>Completed</option>
+                    <option value="Cancelled" ${event.status==="Cancelled"?"selected":""}>Cancelled</option>
+                </select>
+
+                <p>
+                    Status: ${this.statusBadge(event.status)}
+                </p>
 
                 <div class="card">
 
-                    <label>Event Name</label>
-                    <input value="${this.esc(event.name)}"
-                        onchange="Events.update('${event.id}',{name:this.value})">
+                    <h4>Event Financial Summary</h4>
 
-                    <label>Date</label>
-                    <input type="date" value="${this.esc(event.date)}"
-                        onchange="Events.update('${event.id}',{date:this.value})">
-
-                    <label>Start Time</label>
-                    <input type="time" value="${this.esc(event.time)}"
-                        onchange="Events.update('${event.id}',{time:this.value})">
-
-                    <label>End Time</label>
-                    <input type="time" value="${this.esc(event.endTime)}"
-                        onchange="Events.update('${event.id}',{endTime:this.value})">
-
-                    <label>Venue</label>
-
-                    <select onchange="Events.update('${event.id}',{venueId:this.value})">
-
-                        <option value="">Select Venue</option>
-
-                        ${venues.map(v => `
-                            <option value="${v.id}"
-                                ${event.venueId === v.id ? "selected" : ""}>
-                                ${this.esc(v.name || "Unnamed Venue")}
-                            </option>
-                        `).join("")}
-
-                    </select>
-
-                    <label>Theme</label>
-                    <input value="${this.esc(event.theme)}"
-                        onchange="Events.update('${event.id}',{theme:this.value})">
-
-                    <label>Instructor</label>
-                    <input value="${this.esc(event.instructor)}"
-                        onchange="Events.update('${event.id}',{instructor:this.value})">
-
-                    <label>Capacity</label>
-                    <input type="number" value="${Number(event.capacity || 0)}"
-                        onchange="Events.update('${event.id}',{capacity:Number(this.value)})">
-
-                    <label>Tickets Sold</label>
-                    <input type="number" value="${Number(event.ticketsSold || 0)}"
-                        onchange="Events.update('${event.id}',{ticketsSold:Number(this.value)})">
-
-                    <label>Ticket Price</label>
-                    <input type="number" step="0.01" value="${Number(event.ticketPrice || 0)}"
-                        onchange="Events.update('${event.id}',{ticketPrice:Number(this.value)})">
-
-                    <label>Revenue Goal</label>
-                    <input type="number" step="0.01" value="${Number(event.revenueGoal || 0)}"
-                        onchange="Events.update('${event.id}',{revenueGoal:Number(this.value)})">
-
-                    <label>Actual Revenue</label>
-                    <input type="number" step="0.01" value="${Number(event.actualRevenue || 0)}"
-                        onchange="Events.update('${event.id}',{actualRevenue:Number(this.value)})">
-
-                    <label>Status</label>
-
-                    <select onchange="Events.update('${event.id}',{status:this.value})">
-                        <option ${event.status==="Draft"?"selected":""}>Draft</option>
-                        <option ${event.status==="Scheduled"?"selected":""}>Scheduled</option>
-                        <option ${event.status==="Completed"?"selected":""}>Completed</option>
-                        <option ${event.status==="Cancelled"?"selected":""}>Cancelled</option>
-                    </select>
                     <p>
-    Status: ${this.statusBadge(event.status)}
-</p>
-<div class="card">
+                        Income:
+                        ${Utils.money(
+                            Finance.byEvent(event.id)
+                                .filter(t => t.type === "Income" && t.status !== "Cancelled")
+                                .reduce((sum, t) => sum + Number(t.amount || 0), 0)
+                        )}
+                    </p>
 
-    <h4>Event Financial Summary</h4>
+                    <p>
+                        Expenses:
+                        ${Utils.money(
+                            Finance.byEvent(event.id)
+                                .filter(t => t.type === "Expense" && t.status !== "Cancelled")
+                                .reduce((sum, t) => sum + Number(t.amount || 0), 0)
+                        )}
+                    </p>
 
-    <p>
-        Income:
-        ${Utils.money(
-            Finance.byEvent(event.id)
-                .filter(t => t.type === "Income" && t.status !== "Cancelled")
-                .reduce((sum, t) => sum + Number(t.amount || 0), 0)
-        )}
-    </p>
+                    <p>
+                        Profit:
+                        ${Utils.money(Finance.eventProfit(event.id))}
+                    </p>
 
-    <p>
-        Expenses:
-        ${Utils.money(
-            Finance.byEvent(event.id)
-                .filter(t => t.type === "Expense" && t.status !== "Cancelled")
-                .reduce((sum, t) => sum + Number(t.amount || 0), 0)
-        )}
-    </p>
-
-    <p>
-        Profit:
-        ${Utils.money(Finance.eventProfit(event.id))}
-    </p>
-    <p>
-    Profit Status:
-    ${
-        Finance.eventProfit(event.id) >= 0
-            ? this.statusBadge("Good")
-            : this.statusBadge("Needs Repair")
-    }
-</p>
-
-
-</div>
-<div class="card">
-
-    <h4>Revenue Goal Progress</h4>
-
-    <p>
-        Goal:
-        ${Utils.money(event.revenueGoal)}
-    </p>
-
-    <p>
-        Actual Revenue:
-        ${Utils.money(event.actualRevenue)}
-    </p>
-
-    <p>
-        Progress:
-        ${
-            Number(event.revenueGoal || 0) > 0
-                ? Math.min(
-                    100,
-                    Math.round(
-                        Number(event.actualRevenue || 0) /
-                        Number(event.revenueGoal || 0) *
-                        100
-                    )
-                )
-                : 0
-        }%
-    </p>
-    <div class="progress-bar">
-    <div
-        class="progress-fill"
-        style="width:${
-            Number(event.revenueGoal || 0) > 0
-                ? Math.min(
-                    100,
-                    Math.round(
-                        Number(event.actualRevenue || 0) /
-                        Number(event.revenueGoal || 0) *
-                        100
-                    )
-                )
-                : 0
-        }%">
-    </div>
-</div>
-
-</div>
-                    
-
-                    <label>Notes</label>
-                    <textarea onchange="Events.update('${event.id}',{notes:this.value})">${this.esc(event.notes)}</textarea>
-
-                    <br><br>
-
-                    <button onclick="
-                        if(confirm('Delete this event?')){
-                            Events.remove('${event.id}');
-                            UI.renderEvents();
+                    <p>
+                        Profit Status:
+                        ${
+                            Finance.eventProfit(event.id) >= 0
+                                ? this.statusBadge("Good")
+                                : this.statusBadge("Needs Repair")
                         }
-                    ">
-                        Delete Event
-                    </button>
+                    </p>
 
                 </div>
 
-            `).join("")}
-        `;
-    },
+                <div class="card">
+
+                    <h4>Revenue Goal Progress</h4>
+
+                    <p>
+                        Goal:
+                        ${Utils.money(event.revenueGoal)}
+                    </p>
+
+                    <p>
+                        Actual Revenue:
+                        ${Utils.money(event.actualRevenue)}
+                    </p>
+
+                    <p>
+                        Progress:
+                        ${
+                            Number(event.revenueGoal || 0) > 0
+                                ? Math.min(
+                                    100,
+                                    Math.round(
+                                        Number(event.actualRevenue || 0) /
+                                        Number(event.revenueGoal || 0) *
+                                        100
+                                    )
+                                )
+                                : 0
+                        }%
+                    </p>
+
+                    <div class="progress-bar">
+                        <div
+                            class="progress-fill"
+                            style="width:${
+                                Number(event.revenueGoal || 0) > 0
+                                    ? Math.min(
+                                        100,
+                                        Math.round(
+                                            Number(event.actualRevenue || 0) /
+                                            Number(event.revenueGoal || 0) *
+                                            100
+                                        )
+                                    )
+                                    : 0
+                            }%">
+                        </div>
+                    </div>
+
+                </div>
+
+                <label>Notes</label>
+                <textarea
+                    onchange="Events.update('${event.id}',{notes:this.value})">${this.esc(event.notes)}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    if(confirm('Delete this event?')){
+                        Events.remove('${event.id}');
+                        UI.renderEvents();
+                    }
+                ">
+                    Delete Event
+                </button>
+
+            </div>
+
+        `).join("")}
+    `;
+},
 
     renderVenues() {
 
