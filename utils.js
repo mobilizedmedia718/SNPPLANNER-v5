@@ -68,4 +68,38 @@ searchAll(term){
     };
 
 }
+    downloadBackup() {
+
+    const backup = {
+        version: "5.0",
+        created: new Date().toISOString(),
+
+        business: Business.data,
+        events: Events.all(),
+        venues: Venues.all(),
+        vendors: Vendors.all(),
+        inventory: Inventory.all(),
+        customers: CRM.all(),
+        transactions: Finance.all(),
+        assets: Assets.all(),
+        calendar: Calendar.all(),
+        settings: Settings.data
+    };
+
+    const blob = new Blob(
+        [JSON.stringify(backup, null, 2)],
+        { type: "application/json" }
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `snp-planner-backup-${new Date().toISOString().slice(0,10)}.json`;
+
+    link.click();
+
+    URL.revokeObjectURL(url);
+    },
 };
