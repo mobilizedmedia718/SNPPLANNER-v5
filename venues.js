@@ -22,13 +22,21 @@ const Venues = {
             phone: "",
             email: "",
             website: "",
+            contactPerson: "",
             capacity: 0,
             rentalCost: 0,
             deposit: 0,
             depositRefundable: true,
             parking: "",
             indoorOutdoor: "Indoor",
+            alcoholAllowed: false,
+            foodAllowed: true,
+            outsideVendorsAllowed: true,
+            setupTime: "",
+            breakdownTime: "",
             notes: "",
+            active: true,
+            created: Utils.date(),
             ...data
         };
 
@@ -45,14 +53,12 @@ const Venues = {
         if (!venue) return;
 
         Object.assign(venue, updates);
-
         this.save();
     },
 
     remove(id) {
 
         this.list = this.list.filter(v => v.id !== id);
-
         this.save();
     },
 
@@ -62,6 +68,17 @@ const Venues = {
 
     all() {
         return this.list;
+    },
+
+    active() {
+        return this.list.filter(v => v.active !== false);
+    },
+
+    totalRentalCost() {
+        return this.list.reduce(
+            (sum, v) => sum + Number(v.rentalCost || 0),
+            0
+        );
     }
 
 };
