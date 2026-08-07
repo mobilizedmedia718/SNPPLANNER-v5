@@ -66,7 +66,7 @@ const CRM = {
 
     search(term) {
 
-        term = term.toLowerCase();
+        term = String(term || "").toLowerCase().trim();
 
         return this.customers.filter(c =>
             `${c.firstName} ${c.lastName} ${c.email} ${c.phone}`
