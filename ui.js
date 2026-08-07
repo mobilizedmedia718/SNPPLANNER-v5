@@ -511,6 +511,16 @@ renderEvents() {
         )
     )}%
 </p>
+<p>
+    Goal Status:
+    ${
+        Number(event.revenueGoal || 0) <= 0
+            ? this.statusBadge("Pending")
+            : Number(event.actualRevenue || 0) >= Number(event.revenueGoal || 0)
+                ? this.statusBadge("Good")
+                : this.statusBadge("Scheduled")
+    }
+</p>
 
                     <div class="progress-bar">
                         <div
