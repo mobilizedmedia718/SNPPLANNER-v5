@@ -7,6 +7,32 @@ const UI = {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;");
     },
+    statusBadge(status) {
+
+    const value = String(status || "");
+
+    let type = "info";
+
+    if (
+        ["Completed", "Paid", "Available", "Active", "Excellent", "Good"].includes(value)
+    ) {
+        type = "success";
+    }
+
+    if (
+        ["Pending", "Scheduled", "Fair", "Maintenance"].includes(value)
+    ) {
+        type = "warning";
+    }
+
+    if (
+        ["Cancelled", "Overdue", "Needs Repair", "Inactive", "Unpaid"].includes(value)
+    ) {
+        type = "danger";
+    }
+
+    return `<span class="badge badge-${type}">${this.esc(value)}</span>`;
+},
 
     renderLayout() {
 
