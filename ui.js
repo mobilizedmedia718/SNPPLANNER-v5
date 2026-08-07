@@ -916,6 +916,16 @@ const UI = {
                     Save Settings
                 </button>
 
+                <br><br>
+
+<button onclick="Utils.downloadBackup()">
+    Download Backup
+</button><br><br>
+
+<button onclick="Utils.downloadBackup()">
+    Download Backup
+</button>
+
             </div>
         `;
     }
