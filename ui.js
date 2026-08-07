@@ -348,9 +348,24 @@ renderEvents(){
     <br><br>
 
     ${
-        venues.length===0
+        renderVenues(){
+
+    const venues = Venues.all();
+
+    document.getElementById("workspace").innerHTML = `
+
+    <h2>Venues</h2>
+
+    <button onclick="Venues.create(); UI.renderVenues();">
+        + Add Venue
+    </button>
+
+    <br><br>
+
+    ${
+        venues.length === 0
         ? "<p>No venues added yet.</p>"
-        : venues.map(v=>`
+        : venues.map(v => `
 
         <div class="card">
 
@@ -379,6 +394,16 @@ renderEvents(){
                 value="${v.zip}"
                 onchange="Venues.update('${v.id}',{zip:this.value})">
 
+            <label>Phone</label>
+            <input
+                value="${v.phone}"
+                onchange="Venues.update('${v.id}',{phone:this.value})">
+
+            <label>Email</label>
+            <input
+                value="${v.email}"
+                onchange="Venues.update('${v.id}',{email:this.value})">
+
             <label>Capacity</label>
             <input
                 type="number"
@@ -388,12 +413,14 @@ renderEvents(){
             <label>Rental Cost</label>
             <input
                 type="number"
+                step="0.01"
                 value="${v.rentalCost}"
                 onchange="Venues.update('${v.id}',{rentalCost:Number(this.value)})">
 
             <label>Deposit</label>
             <input
                 type="number"
+                step="0.01"
                 value="${v.deposit}"
                 onchange="Venues.update('${v.id}',{deposit:Number(this.value)})">
 
@@ -404,6 +431,22 @@ renderEvents(){
                     onchange="Venues.update('${v.id}',{depositRefundable:this.checked})">
                 Deposit Refundable
             </label>
+
+            <label>Parking</label>
+            <input
+                value="${v.parking}"
+                onchange="Venues.update('${v.id}',{parking:this.value})">
+
+            <label>Indoor / Outdoor</label>
+            <select onchange="Venues.update('${v.id}',{indoorOutdoor:this.value})">
+                <option value="Indoor" ${v.indoorOutdoor==="Indoor"?"selected":""}>Indoor</option>
+                <option value="Outdoor" ${v.indoorOutdoor==="Outdoor"?"selected":""}>Outdoor</option>
+                <option value="Both" ${v.indoorOutdoor==="Both"?"selected":""}>Both</option>
+            </select>
+
+            <label>Notes</label>
+            <textarea
+                onchange="Venues.update('${v.id}',{notes:this.value})">${v.notes}</textarea>
 
             <br><br>
 
@@ -424,13 +467,7 @@ renderEvents(){
 
     `;
 
-    },
-    renderVendors(){
-
-    const vendors = Vendors.all();
-
-    document.getElementById("workspace").innerHTML = `
-
+},
     <h2>Vendors</h2>
 
     <button onclick="Vendors.create(); UI.renderVendors();">
