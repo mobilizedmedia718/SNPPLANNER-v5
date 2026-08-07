@@ -786,6 +786,15 @@ ${
                         <option value="Active" ${item.status==="Active"?"selected":""}>Active</option>
                         <option value="Inactive" ${item.status==="Inactive"?"selected":""}>Inactive</option>
                     </select>
+                    <p>
+    Status: ${this.statusBadge(item.status)}
+</p>
+
+${
+    Number(item.quantity || 0) <= Number(item.minimum || 0)
+    ? `<p>${this.statusBadge("Low Stock")}</p>`
+    : ""
+}
 
                     <label>Notes</label>
                     <textarea onchange="Inventory.update('${item.id}',{notes:this.value})">${this.esc(item.notes)}</textarea>
@@ -1272,7 +1281,7 @@ ${
 
                     <label>Date</label>
                     <input type="date" value="${this.esc(r.date)}"
-                        onchange="Calendar.update('${r.id}',{date:this.value})">
+                        onchange="Calendar.update('${r.id}',{date:this.value});UI.renderCalendar();"
 
                     <label>Time</label>
                     <input type="time" value="${this.esc(r.time)}"
@@ -1289,8 +1298,7 @@ ${
                     </select>
 
                     <label>Priority</label>
-                    <select onchange="Calendar.update('${r.id}',{priority:this.value})">
-                        <option value="Low" ${r.priority==="Low"?"selected":""}>Low</option>
+<select onchange="Calendar.update('${r.id}',{priority:this.value});UI.renderCalendar();">                        <option value="Low" ${r.priority==="Low"?"selected":""}>Low</option>
                         <option value="Normal" ${r.priority==="Normal"?"selected":""}>Normal</option>
                         <option value="High" ${r.priority==="High"?"selected":""}>High</option>
                         <option value="Urgent" ${r.priority==="Urgent"?"selected":""}>Urgent</option>
