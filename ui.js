@@ -1005,63 +1005,126 @@ const UI = {
 
     renderCalendar() {
 
-        const reminders = Calendar.all();
+    const reminders = Calendar.all();
+    const events = Events.all();
+    const upcoming = Calendar.upcoming();
+    const completed = Calendar.completed();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
-            <h2>Calendar & Reminders</h2>
+        <h2>Calendar & Reminders</h2>
 
-            <button onclick="Calendar.create();UI.renderCalendar();">
-                + Add Reminder
-            </button>
+        <button onclick="Calendar.create();UI.renderCalendar();">
+            + Add Reminder
+        </button>
 
-            <br><br>
+        <br><br>
 
-            ${reminders.length === 0 ? "<p>No reminders created yet.</p>" :
+        <div class="dashboard-grid">
 
-            reminders.map(r => `
+            <div class="card">
+                <h3>Total Reminders</h3>
+                <h2>${reminders.length}</h2>
+            </div>
 
-                <div class="card">
+            <div class="card">
+                <h3>Upcoming</h3>
+                <h2>${upcoming.length}</h2>
+            </div>
 
-                    <label>Title</label>
-                    <input value="${this.esc(r.title)}"
-                        onchange="Calendar.update('${r.id}',{title:this.value})">
+            <div class="card">
+                <h3>Completed</h3>
+                <h2>${completed.length}</h2>
+            </div>
 
-                    <label>Date</label>
-                    <input type="date" value="${this.esc(r.date)}"
-                        onchange="Calendar.update('${r.id}',{date:this.value})">
+        </div>
 
-                    <label>Time</label>
-                    <input type="time" value="${this.esc(r.time)}"
-                        onchange="Calendar.update('${r.id}',{time:this.value})">
+        <br>
 
-                    <label>Category</label>
-                    <input value="${this.esc(r.category)}"
-                        onchange="Calendar.update('${r.id}',{category:this.value})">
+        ${reminders.length === 0 ? "<p>No reminders created yet.</p>" :
 
-                    <label>
-                        <input type="checkbox"
-                            ${r.completed ? "checked" : ""}
-                            onchange="Calendar.update('${r.id}',{completed:this.checked})">
-                        Completed
-                    </label>
+        reminders.map(r => `
 
-                    <br><br>
+            <div class="card">
 
-                    <button onclick="
-                        if(confirm('Delete this reminder?')){
-                            Calendar.remove('${r.id}');
-                            UI.renderCalendar();
-                        }
-                    ">
-                        Delete Reminder
-                    </button>
+                <label>Title</label>
+                <input
+                    value="${this.esc(r.title)}"
+                    onchange="Calendar.update('${r.id}',{title:this.value})">
 
-                </div>
+                <label>Description</label>
+                <textarea
+                    onchange="Calendar.update('${r.id}',{description:this.value})">${this.esc(r.description)}</textarea>
 
-            `).join("")}
-        `;
-    },
+                <label>Related Event</label>
+                <select onchange="Calendar.update('${r.id}',{eventId:this.value})">
+
+                    <option value="">No Event</option>
+
+                    ${events.map(event => `
+                        <option
+                            value="${event.id}"
+                            ${r.eventId === event.id ? "selected" : ""}>
+                            ${this.esc(event.name || "Unnamed Event")}
+                        </option>
+                    `).join("")}
+
+                </select>
+
+                <label>Date</label>
+                <input
+                    type="date"
+                    value="${this.esc(r.date)}"
+                    onchange="Calendar.update('${r.id}',{date:this.value})">
+
+                <label>Time</label>
+                <input
+                    type="time"
+                    value="${this.esc(r.time)}"
+                    onchange="Calendar.update('${r.id}',{time:this.value})">
+
+                <label>Category</label>
+                <select onchange="Calendar.update('${r.id}',{category:this.value})">
+                    <option value="General" ${r.category==="General"?"selected":""}>General</option>
+                    <option value="Event" ${r.category==="Event"?"selected":""}>Event</option>
+                    <option value="Vendor" ${r.category==="Vendor"?"selected":""}>Vendor</option>
+                    <option value="Customer" ${r.category==="Customer"?"selected":""}>Customer</option>
+                    <option value="Inventory" ${r.category==="Inventory"?"selected":""}>Inventory</option>
+                    <option value="Finance" ${r.category==="Finance"?"selected":""}>Finance</option>
+                </select>
+
+                <label>Priority</label>
+                <select onchange="Calendar.update('${r.id}',{priority:this.value})">
+                    <option value="Low" ${r.priority==="Low"?"selected":""}>Low</option>
+                    <option value="Normal" ${r.priority==="Normal"?"selected":""}>Normal</option>
+                    <option value="High" ${r.priority==="High"?"selected":""}>High</option>
+                    <option value="Urgent" ${r.priority==="Urgent"?"selected":""}>Urgent</option>
+                </select>
+
+                <label>
+                    <input
+                        type="checkbox"
+                        ${r.completed ? "checked" : ""}
+                        onchange="Calendar.update('${r.id}',{completed:this.checked});UI.renderCalendar();">
+                    Completed
+                </label>
+
+                <br><br>
+
+                <button onclick="
+                    if(confirm('Delete this reminder?')){
+                        Calendar.remove('${r.id}');
+                        UI.renderCalendar();
+                    }
+                ">
+                    Delete Reminder
+                </button>
+
+            </div>
+
+        `).join("")}
+    `;
+},
 
     renderReports() {
 
