@@ -109,8 +109,6 @@
         };
     }
 
-    // This guard does not depend on a dirty flag. If an edit screen has a Save button,
-    // navigation is blocked until the user explicitly saves or cancels.
     document.addEventListener("click", function (event) {
         if (bypassNavigationGuard) return;
 
@@ -137,7 +135,6 @@
         showUnsavedModal();
     }, true);
 
-    // Browser refresh/close/back: warn whenever the user is on an edit screen.
     window.addEventListener("beforeunload", function (event) {
         if (!currentSaveButton()) return;
         event.preventDefault();
@@ -174,9 +171,13 @@
             root.appendChild(datalist);
         }
 
-        datalist.innerHTML = sharedCategories()
+        const desiredOptions = sharedCategories()
             .map(category => `<option value="${UI.esc(category)}"></option>`)
             .join("");
+
+        if (datalist.innerHTML !== desiredOptions) {
+            datalist.innerHTML = desiredOptions;
+        }
 
         Array.from(root.querySelectorAll("label")).forEach(label => {
             if (textOf(label).toLowerCase() !== "category") return;
@@ -187,7 +188,9 @@
             }
 
             if (input?.tagName === "INPUT") {
-                input.setAttribute("list", "snpSharedCategories");
+                if (input.getAttribute("list") !== "snpSharedCategories") {
+                    input.setAttribute("list", "snpSharedCategories");
+                }
                 if (!input.getAttribute("placeholder")) {
                     input.setAttribute("placeholder", "Choose or type a category");
                 }
@@ -195,16 +198,29 @@
         });
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-        installSharedCategorySuggestions();
+    function wrapRender(name) {
+        const original = UI[name];
+        if (typeof original !== "function" || original.__snpCategoryWrapped) return;
 
-        const app = document.getElementById("app");
-        if (app && window.MutationObserver) {
-            const observer = new MutationObserver(function () {
-                installSharedCategorySuggestions();
-            });
-            observer.observe(app, { childList: true, subtree: true });
-        }
+        const wrapped = function (...args) {
+            const result = original.apply(UI, args);
+            setTimeout(installSharedCategorySuggestions, 0);
+            return result;
+        };
+        wrapped.__snpCategoryWrapped = true;
+        UI[name] = wrapped;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        [
+            "renderVendors","renderVendorEdit",
+            "renderInventory","renderInventoryEdit",
+            "renderFinance","renderFinanceEdit",
+            "renderAssets","renderAssetEdit",
+            "renderCalendar","renderCalendarEdit"
+        ].forEach(wrapRender);
+
+        setTimeout(installSharedCategorySuggestions, 0);
     });
 
     window.SNPSharedOptions = {
