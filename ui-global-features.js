@@ -1,12 +1,13 @@
 /*
  * Global UI features:
- * 1) Reliable edit-screen navigation guard.
+ * 1) Reliable edit-screen navigation guard that only triggers for actual unsaved changes.
  * 2) Shared Category suggestions across modules.
  */
 (function () {
     let bypassNavigationGuard = false;
     let pendingNavigationCode = null;
     let pendingNavigationContext = null;
+    let workspaceDirty = false;
 
     function workspace() {
         return document.getElementById("workspace");
@@ -38,6 +39,14 @@
                /^Remove Product \/ Service$/i.test(text);
     }
 
+    function markDirty() {
+        if (currentSaveButton()) workspaceDirty = true;
+    }
+
+    function markClean() {
+        workspaceDirty = false;
+    }
+
     function closeUnsavedModal() {
         document.getElementById("unsavedChangesModal")?.remove();
     }
@@ -48,6 +57,7 @@
         pendingNavigationCode = null;
         pendingNavigationContext = null;
         closeUnsavedModal();
+        markClean();
 
         if (!code) return;
 
@@ -71,11 +81,11 @@
         overlay.innerHTML = `
             <div class="card" style="max-width:560px;width:100%;background:#fff;">
                 <h3>Save or Cancel Before Leaving</h3>
-                <p>You are currently editing this record.</p>
-                <p>Save your changes, cancel them, or stay on this page before moving to another section.</p>
+                <p>You have unsaved changes on this page.</p>
+                <p>Save your changes, discard them, or stay here before moving to another section.</p>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;">
                     <button type="button" id="unsavedSaveContinue">Save & Continue</button>
-                    <button type="button" id="unsavedDiscardContinue">Cancel Changes & Continue</button>
+                    <button type="button" id="unsavedDiscardContinue">Discard Changes & Continue</button>
                     <button type="button" id="unsavedStay">Stay Here</button>
                 </div>
             </div>
@@ -91,11 +101,12 @@
 
             bypassNavigationGuard = true;
             save.click();
+            markClean();
 
             setTimeout(() => {
                 bypassNavigationGuard = false;
                 runPendingNavigation();
-            }, 75);
+            }, 100);
         };
 
         document.getElementById("unsavedDiscardContinue").onclick = function () {
@@ -109,19 +120,32 @@
         };
     }
 
-    document.addEventListener("click", function (event) {
-        if (bypassNavigationGuard) return;
+    document.addEventListener("input", function (event) {
+        if (event.target?.closest?.("#workspace")) markDirty();
+    }, true);
 
+    document.addEventListener("change", function (event) {
+        if (event.target?.closest?.("#workspace")) markDirty();
+    }, true);
+
+    document.addEventListener("click", function (event) {
         const button = event.target?.closest?.("button");
         if (!button) return;
+
+        // A real save/cancel action clears the dirty state immediately so the
+        // next navigation click does not produce a false warning.
+        if (!button.closest("#unsavedChangesModal") && (isSaveButton(button) || isCancelButton(button))) {
+            markClean();
+            return;
+        }
+
+        if (bypassNavigationGuard) return;
         if (button.closest("#unsavedChangesModal")) return;
 
         const save = currentSaveButton();
-        if (!save) return;
+        if (!save || !workspaceDirty) return;
 
-        if (button === save || isSaveButton(button) || isCancelButton(button) || isInlineEditorButton(button)) {
-            return;
-        }
+        if (button === save || isInlineEditorButton(button)) return;
 
         const inlineCode = button.getAttribute("onclick");
         if (!inlineCode) return;
@@ -136,7 +160,7 @@
     }, true);
 
     window.addEventListener("beforeunload", function (event) {
-        if (!currentSaveButton()) return;
+        if (!workspaceDirty || !currentSaveButton()) return;
         event.preventDefault();
         event.returnValue = "";
     });
@@ -203,6 +227,7 @@
         if (typeof original !== "function" || original.__snpCategoryWrapped) return;
 
         const wrapped = function (...args) {
+            markClean();
             const result = original.apply(UI, args);
             setTimeout(installSharedCategorySuggestions, 0);
             return result;
@@ -225,6 +250,8 @@
 
     window.SNPSharedOptions = {
         categories: sharedCategories,
-        refreshCategories: installSharedCategorySuggestions
+        refreshCategories: installSharedCategorySuggestions,
+        markClean,
+        markDirty
     };
 })();
