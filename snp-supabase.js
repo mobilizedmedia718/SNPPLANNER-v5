@@ -67,6 +67,91 @@ const SNPDatabase = {
         return this.session?.user || null;
     },
 
+    async saveStorage(storageKey, storageValue) {
+        const user = this.user();
+        const token = this.session?.access_token;
+        if (!user?.id || !token) return false;
+
+        const response = await fetch(
+            `${SNP_SUPABASE_URL}/rest/v1/app_storage?on_conflict=user_id,storage_key`,
+            {
+                method: "POST",
+                headers: {
+                    ...this.headers(token),
+                    "Prefer": "resolution=merge-duplicates,return=minimal"
+                },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    storage_key: storageKey,
+                    storage_value: storageValue,
+                    updated_at: new Date().toISOString()
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const detail = await response.text();
+            throw new Error(`Cloud save failed for ${storageKey}: ${detail}`);
+        }
+        return true;
+    },
+
+    async removeStorage(storageKey) {
+        const token = this.session?.access_token;
+        if (!token) return false;
+
+        const response = await fetch(
+            `${SNP_SUPABASE_URL}/rest/v1/app_storage?storage_key=eq.${encodeURIComponent(storageKey)}`,
+            { method: "DELETE", headers: this.headers(token) }
+        );
+
+        if (!response.ok) throw new Error(`Cloud delete failed for ${storageKey}.`);
+        return true;
+    },
+
+    async getAllStorage() {
+        const token = this.session?.access_token;
+        if (!token) return [];
+
+        const response = await fetch(
+            `${SNP_SUPABASE_URL}/rest/v1/app_storage?select=storage_key,storage_value,updated_at`,
+            { headers: this.headers(token) }
+        );
+
+        if (!response.ok) {
+            const detail = await response.text();
+            throw new Error(`Unable to load cloud data: ${detail}`);
+        }
+        return await response.json();
+    },
+
+    async syncCloudToLocal() {
+        const rows = await this.getAllStorage();
+
+        if (rows.length) {
+            rows.forEach(row => {
+                localStorage.setItem(`snpplanner_${row.storage_key}`, JSON.stringify(row.storage_value));
+            });
+            return { source: "cloud", count: rows.length };
+        }
+
+        // First login/migration: seed this account from any SNP Planner data
+        // already present in this browser, then future saves stay synchronized.
+        const localRows = [];
+        for (let i = 0; i < localStorage.length; i += 1) {
+            const fullKey = localStorage.key(i);
+            if (!fullKey || !fullKey.startsWith("snpplanner_") || fullKey === SNP_SESSION_KEY) continue;
+
+            const storageKey = fullKey.slice("snpplanner_".length);
+            try {
+                localRows.push([storageKey, JSON.parse(localStorage.getItem(fullKey))]);
+            } catch (_) {}
+        }
+
+        await Promise.all(localRows.map(([key, value]) => this.saveStorage(key, value)));
+        return { source: "local", count: localRows.length };
+    },
+
     renderAuth(message = "") {
         const app = document.getElementById("app");
         if (!app) return;
