@@ -27,6 +27,7 @@ const Events = {
             actualRevenue: 0,
             theme: "",
             instructor: "",
+            offerings: [],
             notes: "",
             created: Utils.date(),
             ...eventData
@@ -82,7 +83,58 @@ const Events = {
             (sum, event) => sum + Number(event.actualRevenue || 0),
             0
         );
+    },
+    addOffering(eventId) {
+
+    const event = this.get(eventId);
+
+    if (!event) return;
+
+    if (!Array.isArray(event.offerings)) {
+        event.offerings = [];
     }
+
+    event.offerings.push({
+        id: Utils.id(),
+        name: "",
+        description: "",
+        quantity: 1,
+        unit: "Each",
+        price: 0,
+        notes: ""
+    });
+
+    this.save();
+},
+
+updateOffering(eventId, offeringId, updates) {
+
+    const event = this.get(eventId);
+
+    if (!event || !Array.isArray(event.offerings)) return;
+
+    const offering = event.offerings.find(
+        item => item.id === offeringId
+    );
+
+    if (!offering) return;
+
+    Object.assign(offering, updates);
+    this.save();
+},
+
+removeOffering(eventId, offeringId) {
+
+    const event = this.get(eventId);
+
+    if (!event || !Array.isArray(event.offerings)) return;
+
+    event.offerings = event.offerings.filter(
+        item => item.id !== offeringId
+    );
+
+    this.save();
+},
 
 };
 
