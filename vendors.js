@@ -171,6 +171,16 @@ removeOffering(vendorId, offeringId) {
 
     this.save();
 },
+    categories() {
+
+    return [
+        ...new Set(
+            this.list
+                .map(v => String(v.category || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+},
     
 
 };
