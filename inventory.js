@@ -200,7 +200,17 @@ purchaseNotes: "",
             this.totalRetailValue() -
             this.totalCostValue()
         );
-    }
+    },
+    categories() {
+
+    return [
+        ...new Set(
+            this.items
+                .map(item => String(item.category || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+},
 
 };
 
