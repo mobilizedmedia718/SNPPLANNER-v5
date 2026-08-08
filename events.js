@@ -145,6 +145,37 @@ removeOffering(eventId, offeringId) {
         )
     ].sort();
 },
+    offeringNames() {
+
+    return [
+        ...new Set(
+            this.list
+                .flatMap(event =>
+                    Array.isArray(event.offerings)
+                        ? event.offerings
+                        : []
+                )
+                .map(item => String(item.name || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+},
+
+offeringDescriptions() {
+
+    return [
+        ...new Set(
+            this.list
+                .flatMap(event =>
+                    Array.isArray(event.offerings)
+                        ? event.offerings
+                        : []
+                )
+                .map(item => String(item.description || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+},
 
 };
 
