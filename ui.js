@@ -1,4 +1,4 @@
-const UI = {
+    const UI = {
 
     esc(value) {
         return String(value ?? "")
@@ -1271,7 +1271,6 @@ renderInventory() {
     renderCRM() {
 
     const customers = CRM.all();
-    const topCustomers = CRM.topCustomers();
 
     document.getElementById("workspace").innerHTML = `
 
@@ -1283,198 +1282,306 @@ renderInventory() {
 
         <br><br>
 
-        <div class="dashboard-grid">
+        ${customers.length === 0
+            ? "<p>No customers added yet.</p>"
+            : customers.map(c => `
 
-            <div class="card">
-                <h3>Total Customers</h3>
-                <h2>${customers.length}</h2>
-            </div>
+                <div class="card">
 
-            <div class="card">
-                <h3>Total Customer Spend</h3>
-                <h2>${Utils.money(CRM.totalSpend())}</h2>
-            </div>
+                    <h3>
+                        ${this.esc(
+                            CRM.fullName(c) ||
+                            c.company ||
+                            "Unnamed Customer"
+                        )}
+                    </h3>
 
-            <div class="card">
-                <h3>Total Visits</h3>
-                <h2>${CRM.totalVisits()}</h2>
-            </div>
+                    ${
+                        c.company
+                            ? `<p>${this.esc(c.company)}</p>`
+                            : ""
+                    }
 
-            <div class="card">
-                <h3>Average Spend</h3>
-                <h2>${Utils.money(CRM.averageSpend())}</h2>
-            </div>
+                    ${
+                        c.email
+                            ? `<p>${this.esc(c.email)}</p>`
+                            : ""
+                    }
 
-        </div>
+                    ${
+                        c.phone
+                            ? `<p>${this.esc(c.phone)}</p>`
+                            : ""
+                    }
 
-        <br>
+                    ${
+                        c.city || c.state
+                            ? `<p>${this.esc(
+                                [c.city, c.state]
+                                    .filter(Boolean)
+                                    .join(", ")
+                            )}</p>`
+                            : ""
+                    }
+
+                    <button
+                        onclick="UI.renderCustomerDetail('${c.id}')">
+                        View Customer
+                    </button>
+
+                </div>
+
+            `).join("")
+        }
+    `;
+},
+        renderCustomerDetail(id) {
+
+    const c = CRM.get(id);
+
+    if (!c) {
+        this.renderCRM();
+        return;
+    }
+
+    document.getElementById("workspace").innerHTML = `
+
+        <button onclick="UI.renderCRM();">
+            ← Back to Customers
+        </button>
+
+        <br><br>
 
         <div class="card">
 
-            <h3>Top Customers</h3>
+            <h2>
+                ${this.esc(
+                    CRM.fullName(c) ||
+                    c.company ||
+                    "Unnamed Customer"
+                )}
+            </h2>
 
-            ${
-                topCustomers.length === 0
-                    ? "<p>No customer data yet.</p>"
-                    : topCustomers.map(c => `
-                        <p>
-                            ${this.esc(
-                                CRM.fullName(c) || "Unnamed Customer"
-                            )}
-                            — ${Utils.money(c.totalSpent)}
-                        </p>
-                    `).join("")
-            }
+            <p><strong>First Name:</strong> ${this.esc(c.firstName || "—")}</p>
+            <p><strong>Last Name:</strong> ${this.esc(c.lastName || "—")}</p>
+            <p><strong>Company:</strong> ${this.esc(c.company || "—")}</p>
+            <p><strong>Job Title:</strong> ${this.esc(c.jobTitle || "—")}</p>
+
+            <p><strong>Email:</strong> ${this.esc(c.email || "—")}</p>
+            <p><strong>Phone:</strong> ${this.esc(c.phone || "—")}</p>
+            <p><strong>Alternate Phone:</strong> ${this.esc(c.alternatePhone || "—")}</p>
+            <p><strong>Birthday:</strong> ${this.esc(c.birthday || "—")}</p>
+
+            <p><strong>Address:</strong> ${this.esc(c.address || "—")}</p>
+            <p><strong>Address Line 2:</strong> ${this.esc(c.address2 || "—")}</p>
+            <p><strong>City:</strong> ${this.esc(c.city || "—")}</p>
+            <p><strong>State:</strong> ${this.esc(c.state || "—")}</p>
+            <p><strong>ZIP Code:</strong> ${this.esc(c.zip || "—")}</p>
+            <p><strong>Country:</strong> ${this.esc(c.country || "—")}</p>
+
+            <p><strong>Website:</strong> ${this.esc(c.website || "—")}</p>
+            <p><strong>Instagram:</strong> ${this.esc(c.instagram || "—")}</p>
+            <p><strong>Facebook:</strong> ${this.esc(c.facebook || "—")}</p>
+
+            <p><strong>Loyalty Points:</strong> ${Number(c.loyaltyPoints || 0)}</p>
+            <p><strong>Total Spent:</strong> ${Utils.money(c.totalSpent || 0)}</p>
+            <p><strong>Total Visits:</strong> ${Number(c.totalVisits || 0)}</p>
+            <p><strong>Last Visit:</strong> ${this.esc(c.lastVisit || "—")}</p>
+
+            <p>
+                <strong>Tags:</strong>
+                ${this.esc((c.tags || []).join(", ") || "—")}
+            </p>
+
+            <p>
+                <strong>Notes:</strong>
+                ${this.esc(c.notes || "—")}
+            </p>
+
+            <br>
+
+            <button onclick="UI.renderCustomerEdit('${c.id}');">
+                Edit Customer
+            </button>
 
         </div>
+    `;
+},
+        renderCustomerEdit(id) {
 
-        ${customers.length === 0 ? "<p>No customers added yet.</p>" :
+    const c = CRM.get(id);
 
-        customers.map(c => `
+    if (!c) {
+        this.renderCRM();
+        return;
+    }
 
-            <div class="card">
+    document.getElementById("workspace").innerHTML = `
 
-                <label>First Name</label>
-                <input
-                    value="${this.esc(c.firstName)}"
-                    onchange="CRM.update('${c.id}',{firstName:this.value})">
+        <button onclick="UI.renderCustomerDetail('${c.id}');">
+            ← Cancel
+        </button>
 
-                <label>Last Name</label>
-                <input
-                    value="${this.esc(c.lastName)}"
-                    onchange="CRM.update('${c.id}',{lastName:this.value})">
+        <br><br>
 
-                <label>Company</label>
-                <input
-                    value="${this.esc(c.company)}"
-                    onchange="CRM.update('${c.id}',{company:this.value})">
+        <div class="card">
 
-                <label>Job Title</label>
-                <input
-                    value="${this.esc(c.jobTitle)}"
-                    onchange="CRM.update('${c.id}',{jobTitle:this.value})">
+            <h2>Edit Customer</h2>
 
-                <label>Email</label>
-                <input
-                    type="email"
-                    value="${this.esc(c.email)}"
-                    onchange="CRM.update('${c.id}',{email:this.value})">
+            <label>First Name</label>
+            <input id="crmFirstName"
+                value="${this.esc(c.firstName || "")}"
+                placeholder="First name">
 
-                <label>Phone</label>
-                <input
-                    value="${this.esc(c.phone)}"
-                    onchange="CRM.update('${c.id}',{phone:this.value})">
+            <label>Last Name</label>
+            <input id="crmLastName"
+                value="${this.esc(c.lastName || "")}"
+                placeholder="Last name">
 
-                <label>Alternate Phone</label>
-                <input
-                    value="${this.esc(c.alternatePhone)}"
-                    onchange="CRM.update('${c.id}',{alternatePhone:this.value})">
+            <label>Company</label>
+            <input id="crmCompany"
+                value="${this.esc(c.company || "")}"
+                placeholder="Company name">
 
-                <label>Birthday</label>
-                <input
-                    type="date"
-                    value="${this.esc(c.birthday)}"
-                    onchange="CRM.update('${c.id}',{birthday:this.value})">
+            <label>Job Title</label>
+            <input id="crmJobTitle"
+                value="${this.esc(c.jobTitle || "")}"
+                placeholder="Job title">
 
-                <label>Address</label>
-                <input
-                    value="${this.esc(c.address)}"
-                    onchange="CRM.update('${c.id}',{address:this.value})">
+            <label>Email</label>
+            <input id="crmEmail"
+                type="email"
+                value="${this.esc(c.email || "")}"
+                placeholder="Email address">
 
-                <label>Address Line 2</label>
-                <input
-                    value="${this.esc(c.address2)}"
-                    onchange="CRM.update('${c.id}',{address2:this.value})">
+            <label>Phone</label>
+            <input id="crmPhone"
+                value="${this.esc(c.phone || "")}"
+                placeholder="Phone number">
 
-                <label>City</label>
-                <input
-                    value="${this.esc(c.city)}"
-                    onchange="CRM.update('${c.id}',{city:this.value})">
+            <label>Alternate Phone</label>
+            <input id="crmAlternatePhone"
+                value="${this.esc(c.alternatePhone || "")}"
+                placeholder="Alternate phone">
 
-                <label>State</label>
-                <input
-                    value="${this.esc(c.state)}"
-                    onchange="CRM.update('${c.id}',{state:this.value})">
+            <label>Birthday</label>
+            <input id="crmBirthday"
+                type="date"
+                value="${this.esc(c.birthday || "")}">
 
-                <label>ZIP Code</label>
-                <input
-                    value="${this.esc(c.zip)}"
-                    onchange="CRM.update('${c.id}',{zip:this.value})">
+            <label>Address</label>
+            <input id="crmAddress"
+                value="${this.esc(c.address || "")}"
+                placeholder="Street address">
 
-                <label>Country</label>
-                <input
-                    value="${this.esc(c.country)}"
-                    onchange="CRM.update('${c.id}',{country:this.value})">
+            <label>Address Line 2</label>
+            <input id="crmAddress2"
+                value="${this.esc(c.address2 || "")}"
+                placeholder="Apartment, suite, unit, etc.">
 
-                <label>Website</label>
-                <input
-                    value="${this.esc(c.website)}"
-                    onchange="CRM.update('${c.id}',{website:this.value})">
+            <label>City</label>
+            <input id="crmCity"
+                value="${this.esc(c.city || "")}"
+                placeholder="City">
 
-                <label>Instagram</label>
-                <input
-                    value="${this.esc(c.instagram)}"
-                    onchange="CRM.update('${c.id}',{instagram:this.value})">
+            <label>State</label>
+            <input id="crmState"
+                value="${this.esc(c.state || "")}"
+                placeholder="State">
 
-                <label>Facebook</label>
-                <input
-                    value="${this.esc(c.facebook)}"
-                    onchange="CRM.update('${c.id}',{facebook:this.value})">
+            <label>ZIP Code</label>
+            <input id="crmZip"
+                value="${this.esc(c.zip || "")}"
+                placeholder="ZIP code">
 
-                <label>Loyalty Points</label>
-                <input
-                    type="number"
-                    value="${Number(c.loyaltyPoints || 0)}"
-                    onchange="CRM.update('${c.id}',{loyaltyPoints:Number(this.value)})">
+            <label>Country</label>
+            <input id="crmCountry"
+                value="${this.esc(c.country || "")}"
+                placeholder="Country">
 
-                <label>Total Spent</label>
-                <input
-                    type="number"
-                    step="0.01"
-                    value="${Number(c.totalSpent || 0)}"
-                    onchange="CRM.update('${c.id}',{totalSpent:Number(this.value)});UI.renderCRM();">
+            <label>Website</label>
+            <input id="crmWebsite"
+                value="${this.esc(c.website || "")}"
+                placeholder="Website">
 
-                <label>Total Visits</label>
-                <input
-                    type="number"
-                    value="${Number(c.totalVisits || 0)}"
-                    onchange="CRM.update('${c.id}',{totalVisits:Number(this.value)});UI.renderCRM();">
+            <label>Instagram</label>
+            <input id="crmInstagram"
+                value="${this.esc(c.instagram || "")}"
+                placeholder="Instagram">
 
-                <label>Last Visit</label>
-                <input
-                    type="date"
-                    value="${this.esc(c.lastVisit)}"
-                    onchange="CRM.update('${c.id}',{lastVisit:this.value})">
+            <label>Facebook</label>
+            <input id="crmFacebook"
+                value="${this.esc(c.facebook || "")}"
+                placeholder="Facebook">
 
-                <label>Tags</label>
-                <input
-                    value="${this.esc((c.tags || []).join(", "))}"
-                    placeholder="VIP, Birthday Club, Corporate"
-                    onchange="CRM.update('${c.id}',{
-                        tags:this.value
-                            .split(',')
-                            .map(tag => tag.trim())
-                            .filter(Boolean)
-                    })">
+            <label>Loyalty Points</label>
+            <input id="crmLoyaltyPoints"
+                type="number"
+                value="${Number(c.loyaltyPoints || 0)}">
 
-                <label>Notes</label>
-                <textarea
-                    onchange="CRM.update('${c.id}',{notes:this.value})">${this.esc(c.notes)}</textarea>
+            <label>Total Spent</label>
+            <input id="crmTotalSpent"
+                type="number"
+                step="0.01"
+                value="${Number(c.totalSpent || 0)}">
 
-                <br><br>
+            <label>Total Visits</label>
+            <input id="crmTotalVisits"
+                type="number"
+                value="${Number(c.totalVisits || 0)}">
 
-                <button onclick="
-                    if(confirm('Delete this customer?')){
-                        CRM.remove('${c.id}');
-                        UI.renderCRM();
-                    }
-                ">
-                    Delete Customer
-                </button>
+            <label>Last Visit</label>
+            <input id="crmLastVisit"
+                type="date"
+                value="${this.esc(c.lastVisit || "")}">
 
-            </div>
+            <label>Tags</label>
+            <input id="crmTags"
+                value="${this.esc((c.tags || []).join(", "))}"
+                placeholder="VIP, Corporate, Birthday Club">
 
-        `).join("")}
+            <label>Notes</label>
+            <textarea id="crmNotes"
+                placeholder="Customer notes">${this.esc(c.notes || "")}</textarea>
+
+            <br><br>
+
+            <button onclick="
+                CRM.update('${c.id}', {
+                    firstName: document.getElementById('crmFirstName').value,
+                    lastName: document.getElementById('crmLastName').value,
+                    company: document.getElementById('crmCompany').value,
+                    jobTitle: document.getElementById('crmJobTitle').value,
+                    email: document.getElementById('crmEmail').value,
+                    phone: document.getElementById('crmPhone').value,
+                    alternatePhone: document.getElementById('crmAlternatePhone').value,
+                    birthday: document.getElementById('crmBirthday').value,
+                    address: document.getElementById('crmAddress').value,
+                    address2: document.getElementById('crmAddress2').value,
+                    city: document.getElementById('crmCity').value,
+                    state: document.getElementById('crmState').value,
+                    zip: document.getElementById('crmZip').value,
+                    country: document.getElementById('crmCountry').value,
+                    website: document.getElementById('crmWebsite').value,
+                    instagram: document.getElementById('crmInstagram').value,
+                    facebook: document.getElementById('crmFacebook').value,
+                    loyaltyPoints: Number(document.getElementById('crmLoyaltyPoints').value),
+                    totalSpent: Number(document.getElementById('crmTotalSpent').value),
+                    totalVisits: Number(document.getElementById('crmTotalVisits').value),
+                    lastVisit: document.getElementById('crmLastVisit').value,
+                    tags: document.getElementById('crmTags').value
+                        .split(',')
+                        .map(tag => tag.trim())
+                        .filter(Boolean),
+                    notes: document.getElementById('crmNotes').value
+                });
+
+                UI.renderCustomerDetail('${c.id}');
+            ">
+                Save Customer
+            </button>
+
+        </div>
     `;
 },
     renderFinance() {
