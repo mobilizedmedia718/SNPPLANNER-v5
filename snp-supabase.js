@@ -135,8 +135,6 @@ const SNPDatabase = {
             return { source: "cloud", count: rows.length };
         }
 
-        // First login/migration: seed this account from any SNP Planner data
-        // already present in this browser, then future saves stay synchronized.
         const localRows = [];
         for (let i = 0; i < localStorage.length; i += 1) {
             const fullKey = localStorage.key(i);
@@ -163,9 +161,9 @@ const SNPDatabase = {
                     <p>Sign in to access your planner data from any browser or device.</p>
                     <p id="authMessage" style="${message ? "padding:10px;background:#f3f4f6;border-radius:8px;" : ""}">${this.escape(message)}</p>
                     <label>Email</label>
-                    <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" style="width:100%;box-sizing:border-box;margin-bottom:12px;">
+                    <input id="authEmail" type="email" autocomplete="off" autocapitalize="none" spellcheck="false" value="" placeholder="you@example.com" style="width:100%;box-sizing:border-box;margin-bottom:12px;">
                     <label>Password</label>
-                    <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;box-sizing:border-box;margin-bottom:16px;">
+                    <input id="authPassword" type="password" autocomplete="new-password" value="" placeholder="Password" style="width:100%;box-sizing:border-box;margin-bottom:16px;">
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         <button type="button" onclick="SNPDatabase.signIn()">Sign In</button>
                         <button type="button" onclick="SNPDatabase.signUp()">Create Account</button>
@@ -173,6 +171,13 @@ const SNPDatabase = {
                 </div>
             </div>
         `;
+
+        setTimeout(() => {
+            const email = document.getElementById("authEmail");
+            const password = document.getElementById("authPassword");
+            if (email) email.value = "";
+            if (password) password.value = "";
+        }, 150);
     },
 
     setAuthMessage(message) {
