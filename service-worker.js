@@ -1,8 +1,6 @@
-const CACHE = "snpplanner-v5-12";
+const CACHE = "snpplanner-v5-13";
 
 const FILES = [
-    "./",
-    "./index.html",
     "./styles.css",
     "./manifest.json"
 ];
@@ -28,9 +26,23 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("fetch", event => {
+    const request = event.request;
+    const url = new URL(request.url);
+
+    // Always fetch the app shell and JavaScript from the network first so a
+    // second browser/device cannot keep running an older SNP Planner build.
+    if (
+        request.mode === "navigate" ||
+        url.pathname.endsWith(".html") ||
+        url.pathname.endsWith(".js")
+    ) {
+        event.respondWith(
+            fetch(request).catch(() => caches.match(request))
+        );
+        return;
+    }
+
     event.respondWith(
-        caches.match(event.request).then(response =>
-            response || fetch(event.request)
-        )
+        caches.match(request).then(response => response || fetch(request))
     );
 });
