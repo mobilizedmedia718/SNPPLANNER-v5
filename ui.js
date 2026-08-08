@@ -646,14 +646,20 @@ ${
 
                 <label>Description</label>
 <input
-    list="venueOfferingDescriptions"
+    list="eventOfferingDescriptions"
     value="${this.esc(item.description || "")}"
     placeholder="Choose or type a description"
-    onchange="Venues.updateOffering(
-        '${v.id}',
+    onchange="Events.updateOffering(
+        '${event.id}',
         '${item.id}',
         {description:this.value}
     )">
+
+<datalist id="eventOfferingDescriptions">
+    ${Events.offeringDescriptions().map(description => `
+        <option value="${this.esc(description)}">
+    `).join("")}
+</datalist>
 
 <datalist id="venueOfferingDescriptions">
     ${Venues.offeringDescriptions().map(description => `
