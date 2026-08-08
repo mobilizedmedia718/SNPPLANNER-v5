@@ -413,9 +413,17 @@ renderEvents() {
                 </select>
 
                 <label>Theme</label>
-                <input
-                    value="${this.esc(event.theme)}"
-                    onchange="Events.update('${event.id}',{theme:this.value})">
+<input
+    list="eventThemes"
+    value="${this.esc(event.theme || "")}"
+    placeholder="Choose or type a theme"
+    onchange="Events.update('${event.id}',{theme:this.value})">
+
+<datalist id="eventThemes">
+    ${Events.themes().map(theme => `
+        <option value="${this.esc(theme)}">
+    `).join("")}
+</datalist>
 
                 <label>Instructor</label>
                 <input
@@ -619,25 +627,39 @@ ${
 
             <div class="card">
 
-                <label>Product / Service Name</label>
-                <input
-                    value="${this.esc(item.name || "")}"
-                    placeholder="Product or service name"
-                    onchange="Events.updateOffering(
-                        '${event.id}',
-                        '${item.id}',
-                        {name:this.value}
-                    )">
+               <label>Product / Service Name</label>
+<input
+    list="eventOfferingNames"
+    value="${this.esc(item.name || "")}"
+    placeholder="Choose or type a product/service"
+    onchange="Events.updateOffering(
+        '${event.id}',
+        '${item.id}',
+        {name:this.value}
+    )">
+
+<datalist id="eventOfferingNames">
+    ${Events.offeringNames().map(name => `
+        <option value="${this.esc(name)}">
+    `).join("")}
+</datalist>
 
                 <label>Description</label>
-                <input
-                    value="${this.esc(item.description || "")}"
-                    placeholder="Description"
-                    onchange="Events.updateOffering(
-                        '${event.id}',
-                        '${item.id}',
-                        {description:this.value}
-                    )">
+<input
+    list="venueOfferingDescriptions"
+    value="${this.esc(item.description || "")}"
+    placeholder="Choose or type a description"
+    onchange="Venues.updateOffering(
+        '${v.id}',
+        '${item.id}',
+        {description:this.value}
+    )">
+
+<datalist id="venueOfferingDescriptions">
+    ${Venues.offeringDescriptions().map(description => `
+        <option value="${this.esc(description)}">
+    `).join("")}
+</datalist>
 
                 <label>Quantity</label>
                 <input
@@ -928,14 +950,21 @@ ${
             <div class="card">
 
                 <label>Product / Service Name</label>
-                <input
-                    value="${this.esc(item.name || "")}"
-                    placeholder="Product or service name"
-                    onchange="Venues.updateOffering(
-                        '${v.id}',
-                        '${item.id}',
-                        {name:this.value}
-                    )">
+<input
+    list="venueOfferingNames"
+    value="${this.esc(item.name || "")}"
+    placeholder="Choose or type a product/service"
+    onchange="Venues.updateOffering(
+        '${v.id}',
+        '${item.id}',
+        {name:this.value}
+    )">
+
+<datalist id="venueOfferingNames">
+    ${Venues.offeringNames().map(name => `
+        <option value="${this.esc(name)}">
+    `).join("")}
+</datalist>
 
                 <label>Description</label>
                 <input
@@ -1071,9 +1100,15 @@ ${
                 <label>Category</label>
 <input
     list="vendorCategories"
-    value="${this.esc(v.category)}"
+    value="${this.esc(v.category || "")}"
     placeholder="Choose or type a category"
     onchange="Vendors.update('${v.id}',{category:this.value})">
+
+<datalist id="vendorCategories">
+    ${Vendors.categories().map(category => `
+        <option value="${this.esc(category)}">
+    `).join("")}
+</datalist>
 
 <datalist id="vendorCategories">
     ${Vendors.categories().map(category => `
@@ -1204,24 +1239,37 @@ ${
             <div class="card">
 
                 <label>Product / Service Name</label>
-                <input
-                    value="${this.esc(item.name || "")}"
-                    placeholder="Product or service name"
-                    onchange="Vendors.updateOffering(
-                        '${v.id}',
-                        '${item.id}',
-                        {name:this.value}
-                    )">
+<input
+    list="vendorOfferingNames"
+    value="${this.esc(item.name || "")}"
+    placeholder="Choose or type a product/service"
+    onchange="Vendors.updateOffering(
+        '${v.id}',
+        '${item.id}',
+        {name:this.value}
+    )">
 
+<datalist id="vendorOfferingNames">
+    ${Vendors.offeringNames().map(name => `
+        <option value="${this.esc(name)}">
+    `).join("")}
+</datalist>
                 <label>Description</label>
-                <input
-                    value="${this.esc(item.description || "")}"
-                    placeholder="Description"
-                    onchange="Vendors.updateOffering(
-                        '${v.id}',
-                        '${item.id}',
-                        {description:this.value}
-                    )">
+<input
+    list="vendorOfferingDescriptions"
+    value="${this.esc(item.description || "")}"
+    placeholder="Choose or type a description"
+    onchange="Vendors.updateOffering(
+        '${v.id}',
+        '${item.id}',
+        {description:this.value}
+    )">
+
+<datalist id="vendorOfferingDescriptions">
+    ${Vendors.offeringDescriptions().map(description => `
+        <option value="${this.esc(description)}">
+    `).join("")}
+</datalist>
 
                 <label>Quantity</label>
                 <input
@@ -1402,9 +1450,15 @@ renderInventory() {
                 <label>Category</label>
 <input
     list="inventoryCategories"
-    value="${this.esc(item.category)}"
+    value="${this.esc(item.category || "")}"
     placeholder="Choose or type a category"
     onchange="Inventory.update('${item.id}',{category:this.value})">
+
+<datalist id="inventoryCategories">
+    ${Inventory.categories().map(category => `
+        <option value="${this.esc(category)}">
+    `).join("")}
+</datalist>
 
 <datalist id="inventoryCategories">
     ${Inventory.categories().map(category => `
@@ -1912,24 +1966,38 @@ ${
             <div class="card">
 
                 <label>Product / Service Name</label>
-                <input
-                    value="${this.esc(item.name || "")}"
-                    placeholder="Product or service name"
-                    onchange="CRM.updateOffering(
-                        '${c.id}',
-                        '${item.id}',
-                        {name:this.value}
-                    )">
+<input
+    list="crmOfferingNames"
+    value="${this.esc(item.name || "")}"
+    placeholder="Choose or type a product/service"
+    onchange="CRM.updateOffering(
+        '${c.id}',
+        '${item.id}',
+        {name:this.value}
+    )">
+
+<datalist id="crmOfferingNames">
+    ${CRM.offeringNames().map(name => `
+        <option value="${this.esc(name)}">
+    `).join("")}
+</datalist>
 
                 <label>Description</label>
-                <input
-                    value="${this.esc(item.description || "")}"
-                    placeholder="Description"
-                    onchange="CRM.updateOffering(
-                        '${c.id}',
-                        '${item.id}',
-                        {description:this.value}
-                    )">
+<input
+    list="crmOfferingDescriptions"
+    value="${this.esc(item.description || "")}"
+    placeholder="Choose or type a description"
+    onchange="CRM.updateOffering(
+        '${c.id}',
+        '${item.id}',
+        {description:this.value}
+    )">
+
+<datalist id="crmOfferingDescriptions">
+    ${CRM.offeringDescriptions().map(description => `
+        <option value="${this.esc(description)}">
+    `).join("")}
+</datalist>
 
                 <label>Quantity</label>
                 <input
