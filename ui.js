@@ -1069,9 +1069,17 @@ ${
                     onchange="Vendors.update('${v.id}',{name:this.value})">
 
                 <label>Category</label>
-                <input
-                    value="${this.esc(v.category)}"
-                    onchange="Vendors.update('${v.id}',{category:this.value})">
+<input
+    list="vendorCategories"
+    value="${this.esc(v.category)}"
+    placeholder="Choose or type a category"
+    onchange="Vendors.update('${v.id}',{category:this.value})">
+
+<datalist id="vendorCategories">
+    ${Vendors.categories().map(category => `
+        <option value="${this.esc(category)}">
+    `).join("")}
+</datalist>
 
                 <label>Contact Person</label>
                 <input
@@ -1392,9 +1400,17 @@ renderInventory() {
                     onchange="Inventory.update('${item.id}',{name:this.value})">
 
                 <label>Category</label>
-                <input
-                    value="${this.esc(item.category)}"
-                    onchange="Inventory.update('${item.id}',{category:this.value})">
+<input
+    list="inventoryCategories"
+    value="${this.esc(item.category)}"
+    placeholder="Choose or type a category"
+    onchange="Inventory.update('${item.id}',{category:this.value})">
+
+<datalist id="inventoryCategories">
+    ${Inventory.categories().map(category => `
+        <option value="${this.esc(category)}">
+    `).join("")}
+</datalist>
 
                 <label>SKU</label>
                 <input
