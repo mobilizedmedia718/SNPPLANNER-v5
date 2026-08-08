@@ -17,6 +17,7 @@ const Vendors = {
 
             name: "",
             category: "",
+            offerings: [],
 
             contact: "",
             jobTitle: "",
@@ -117,7 +118,60 @@ const Vendors = {
         }
 
         return Number(vendor.flatRate || 0);
+    },
+    addOffering(vendorId) {
+
+    const vendor = this.get(vendorId);
+
+    if (!vendor) return;
+
+    if (!Array.isArray(vendor.offerings)) {
+        vendor.offerings = [];
     }
+
+    vendor.offerings.push({
+        id: Utils.id(),
+        name: "",
+        description: "",
+        quantity: 1,
+        unit: "Each",
+        price: 0,
+        notes: ""
+    });
+
+    this.save();
+},
+
+updateOffering(vendorId, offeringId, updates) {
+
+    const vendor = this.get(vendorId);
+
+    if (!vendor || !Array.isArray(vendor.offerings)) return;
+
+    const offering = vendor.offerings.find(
+        item => item.id === offeringId
+    );
+
+    if (!offering) return;
+
+    Object.assign(offering, updates);
+
+    this.save();
+},
+
+removeOffering(vendorId, offeringId) {
+
+    const vendor = this.get(vendorId);
+
+    if (!vendor || !Array.isArray(vendor.offerings)) return;
+
+    vendor.offerings = vendor.offerings.filter(
+        item => item.id !== offeringId
+    );
+
+    this.save();
+},
+    
 
 };
 
