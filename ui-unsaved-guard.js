@@ -1,129 +1,136 @@
 /*
  * Global unsaved-changes guard.
- * Prevents navigation away from editable forms until the user saves,
- * discards/cancels, or chooses to stay on the page.
+ * Protects editable screens from accidental navigation before Save.
  */
-
 (function () {
     let dirty = false;
     let bypass = false;
-    let pendingAction = null;
+    let pendingCode = null;
+    let pendingThis = null;
 
     function workspace() {
         return document.getElementById("workspace");
     }
 
-    function currentSaveButton() {
+    function buttonsInWorkspace() {
         const root = workspace();
-        if (!root) return null;
-        return [...root.querySelectorAll("button")]
-            .find(button => /^\s*Save\b/i.test((button.textContent || "").trim()));
+        return root ? Array.from(root.querySelectorAll("button")) : [];
+    }
+
+    function saveButton() {
+        return buttonsInWorkspace().find(button => {
+            const text = String(button.textContent || "").trim();
+            return /^Save(?:\s|$)/i.test(text);
+        }) || null;
     }
 
     function isSaveButton(button) {
-        return !!button && /^\s*Save\b/i.test((button.textContent || "").trim());
+        if (!button) return false;
+        return /^Save(?:\s|$)/i.test(String(button.textContent || "").trim());
     }
 
-    function isInlineEditUtility(button) {
+    function isEditUtility(button) {
         if (!button) return false;
-        const text = (button.textContent || "").trim();
+        const text = String(button.textContent || "").trim();
         return /^(\+\s*)?Add Product \/ Service$/i.test(text) ||
                /^Remove Product \/ Service$/i.test(text);
     }
 
-    function markDirtyFromField(event) {
+    function markDirty(event) {
         const root = workspace();
-        if (!root || !root.contains(event.target)) return;
-        if (!currentSaveButton()) return;
+        if (!root || !event.target || !root.contains(event.target)) return;
+
+        // Only treat changes as unsaved when this screen has an explicit Save action.
+        if (!saveButton()) return;
         dirty = true;
     }
 
-    function closeModal() {
-        document.getElementById("unsavedChangesModal")?.remove();
+    function removeModal() {
+        const modal = document.getElementById("unsavedChangesModal");
+        if (modal) modal.remove();
     }
 
-    function replayPendingAction() {
-        const action = pendingAction;
-        pendingAction = null;
-        closeModal();
-        if (!action) return;
+    function runPending() {
+        const code = pendingCode;
+        const context = pendingThis;
+        pendingCode = null;
+        pendingThis = null;
+        removeModal();
+
+        if (!code) return;
 
         bypass = true;
         try {
-            action();
+            const fn = new Function(code);
+            fn.call(context || window);
         } finally {
-            setTimeout(() => { bypass = false; }, 0);
+            setTimeout(function () { bypass = false; }, 0);
         }
     }
 
-    function showModal() {
-        closeModal();
+    function showPrompt() {
+        removeModal();
 
         const overlay = document.createElement("div");
         overlay.id = "unsavedChangesModal";
-        overlay.style.cssText = [
-            "position:fixed",
-            "inset:0",
-            "background:rgba(0,0,0,.45)",
-            "display:flex",
-            "align-items:center",
-            "justify-content:center",
-            "z-index:99999",
-            "padding:20px"
-        ].join(";");
-
+        overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:999999;padding:20px;";
         overlay.innerHTML = `
-            <div class="card" style="max-width:520px;width:100%;background:#fff;">
+            <div class="card" style="max-width:540px;width:100%;background:white;">
                 <h3>Unsaved Changes</h3>
-                <p>You changed information on this page and have not saved it yet.</p>
-                <p>Please save your changes, cancel/discard them, or stay on this page.</p>
+                <p>You changed information on this page but have not saved it.</p>
+                <p>Save or cancel your changes before leaving this screen.</p>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;">
-                    <button id="unsavedSaveContinue">Save & Continue</button>
-                    <button id="unsavedDiscardContinue">Cancel Changes & Continue</button>
-                    <button id="unsavedStay">Stay Here</button>
+                    <button type="button" id="unsavedSaveContinue">Save & Continue</button>
+                    <button type="button" id="unsavedDiscardContinue">Cancel Changes & Continue</button>
+                    <button type="button" id="unsavedStay">Stay Here</button>
                 </div>
             </div>
         `;
-
         document.body.appendChild(overlay);
 
-        document.getElementById("unsavedSaveContinue").onclick = function () {
-            const saveButton = currentSaveButton();
-            if (!saveButton) {
-                replayPendingAction();
+        document.getElementById("unsavedSaveContinue").addEventListener("click", function () {
+            const button = saveButton();
+            if (!button) {
+                dirty = false;
+                runPending();
                 return;
             }
 
             dirty = false;
             bypass = true;
-            saveButton.click();
+            button.click();
 
-            setTimeout(() => {
+            setTimeout(function () {
                 bypass = false;
-                replayPendingAction();
-            }, 0);
-        };
+                runPending();
+            }, 25);
+        });
 
-        document.getElementById("unsavedDiscardContinue").onclick = function () {
+        document.getElementById("unsavedDiscardContinue").addEventListener("click", function () {
             dirty = false;
-            replayPendingAction();
-        };
+            runPending();
+        });
 
-        document.getElementById("unsavedStay").onclick = function () {
-            pendingAction = null;
-            closeModal();
-        };
+        document.getElementById("unsavedStay").addEventListener("click", function () {
+            pendingCode = null;
+            pendingThis = null;
+            removeModal();
+        });
     }
 
-    document.addEventListener("input", markDirtyFromField, true);
-    document.addEventListener("change", markDirtyFromField, true);
+    // input covers typing immediately; change covers selects, checkboxes, dates, etc.
+    document.addEventListener("input", markDirty, true);
+    document.addEventListener("change", markDirty, true);
 
+    // Capture BEFORE inline onclick handlers run.
     document.addEventListener("click", function (event) {
-        if (bypass || !dirty) return;
+        if (bypass) return;
 
-        const button = event.target.closest("button");
+        const target = event.target;
+        if (!target || typeof target.closest !== "function") return;
+
+        const button = target.closest("button");
         if (!button) return;
-
         if (button.closest("#unsavedChangesModal")) return;
 
         if (isSaveButton(button)) {
@@ -131,35 +138,40 @@
             return;
         }
 
-        if (isInlineEditUtility(button)) {
-            return;
-        }
+        if (isEditUtility(button)) return;
+        if (!dirty) return;
 
-        const inlineCode = button.getAttribute("onclick");
-        if (!inlineCode) return;
+        const code = button.getAttribute("onclick");
+        if (!code) return;
 
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
 
-        pendingAction = function () {
-            const fn = new Function(inlineCode);
-            fn.call(button);
-        };
-
-        showModal();
+        pendingCode = code;
+        pendingThis = button;
+        showPrompt();
     }, true);
 
+    // Protect browser refresh/close/back navigation too.
     window.addEventListener("beforeunload", function (event) {
         if (!dirty) return;
         event.preventDefault();
         event.returnValue = "";
     });
 
-    // Expose a tiny API so future UI code can deliberately clear or set the state.
+    // Clear stale dirty state whenever a saved/detail/list screen is rendered.
+    const root = workspace();
+    if (root && window.MutationObserver) {
+        const observer = new MutationObserver(function () {
+            if (!saveButton()) dirty = false;
+        });
+        observer.observe(root, { childList: true, subtree: true });
+    }
+
     UI.unsavedChanges = {
-        mark() { dirty = true; },
-        clear() { dirty = false; },
-        isDirty() { return dirty; }
+        mark: function () { dirty = true; },
+        clear: function () { dirty = false; },
+        isDirty: function () { return dirty; }
     };
 })();
