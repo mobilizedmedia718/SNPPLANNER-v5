@@ -1,7 +1,7 @@
 /* Business profile view/edit behavior */
 
 (function () {
-    if (!window.UI || !window.Business || !window.Utils) return;
+    if (typeof UI === "undefined" || typeof Business === "undefined" || typeof Utils === "undefined") return;
 
     UI._businessEditing = false;
 
@@ -50,63 +50,25 @@
         document.getElementById("workspace").innerHTML = `
             <h2>Business Profile</h2>
             <div class="card">
-                <label>Business Name</label>
-                <input id="businessName" value="${this.esc(b.name || "")}">
-
-                <label>Owner</label>
-                <input id="businessOwner" value="${this.esc(b.owner || "")}">
-
-                <label>Owner Title</label>
-                <input id="businessOwnerTitle" value="${this.esc(b.ownerTitle || "")}">
-
-                <label>Logo URL</label>
-                <input id="businessLogo" value="${this.esc(b.logo || "")}">
-
-                <label>Phone</label>
-                <input id="businessPhone" value="${this.esc(b.phone || "")}">
-
-                <label>Alternate Phone</label>
-                <input id="businessAlternatePhone" value="${this.esc(b.alternatePhone || "")}">
-
-                <label>Email</label>
-                <input id="businessEmail" type="email" value="${this.esc(b.email || "")}">
-
-                <label>Website</label>
-                <input id="businessWebsite" value="${this.esc(b.website || "")}">
-
-                <label>Instagram</label>
-                <input id="businessInstagram" value="${this.esc(b.instagram || "")}">
-
-                <label>Facebook</label>
-                <input id="businessFacebook" value="${this.esc(b.facebook || "")}">
-
-                <label>Address</label>
-                <input id="businessAddress" value="${this.esc(b.address || "")}">
-
-                <label>Address Line 2</label>
-                <input id="businessAddress2" value="${this.esc(b.address2 || "")}">
-
-                <label>City</label>
-                <input id="businessCity" value="${this.esc(b.city || "")}">
-
-                <label>State</label>
-                <input id="businessState" value="${this.esc(b.state || "")}">
-
-                <label>ZIP Code</label>
-                <input id="businessZip" value="${this.esc(b.zip || "")}">
-
-                <label>Country</label>
-                <input id="businessCountry" value="${this.esc(b.country || "")}">
-
-                <label>Tax Rate (%)</label>
-                <input id="businessTax" type="number" step="0.01" value="${Number(b.taxRate || 0)}">
-
-                <label>Tax ID</label>
-                <input id="businessTaxId" value="${this.esc(b.taxId || "")}">
-
-                <label>Notes</label>
-                <textarea id="businessNotes">${this.esc(b.notes || "")}</textarea>
-
+                <label>Business Name</label><input id="businessName" value="${this.esc(b.name || "")}">
+                <label>Owner</label><input id="businessOwner" value="${this.esc(b.owner || "")}">
+                <label>Owner Title</label><input id="businessOwnerTitle" value="${this.esc(b.ownerTitle || "")}">
+                <label>Logo URL</label><input id="businessLogo" value="${this.esc(b.logo || "")}">
+                <label>Phone</label><input id="businessPhone" value="${this.esc(b.phone || "")}">
+                <label>Alternate Phone</label><input id="businessAlternatePhone" value="${this.esc(b.alternatePhone || "")}">
+                <label>Email</label><input id="businessEmail" type="email" value="${this.esc(b.email || "")}">
+                <label>Website</label><input id="businessWebsite" value="${this.esc(b.website || "")}">
+                <label>Instagram</label><input id="businessInstagram" value="${this.esc(b.instagram || "")}">
+                <label>Facebook</label><input id="businessFacebook" value="${this.esc(b.facebook || "")}">
+                <label>Address</label><input id="businessAddress" value="${this.esc(b.address || "")}">
+                <label>Address Line 2</label><input id="businessAddress2" value="${this.esc(b.address2 || "")}">
+                <label>City</label><input id="businessCity" value="${this.esc(b.city || "")}">
+                <label>State</label><input id="businessState" value="${this.esc(b.state || "")}">
+                <label>ZIP Code</label><input id="businessZip" value="${this.esc(b.zip || "")}">
+                <label>Country</label><input id="businessCountry" value="${this.esc(b.country || "")}">
+                <label>Tax Rate (%)</label><input id="businessTax" type="number" step="0.01" value="${Number(b.taxRate || 0)}">
+                <label>Tax ID</label><input id="businessTaxId" value="${this.esc(b.taxId || "")}">
+                <label>Notes</label><textarea id="businessNotes">${this.esc(b.notes || "")}</textarea>
                 <br><br>
                 <button type="button" onclick="UI.saveBusinessProfile();">Save Business Profile</button>
                 ${Object.values(b).some(value => String(value ?? "").trim() && value !== 0) ? `<button type="button" onclick="UI._businessEditing=false;UI.renderBusiness();">Cancel</button>` : ""}
