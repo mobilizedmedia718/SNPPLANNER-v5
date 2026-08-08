@@ -168,6 +168,21 @@ removeOffering(venueId, offeringId) {
 
     this.save();
 },
+    offeringNames() {
+
+    return [
+        ...new Set(
+            this.list
+                .flatMap(venue =>
+                    Array.isArray(venue.offerings)
+                        ? venue.offerings
+                        : []
+                )
+                .map(item => String(item.name || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+},
 
 };
 
