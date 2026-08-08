@@ -135,6 +135,16 @@ removeOffering(eventId, offeringId) {
 
     this.save();
 },
+    themes() {
+
+    return [
+        ...new Set(
+            this.list
+                .map(event => String(event.theme || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+},
 
 };
 
