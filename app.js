@@ -1,27 +1,22 @@
 const SNPPlanner = {
 
     version: "5.0",
-
     initialized: false,
 
     async init() {
-
         console.log(`Starting SNP Planner V${this.version}...`);
-
         try {
             if (!window.SNPDatabase || !SNPDatabase.client) {
                 throw new Error("Supabase connection is not available.");
             }
 
             const session = await SNPDatabase.getSession();
-
             if (!session) {
                 SNPDatabase.renderAuth();
                 return;
             }
 
             await this.startApplication();
-
         } catch (error) {
             this.showStartupError(error);
         }
@@ -29,6 +24,11 @@ const SNPPlanner = {
 
     async startApplication() {
         try {
+            // Pull this user's cloud records before any module reads local state.
+            // On the first migration, an empty cloud account is seeded from the
+            // SNP Planner records already present in this browser.
+            await SNPDatabase.syncCloudToLocal();
+
             Settings.load();
             Business.load();
             Events.load();
@@ -45,7 +45,6 @@ const SNPPlanner = {
 
             this.initialized = true;
             console.log("SNP Planner Ready");
-
         } catch (error) {
             this.showStartupError(error);
         }
@@ -53,10 +52,8 @@ const SNPPlanner = {
 
     showStartupError(error) {
         console.error("SNP Planner failed to initialize:", error);
-
         const app = document.getElementById("app");
         if (!app) return;
-
         app.innerHTML = `
             <div style="padding:20px;font-family:Arial,sans-serif;">
                 <h2>SNP Planner could not start</h2>
