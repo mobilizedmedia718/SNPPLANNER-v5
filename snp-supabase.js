@@ -3,6 +3,7 @@
 const SNP_SUPABASE_URL = "https://mmstqostdqouxaiyrxtv.supabase.co";
 const SNP_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_6bxNaNPgezRwqyTrLtnUpA_zmXNoIsC";
 const SNP_SESSION_KEY = "snpplanner_supabase_session";
+const SNP_APP_URL = "https://mobilizedmedia718.github.io/SNPPLANNER-v5/";
 
 const SNPDatabase = {
     client: {},
@@ -127,14 +128,11 @@ const SNPDatabase = {
 
         this.setAuthMessage("Creating account...");
         try {
-            const response = await fetch(`${SNP_SUPABASE_URL}/auth/v1/signup`, {
+            const signupUrl = `${SNP_SUPABASE_URL}/auth/v1/signup?redirect_to=${encodeURIComponent(SNP_APP_URL)}`;
+            const response = await fetch(signupUrl, {
                 method: "POST",
                 headers: this.headers(),
-                body: JSON.stringify({
-                    email,
-                    password,
-                    options: { emailRedirectTo: "https://mobilizedmedia718.github.io/SNPPLANNER-v5/" }
-                })
+                body: JSON.stringify({ email, password })
             });
             const data = await response.json();
             if (!response.ok) {
