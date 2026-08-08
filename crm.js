@@ -218,6 +218,37 @@ removeOffering(customerId, offeringId) {
 
     this.save();
 },
+    offeringNames() {
+
+    return [
+        ...new Set(
+            this.list
+                .flatMap(customer =>
+                    Array.isArray(customer.offerings)
+                        ? customer.offerings
+                        : []
+                )
+                .map(item => String(item.name || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+},
+
+offeringDescriptions() {
+
+    return [
+        ...new Set(
+            this.list
+                .flatMap(customer =>
+                    Array.isArray(customer.offerings)
+                        ? customer.offerings
+                        : []
+                )
+                .map(item => String(item.description || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+},
 
 };
 
