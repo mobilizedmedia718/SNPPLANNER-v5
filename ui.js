@@ -661,12 +661,6 @@ ${
     `).join("")}
 </datalist>
 
-<datalist id="venueOfferingDescriptions">
-    ${Venues.offeringDescriptions().map(description => `
-        <option value="${this.esc(description)}">
-    `).join("")}
-</datalist>
-
                 <label>Quantity</label>
                 <input
                     type="number"
