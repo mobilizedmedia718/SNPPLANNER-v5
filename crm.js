@@ -20,6 +20,7 @@ const CRM = {
 
             company: "",
             jobTitle: "",
+            offerings: [],
 
             email: "",
             phone: "",
@@ -164,7 +165,59 @@ const CRM = {
                     Number(a.totalSpent || 0)
             )
             .slice(0, limit);
+    },
+    addOffering(customerId) {
+
+    const customer = this.get(customerId);
+
+    if (!customer) return;
+
+    if (!Array.isArray(customer.offerings)) {
+        customer.offerings = [];
     }
+
+    customer.offerings.push({
+        id: Utils.id(),
+        name: "",
+        description: "",
+        quantity: 1,
+        unit: "Each",
+        price: 0,
+        notes: ""
+    });
+
+    this.save();
+},
+
+updateOffering(customerId, offeringId, updates) {
+
+    const customer = this.get(customerId);
+
+    if (!customer || !Array.isArray(customer.offerings)) return;
+
+    const offering = customer.offerings.find(
+        item => item.id === offeringId
+    );
+
+    if (!offering) return;
+
+    Object.assign(offering, updates);
+
+    this.save();
+},
+
+removeOffering(customerId, offeringId) {
+
+    const customer = this.get(customerId);
+
+    if (!customer || !Array.isArray(customer.offerings)) return;
+
+    customer.offerings = customer.offerings.filter(
+        item => item.id !== offeringId
+    );
+
+    this.save();
+},
 
 };
 
