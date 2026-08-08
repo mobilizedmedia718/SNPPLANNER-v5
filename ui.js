@@ -1696,7 +1696,7 @@ renderInventory() {
             <p><strong>Total Visits:</strong> ${Number(c.totalVisits || 0)}</p>
             <p><strong>Last Visit:</strong> ${this.esc(c.lastVisit || "—")}</p>
 
-            <p>
+        
             <h4>Products / Services Offered</h4>
 
 ${
