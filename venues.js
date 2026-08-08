@@ -16,6 +16,7 @@ const Venues = {
             id: Utils.id(),
 
             name: "",
+            offerings: [],
             contactPerson: "",
             jobTitle: "",
 
@@ -114,7 +115,59 @@ const Venues = {
                 sum + Number(v.rentalCost || 0),
             0
         );
+    },
+    addOffering(venueId) {
+
+    const venue = this.get(venueId);
+
+    if (!venue) return;
+
+    if (!Array.isArray(venue.offerings)) {
+        venue.offerings = [];
     }
+
+    venue.offerings.push({
+        id: Utils.id(),
+        name: "",
+        description: "",
+        quantity: 1,
+        unit: "Each",
+        price: 0,
+        notes: ""
+    });
+
+    this.save();
+},
+
+updateOffering(venueId, offeringId, updates) {
+
+    const venue = this.get(venueId);
+
+    if (!venue || !Array.isArray(venue.offerings)) return;
+
+    const offering = venue.offerings.find(
+        item => item.id === offeringId
+    );
+
+    if (!offering) return;
+
+    Object.assign(offering, updates);
+
+    this.save();
+},
+
+removeOffering(venueId, offeringId) {
+
+    const venue = this.get(venueId);
+
+    if (!venue || !Array.isArray(venue.offerings)) return;
+
+    venue.offerings = venue.offerings.filter(
+        item => item.id !== offeringId
+    );
+
+    this.save();
+},
 
 };
 
