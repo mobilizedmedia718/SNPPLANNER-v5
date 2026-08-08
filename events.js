@@ -42,7 +42,6 @@ const Events = {
     update(id, updates) {
 
         const event = this.data.find(e => e.id === id);
-
         if (!event) return;
 
         Object.assign(event, updates);
@@ -50,7 +49,6 @@ const Events = {
     },
 
     remove(id) {
-
         this.data = this.data.filter(e => e.id !== id);
         this.save();
     },
@@ -84,98 +82,78 @@ const Events = {
             0
         );
     },
+
     addOffering(eventId) {
+        const event = this.get(eventId);
+        if (!event) return;
 
-    const event = this.get(eventId);
+        if (!Array.isArray(event.offerings)) {
+            event.offerings = [];
+        }
 
-    if (!event) return;
+        event.offerings.push({
+            id: Utils.id(),
+            name: "",
+            description: "",
+            quantity: 1,
+            unit: "Each",
+            price: 0,
+            notes: ""
+        });
 
-    if (!Array.isArray(event.offerings)) {
-        event.offerings = [];
-    }
+        this.save();
+    },
 
-    event.offerings.push({
-        id: Utils.id(),
-        name: "",
-        description: "",
-        quantity: 1,
-        unit: "Each",
-        price: 0,
-        notes: ""
-    });
+    updateOffering(eventId, offeringId, updates) {
+        const event = this.get(eventId);
+        if (!event || !Array.isArray(event.offerings)) return;
 
-    this.save();
-},
+        const offering = event.offerings.find(item => item.id === offeringId);
+        if (!offering) return;
 
-updateOffering(eventId, offeringId, updates) {
+        Object.assign(offering, updates);
+        this.save();
+    },
 
-    const event = this.get(eventId);
+    removeOffering(eventId, offeringId) {
+        const event = this.get(eventId);
+        if (!event || !Array.isArray(event.offerings)) return;
 
-    if (!event || !Array.isArray(event.offerings)) return;
+        event.offerings = event.offerings.filter(item => item.id !== offeringId);
+        this.save();
+    },
 
-    const offering = event.offerings.find(
-        item => item.id === offeringId
-    );
-
-    if (!offering) return;
-
-    Object.assign(offering, updates);
-    this.save();
-},
-
-removeOffering(eventId, offeringId) {
-
-    const event = this.get(eventId);
-
-    if (!event || !Array.isArray(event.offerings)) return;
-
-    event.offerings = event.offerings.filter(
-        item => item.id !== offeringId
-    );
-
-    this.save();
-},
     themes() {
+        return [
+            ...new Set(
+                this.data
+                    .map(event => String(event.theme || "").trim())
+                    .filter(Boolean)
+            )
+        ].sort();
+    },
 
-    return [
-        ...new Set(
-            this.customers
-                .map(event => String(event.theme || "").trim())
-                .filter(Boolean)
-        )
-    ].sort();
-},
     offeringNames() {
+        return [
+            ...new Set(
+                this.data
+                    .flatMap(event => Array.isArray(event.offerings) ? event.offerings : [])
+                    .map(item => String(item.name || "").trim())
+                    .filter(Boolean)
+            )
+        ].sort();
+    },
 
-    return [
-        ...new Set(
-            this.customers
-                .flatMap(event =>
-                    Array.isArray(event.offerings)
-                        ? event.offerings
-                        : []
-                )
-                .map(item => String(item.name || "").trim())
-                .filter(Boolean)
-        )
-    ].sort();
-},
-
-offeringDescriptions() {
-
-    return [
-        ...new Set(
-            this.customers
-                .flatMap(event =>
-                    Array.isArray(event.offerings)
-                        ? event.offerings
-                        : []
-                )
-                .map(item => String(item.description || "").trim())
-                .filter(Boolean)
-        )
-    ].sort();
-},
+    offeringDescriptions() {
+        return [
+            ...new Set(
+                this.data
+                    .flatMap(event => Array.isArray(event.offerings) ? event.offerings : [])
+                    .map(item => String(item.description || "").trim())
+                    .filter(Boolean)
+            )
+        ].sort();
+    }
 
 };
 
