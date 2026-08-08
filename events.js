@@ -139,7 +139,7 @@ removeOffering(eventId, offeringId) {
 
     return [
         ...new Set(
-            this.list
+            this.customers
                 .map(event => String(event.theme || "").trim())
                 .filter(Boolean)
         )
@@ -149,7 +149,7 @@ removeOffering(eventId, offeringId) {
 
     return [
         ...new Set(
-            this.list
+            this.customers
                 .flatMap(event =>
                     Array.isArray(event.offerings)
                         ? event.offerings
@@ -165,7 +165,7 @@ offeringDescriptions() {
 
     return [
         ...new Set(
-            this.list
+            this.customers
                 .flatMap(event =>
                     Array.isArray(event.offerings)
                         ? event.offerings
