@@ -1,4 +1,4 @@
-const CACHE = "snpplanner-v5-6";
+const CACHE = "snpplanner-v5-7";
 
 const FILES = [
     "./",
