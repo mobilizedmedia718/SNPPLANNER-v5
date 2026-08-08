@@ -1,7 +1,7 @@
 /*
  * Global UI features:
  * 1) Reliable edit-screen navigation guard that only triggers for actual unsaved changes.
- * 2) Shared Category suggestions across modules.
+ * 2) Shared Category and Description suggestions across modules.
  */
 (function () {
     let bypassNavigationGuard = false;
@@ -132,8 +132,6 @@
         const button = event.target?.closest?.("button");
         if (!button) return;
 
-        // A real save/cancel action clears the dirty state immediately so the
-        // next navigation click does not produce a false warning.
         if (!button.closest("#unsavedChangesModal") && (isSaveButton(button) || isCancelButton(button))) {
             markClean();
             return;
@@ -165,92 +163,137 @@
         event.returnValue = "";
     });
 
-    function sharedCategories() {
+    function collectFieldValues(fieldName) {
         const values = [];
+        const seenObjects = new Set();
 
-        function add(records) {
-            (records || []).forEach(record => {
-                const value = String(record?.category || "").trim();
-                if (value) values.push(value);
+        function visit(value) {
+            if (!value || typeof value !== "object") return;
+            if (seenObjects.has(value)) return;
+            seenObjects.add(value);
+
+            if (Array.isArray(value)) {
+                value.forEach(visit);
+                return;
+            }
+
+            Object.entries(value).forEach(([key, child]) => {
+                if (key.toLowerCase() === fieldName.toLowerCase()) {
+                    const text = String(child ?? "").trim();
+                    if (text) values.push(text);
+                }
+                if (child && typeof child === "object") visit(child);
             });
         }
 
-        if (typeof Vendors !== "undefined" && Vendors.all) add(Vendors.all());
-        if (typeof Inventory !== "undefined" && Inventory.all) add(Inventory.all());
-        if (typeof Finance !== "undefined" && Finance.all) add(Finance.all());
-        if (typeof Assets !== "undefined" && Assets.all) add(Assets.all());
-        if (typeof Calendar !== "undefined" && Calendar.all) add(Calendar.all());
+        const modules = [
+            typeof Vendors !== "undefined" ? Vendors : null,
+            typeof Venues !== "undefined" ? Venues : null,
+            typeof Inventory !== "undefined" ? Inventory : null,
+            typeof Finance !== "undefined" ? Finance : null,
+            typeof Assets !== "undefined" ? Assets : null,
+            typeof Calendar !== "undefined" ? Calendar : null,
+            typeof Events !== "undefined" ? Events : null,
+            typeof CRM !== "undefined" ? CRM : null
+        ];
+
+        modules.forEach(module => {
+            if (module?.all) visit(module.all());
+        });
 
         return [...new Set(values)].sort((a, b) => a.localeCompare(b));
     }
 
-    function installSharedCategorySuggestions() {
-        const root = workspace();
-        if (!root) return;
+    function sharedCategories() {
+        return collectFieldValues("category");
+    }
 
-        let datalist = document.getElementById("snpSharedCategories");
+    function sharedDescriptions() {
+        return collectFieldValues("description");
+    }
+
+    function ensureDatalist(id, values) {
+        const root = workspace();
+        if (!root) return null;
+
+        let datalist = document.getElementById(id);
         if (!datalist) {
             datalist = document.createElement("datalist");
-            datalist.id = "snpSharedCategories";
+            datalist.id = id;
             root.appendChild(datalist);
         }
 
-        const desiredOptions = sharedCategories()
-            .map(category => `<option value="${UI.esc(category)}"></option>`)
+        const desiredOptions = values
+            .map(value => `<option value="${UI.esc(value)}"></option>`)
             .join("");
 
-        if (datalist.innerHTML !== desiredOptions) {
-            datalist.innerHTML = desiredOptions;
-        }
+        if (datalist.innerHTML !== desiredOptions) datalist.innerHTML = desiredOptions;
+        return datalist;
+    }
+
+    function installSharedSuggestions() {
+        const root = workspace();
+        if (!root) return;
+
+        ensureDatalist("snpSharedCategories", sharedCategories());
+        ensureDatalist("snpSharedDescriptions", sharedDescriptions());
 
         Array.from(root.querySelectorAll("label")).forEach(label => {
-            if (textOf(label).toLowerCase() !== "category") return;
+            const labelText = textOf(label).toLowerCase();
+            if (labelText !== "category" && labelText !== "description") return;
 
             let input = label.nextElementSibling;
-            while (input && input.tagName === "DATALIST") {
-                input = input.nextElementSibling;
-            }
+            while (input && input.tagName === "DATALIST") input = input.nextElementSibling;
 
-            if (input?.tagName === "INPUT") {
-                if (input.getAttribute("list") !== "snpSharedCategories") {
-                    input.setAttribute("list", "snpSharedCategories");
-                }
-                if (!input.getAttribute("placeholder")) {
-                    input.setAttribute("placeholder", "Choose or type a category");
-                }
+            if (input?.tagName !== "INPUT") return;
+
+            const listId = labelText === "category" ? "snpSharedCategories" : "snpSharedDescriptions";
+            input.setAttribute("list", listId);
+
+            if (!input.getAttribute("placeholder")) {
+                input.setAttribute(
+                    "placeholder",
+                    labelText === "category" ? "Choose or type a category" : "Choose or type a description"
+                );
             }
         });
     }
 
     function wrapRender(name) {
         const original = UI[name];
-        if (typeof original !== "function" || original.__snpCategoryWrapped) return;
+        if (typeof original !== "function" || original.__snpSharedOptionsWrapped) return;
 
         const wrapped = function (...args) {
             markClean();
             const result = original.apply(UI, args);
-            setTimeout(installSharedCategorySuggestions, 0);
+            setTimeout(installSharedSuggestions, 0);
             return result;
         };
-        wrapped.__snpCategoryWrapped = true;
+        wrapped.__snpSharedOptionsWrapped = true;
         UI[name] = wrapped;
     }
 
     document.addEventListener("DOMContentLoaded", function () {
         [
             "renderVendors","renderVendorEdit",
+            "renderVenues","renderVenueEdit",
             "renderInventory","renderInventoryEdit",
             "renderFinance","renderFinanceEdit",
             "renderAssets","renderAssetEdit",
-            "renderCalendar","renderCalendarEdit"
+            "renderCalendar","renderCalendarEdit",
+            "renderEvents","renderEventEdit",
+            "renderCRM","renderCRMEdit","renderCustomerEdit"
         ].forEach(wrapRender);
 
-        setTimeout(installSharedCategorySuggestions, 0);
+        setTimeout(installSharedSuggestions, 0);
     });
 
     window.SNPSharedOptions = {
         categories: sharedCategories,
-        refreshCategories: installSharedCategorySuggestions,
+        descriptions: sharedDescriptions,
+        refreshCategories: installSharedSuggestions,
+        refreshDescriptions: installSharedSuggestions,
+        refresh: installSharedSuggestions,
         markClean,
         markDirty
     };
