@@ -177,4 +177,5 @@ const SNPDatabase = {
     }
 };
 
+window.SNPDatabase = SNPDatabase;
 SNPDatabase.init();
