@@ -610,7 +610,109 @@ renderEvents() {
                     </div>
 
                 </div>
+<h4>Products / Services Offered</h4>
 
+${
+    !Array.isArray(event.offerings) || event.offerings.length === 0
+        ? "<p>No products or services added yet.</p>"
+        : event.offerings.map(item => `
+
+            <div class="card">
+
+                <label>Product / Service Name</label>
+                <input
+                    value="${this.esc(item.name || "")}"
+                    placeholder="Product or service name"
+                    onchange="Events.updateOffering(
+                        '${event.id}',
+                        '${item.id}',
+                        {name:this.value}
+                    )">
+
+                <label>Description</label>
+                <input
+                    value="${this.esc(item.description || "")}"
+                    placeholder="Description"
+                    onchange="Events.updateOffering(
+                        '${event.id}',
+                        '${item.id}',
+                        {description:this.value}
+                    )">
+
+                <label>Quantity</label>
+                <input
+                    type="number"
+                    min="0"
+                    value="${Number(item.quantity || 0)}"
+                    onchange="Events.updateOffering(
+                        '${event.id}',
+                        '${item.id}',
+                        {quantity:Number(this.value)}
+                    )">
+
+                <label>Unit</label>
+                <select onchange="Events.updateOffering(
+                    '${event.id}',
+                    '${item.id}',
+                    {unit:this.value}
+                )">
+                    <option value="Each" ${item.unit==="Each"?"selected":""}>Each</option>
+                    <option value="Hour" ${item.unit==="Hour"?"selected":""}>Hour</option>
+                    <option value="Day" ${item.unit==="Day"?"selected":""}>Day</option>
+                    <option value="Package" ${item.unit==="Package"?"selected":""}>Package</option>
+                    <option value="Case" ${item.unit==="Case"?"selected":""}>Case</option>
+                    <option value="Box" ${item.unit==="Box"?"selected":""}>Box</option>
+                    <option value="Dozen" ${item.unit==="Dozen"?"selected":""}>Dozen</option>
+                    <option value="Flat Rate" ${item.unit==="Flat Rate"?"selected":""}>Flat Rate</option>
+                    <option value="Other" ${item.unit==="Other"?"selected":""}>Other</option>
+                </select>
+
+                <label>Price</label>
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value="${Number(item.price || 0)}"
+                    onchange="Events.updateOffering(
+                        '${event.id}',
+                        '${item.id}',
+                        {price:Number(this.value)}
+                    )">
+
+                <label>Notes</label>
+                <textarea
+                    placeholder="Item notes"
+                    onchange="Events.updateOffering(
+                        '${event.id}',
+                        '${item.id}',
+                        {notes:this.value}
+                    )">${this.esc(item.notes || "")}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    Events.removeOffering(
+                        '${event.id}',
+                        '${item.id}'
+                    );
+                    UI.renderEvents();
+                ">
+                    Remove Product / Service
+                </button>
+
+            </div>
+
+        `).join("")
+}
+
+<button onclick="
+    Events.addOffering('${event.id}');
+    UI.renderEvents();
+">
+    + Add Product / Service
+</button>
+
+<br><br>
                 <label>Notes</label>
                 <textarea
                     onchange="Events.update('${event.id}',{notes:this.value})">${this.esc(event.notes)}</textarea>
@@ -816,6 +918,109 @@ renderEvents() {
                         onchange="Venues.update('${v.id}',{active:this.checked})">
                     Active Venue
                 </label>
+                <h4>Products / Services Offered</h4>
+
+${
+    !Array.isArray(v.offerings) || v.offerings.length === 0
+        ? "<p>No products or services added yet.</p>"
+        : v.offerings.map(item => `
+
+            <div class="card">
+
+                <label>Product / Service Name</label>
+                <input
+                    value="${this.esc(item.name || "")}"
+                    placeholder="Product or service name"
+                    onchange="Venues.updateOffering(
+                        '${v.id}',
+                        '${item.id}',
+                        {name:this.value}
+                    )">
+
+                <label>Description</label>
+                <input
+                    value="${this.esc(item.description || "")}"
+                    placeholder="Description"
+                    onchange="Venues.updateOffering(
+                        '${v.id}',
+                        '${item.id}',
+                        {description:this.value}
+                    )">
+
+                <label>Quantity</label>
+                <input
+                    type="number"
+                    min="0"
+                    value="${Number(item.quantity || 0)}"
+                    onchange="Venues.updateOffering(
+                        '${v.id}',
+                        '${item.id}',
+                        {quantity:Number(this.value)}
+                    )">
+
+                <label>Unit</label>
+                <select onchange="Venues.updateOffering(
+                    '${v.id}',
+                    '${item.id}',
+                    {unit:this.value}
+                )">
+                    <option value="Each" ${item.unit==="Each"?"selected":""}>Each</option>
+                    <option value="Hour" ${item.unit==="Hour"?"selected":""}>Hour</option>
+                    <option value="Day" ${item.unit==="Day"?"selected":""}>Day</option>
+                    <option value="Package" ${item.unit==="Package"?"selected":""}>Package</option>
+                    <option value="Case" ${item.unit==="Case"?"selected":""}>Case</option>
+                    <option value="Box" ${item.unit==="Box"?"selected":""}>Box</option>
+                    <option value="Dozen" ${item.unit==="Dozen"?"selected":""}>Dozen</option>
+                    <option value="Flat Rate" ${item.unit==="Flat Rate"?"selected":""}>Flat Rate</option>
+                    <option value="Other" ${item.unit==="Other"?"selected":""}>Other</option>
+                </select>
+
+                <label>Price</label>
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value="${Number(item.price || 0)}"
+                    onchange="Venues.updateOffering(
+                        '${v.id}',
+                        '${item.id}',
+                        {price:Number(this.value)}
+                    )">
+
+                <label>Notes</label>
+                <textarea
+                    placeholder="Item notes"
+                    onchange="Venues.updateOffering(
+                        '${v.id}',
+                        '${item.id}',
+                        {notes:this.value}
+                    )">${this.esc(item.notes || "")}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    Venues.removeOffering(
+                        '${v.id}',
+                        '${item.id}'
+                    );
+                    UI.renderVenues();
+                ">
+                    Remove Product / Service
+                </button>
+
+            </div>
+
+        `).join("")
+}
+
+<button onclick="
+    Venues.addOffering('${v.id}');
+    UI.renderVenues();
+">
+    + Add Product / Service
+</button>
+
+<br><br>
 
                 <label>Notes</label>
                 <textarea
@@ -1492,6 +1697,49 @@ renderInventory() {
             <p><strong>Last Visit:</strong> ${this.esc(c.lastVisit || "—")}</p>
 
             <p>
+            <h4>Products / Services Offered</h4>
+
+${
+    !Array.isArray(c.offerings) || c.offerings.length === 0
+        ? "<p>No products or services added.</p>"
+        : c.offerings.map(item => `
+
+            <div class="card">
+
+                <p>
+                    <strong>Product / Service:</strong>
+                    ${this.esc(item.name || "—")}
+                </p>
+
+                <p>
+                    <strong>Description:</strong>
+                    ${this.esc(item.description || "—")}
+                </p>
+
+                <p>
+                    <strong>Quantity:</strong>
+                    ${Number(item.quantity || 0)}
+                </p>
+
+                <p>
+                    <strong>Unit:</strong>
+                    ${this.esc(item.unit || "—")}
+                </p>
+
+                <p>
+                    <strong>Price:</strong>
+                    ${Utils.money(item.price || 0)}
+                </p>
+
+                <p>
+                    <strong>Notes:</strong>
+                    ${this.esc(item.notes || "—")}
+                </p>
+
+            </div>
+
+        `).join("")
+}
                 <strong>Tags:</strong>
                 ${this.esc((c.tags || []).join(", ") || "—")}
             </p>
@@ -1637,7 +1885,107 @@ renderInventory() {
             <input id="crmLastVisit"
                 type="date"
                 value="${this.esc(c.lastVisit || "")}">
+                
+<h4>Products / Services Offered</h4>
 
+${
+    !Array.isArray(c.offerings) || c.offerings.length === 0
+        ? "<p>No products or services added yet.</p>"
+        : c.offerings.map(item => `
+
+            <div class="card">
+
+                <label>Product / Service Name</label>
+                <input
+                    value="${this.esc(item.name || "")}"
+                    placeholder="Product or service name"
+                    onchange="CRM.updateOffering(
+                        '${c.id}',
+                        '${item.id}',
+                        {name:this.value}
+                    )">
+
+                <label>Description</label>
+                <input
+                    value="${this.esc(item.description || "")}"
+                    placeholder="Description"
+                    onchange="CRM.updateOffering(
+                        '${c.id}',
+                        '${item.id}',
+                        {description:this.value}
+                    )">
+
+                <label>Quantity</label>
+                <input
+                    type="number"
+                    min="0"
+                    value="${Number(item.quantity || 0)}"
+                    onchange="CRM.updateOffering(
+                        '${c.id}',
+                        '${item.id}',
+                        {quantity:Number(this.value)}
+                    )">
+
+                <label>Unit</label>
+                <select onchange="CRM.updateOffering(
+                    '${c.id}',
+                    '${item.id}',
+                    {unit:this.value}
+                )">
+                    <option value="Each" ${item.unit==="Each"?"selected":""}>Each</option>
+                    <option value="Hour" ${item.unit==="Hour"?"selected":""}>Hour</option>
+                    <option value="Day" ${item.unit==="Day"?"selected":""}>Day</option>
+                    <option value="Package" ${item.unit==="Package"?"selected":""}>Package</option>
+                    <option value="Case" ${item.unit==="Case"?"selected":""}>Case</option>
+                    <option value="Box" ${item.unit==="Box"?"selected":""}>Box</option>
+                    <option value="Dozen" ${item.unit==="Dozen"?"selected":""}>Dozen</option>
+                    <option value="Flat Rate" ${item.unit==="Flat Rate"?"selected":""}>Flat Rate</option>
+                    <option value="Other" ${item.unit==="Other"?"selected":""}>Other</option>
+                </select>
+
+                <label>Price</label>
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value="${Number(item.price || 0)}"
+                    onchange="CRM.updateOffering(
+                        '${c.id}',
+                        '${item.id}',
+                        {price:Number(this.value)}
+                    )">
+
+                <label>Notes</label>
+                <textarea
+                    placeholder="Item notes"
+                    onchange="CRM.updateOffering(
+                        '${c.id}',
+                        '${item.id}',
+                        {notes:this.value}
+                    )">${this.esc(item.notes || "")}</textarea>
+
+                <br><br>
+
+                <button onclick="
+                    CRM.removeOffering('${c.id}','${item.id}');
+                    UI.renderCustomerEdit('${c.id}');
+                ">
+                    Remove Product / Service
+                </button>
+
+            </div>
+
+        `).join("")
+}
+
+<button onclick="
+    CRM.addOffering('${c.id}');
+    UI.renderCustomerEdit('${c.id}');
+">
+    + Add Product / Service
+</button>
+
+<br><br>
             <label>Tags</label>
             <input id="crmTags"
                 value="${this.esc((c.tags || []).join(", "))}"
