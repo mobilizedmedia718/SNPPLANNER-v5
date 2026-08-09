@@ -49,7 +49,7 @@ const SalesUI = {
 
     render() {
         const items = this.inventoryForSale();
-        const events = Events.all().filter(e => e.status !== "Cancelled");
+        const events = Events.all().filter(e => e.status !== "Cancelled" && e.status !== "Completed");
         const customers = CRM.all();
         const workspace = document.getElementById("workspace");
         if (!workspace) return;
@@ -61,7 +61,7 @@ const SalesUI = {
                 <label>Event</label>
                 <select id="salesEventId">
                     <option value="">General / No Event</option>
-                    ${events.map(e => `<option value="${UI.esc(e.id)}">${UI.esc(e.name)}${e.date ? ` — ${UI.esc(e.date)}` : ""}</option>`).join("")}
+                    ${events.map(e => `<option value="${UI.esc(e.id)}">${UI.esc(e.name || "Untitled Event")}${e.date ? ` — ${UI.esc(e.date)}` : ""}</option>`).join("")}
                 </select>
 
                 <label>Customer</label>
@@ -91,7 +91,7 @@ const SalesUI = {
             <div class="card">
                 <h3>Checkout</h3>
                 <p><strong>Total:</strong> ${Utils.money(this.total())}</p>
-                <p>After Stripe confirms payment, SNP Planner will record the income, Stripe fee, event revenue, customer purchase history, and subtract purchased quantities from Inventory automatically.</p>
+                <p>After Stripe confirms payment, SNP Planner records the sale in Finance, updates linked Event revenue and Customer spending, and subtracts purchased quantities from Inventory automatically.</p>
                 <button type="button" onclick="SalesUI.checkout()" ${this.selectedItems().length ? "" : "disabled"}>Charge with Stripe</button>
                 <button type="button" onclick="SalesUI.clearCart()">Clear Sale</button>
             </div>
@@ -102,7 +102,7 @@ const SalesUI = {
         const id = document.getElementById("salesCustomerId")?.value || "";
         const customer = id ? CRM.get(id) : null;
         const input = document.getElementById("salesCustomerEmail");
-        if (input && customer?.email) input.value = customer.email;
+        if (input) input.value = customer?.email || "";
     },
 
     clearCart() {
