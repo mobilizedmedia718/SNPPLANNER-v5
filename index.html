@@ -3,17 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>SNP Planner V5</title>
-
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-
 <div id="app"></div>
-
 <script src="snp-supabase.js?v=7"></script>
 <script src="utils.js?v=2"></script>
 <script src="business.js"></script>
@@ -47,18 +42,15 @@
 <script src="ui-event-live-mode.js?v=3"></script>
 <script src="ui-guest-list.js?v=1"></script>
 <script src="ui-ticket-types-staff.js?v=1"></script>
+<script src="ui-ticket-inclusions.js?v=1"></script>
 <script src="ui-event-menu.js?v=1"></script>
 <script src="ui-ticket-sales.js?v=2"></script>
 <script src="ui-ticket-qr.js?v=1"></script>
 <script src="app.js?v=6"></script>
-
 <script>
 if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js");
-    });
+    window.addEventListener("load", () => { navigator.serviceWorker.register("./service-worker.js"); });
 }
 </script>
-
 </body>
 </html>
