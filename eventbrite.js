@@ -1,7 +1,9 @@
-/* Eventbrite integration restored from the original SNP Planner.
- * Uses the same secure connector contract:
+/* Eventbrite integration for SNP Planner.
+ * Secure connector routes used:
  *   GET {connectorUrl}/ticket-classes?event_id=...
  *   GET {connectorUrl}/sales?event_id=...
+ *   GET {connectorUrl}/attendees?event_id=...
+ *   GET {connectorUrl}/attendees?event_id=...&status=attending
  */
 const Eventbrite = {
     data: {
@@ -30,11 +32,16 @@ const Eventbrite = {
                 lastSync: "",
                 ticketClasses: [],
                 sales: [],
+                attendees: [],
+                checkedIn: [],
                 manualTicketsSold: null,
                 manualRevenue: null
             };
         }
-        return this.data.events[eventId];
+        const link = this.data.events[eventId];
+        if (!Array.isArray(link.attendees)) link.attendees = [];
+        if (!Array.isArray(link.checkedIn)) link.checkedIn = [];
+        return link;
     },
 
     setConnectorUrl(value) {
@@ -47,31 +54,139 @@ const Eventbrite = {
         this.save();
     },
 
-    async connectorRequest(path, plannerEventId) {
+    async connectorRequest(path, plannerEventId, params = {}) {
         const connectorUrl = String(this.data.connectorUrl || "").trim().replace(/\/$/, "");
         const link = this.link(plannerEventId);
         const eventbriteEventId = String(link.eventbriteEventId || "").trim();
 
-        if (!connectorUrl) throw new Error("Enter the Secure Connector URL.");
-        if (!eventbriteEventId) throw new Error("Enter the Eventbrite Event ID.");
+        if (!connectorUrl) throw new Error("Enter the Secure Connector URL in Eventbrite settings.");
+        if (!eventbriteEventId) throw new Error("Enter the Eventbrite Event ID for this event.");
 
-        const response = await fetch(
-            `${connectorUrl}${path}?event_id=${encodeURIComponent(eventbriteEventId)}`
-        );
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-            throw new Error(data.error || `Eventbrite connection failed (${response.status}).`);
+        const query = new URLSearchParams({ event_id: eventbriteEventId });
+        Object.entries(params || {}).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && String(value) !== "") query.set(key, String(value));
+        });
+
+        const headers = {};
+        const token = window.SNPDatabase?.session?.access_token;
+        if (token) headers.Authorization = `Bearer ${token}`;
+        if (typeof SNP_SUPABASE_PUBLISHABLE_KEY !== "undefined" && connectorUrl.includes("supabase.co/functions/v1/")) {
+            headers.apikey = SNP_SUPABASE_PUBLISHABLE_KEY;
         }
+
+        const response = await fetch(`${connectorUrl}${path}?${query.toString()}`, { headers });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || `Eventbrite connection failed (${response.status}).`);
         return data;
+    },
+
+    normalizeAttendee(item = {}) {
+        const profile = item.profile || {};
+        const barcodes = Array.isArray(item.barcodes) ? item.barcodes : [];
+        return {
+            id: String(item.id || ""),
+            eventId: String(item.event_id || ""),
+            orderId: String(item.order_id || ""),
+            firstName: profile.first_name || item.first_name || "",
+            lastName: profile.last_name || item.last_name || "",
+            name: profile.name || [profile.first_name, profile.last_name].filter(Boolean).join(" ") || item.name || "",
+            email: profile.email || item.email || "",
+            ticketClassName: item.ticket_class_name || "",
+            checkedIn: Boolean(item.checked_in) || String(item.status || "").toLowerCase() === "checked in",
+            status: item.status || "",
+            barcode: String(barcodes[0]?.barcode || item.barcode || ""),
+            barcodeStatus: barcodes[0]?.status || ""
+        };
+    },
+
+    upsertCustomerFromAttendee(attendee) {
+        const email = String(attendee.email || "").trim().toLowerCase();
+        let customer = email ? CRM.all().find(c => String(c.email || "").trim().toLowerCase() === email) : null;
+        if (!customer && attendee.id) {
+            customer = CRM.all().find(c => String(c.eventbriteAttendeeId || "") === String(attendee.id));
+        }
+
+        const updates = {
+            firstName: attendee.firstName || customer?.firstName || "",
+            lastName: attendee.lastName || customer?.lastName || "",
+            email: attendee.email || customer?.email || "",
+            eventbriteAttendeeId: attendee.id,
+            eventbriteOrderId: attendee.orderId,
+            lastVisit: attendee.checkedIn ? new Date().toISOString() : (customer?.lastVisit || ""),
+            tags: [...new Set([...(customer?.tags || []), "Eventbrite", ...(attendee.checkedIn ? ["Checked In"] : [])])]
+        };
+
+        if (!customer) customer = CRM.create(updates);
+        else CRM.update(customer.id, updates);
+        return CRM.get(customer.id);
+    },
+
+    attachPatron(plannerEventId, customerId) {
+        const event = Events.get(plannerEventId);
+        if (!event || !customerId) return;
+        const patronIds = [...new Set([...(Array.isArray(event.patronIds) ? event.patronIds : []), customerId])];
+        Events.update(plannerEventId, { patronIds });
+    },
+
+    async loadAttendees(plannerEventId) {
+        const data = await this.connectorRequest("/attendees", plannerEventId);
+        const link = this.link(plannerEventId);
+        link.attendees = (data.attendees || []).map(item => this.normalizeAttendee(item));
+        link.checkedIn = link.attendees.filter(a => a.checkedIn);
+        link.lastSync = new Date().toISOString();
+        this.save();
+        return link.attendees;
+    },
+
+    async syncCheckedIn(plannerEventId) {
+        let rows = [];
+        try {
+            const data = await this.connectorRequest("/attendees", plannerEventId, { status: "attending" });
+            rows = (data.attendees || []).map(item => this.normalizeAttendee(item));
+        } catch (error) {
+            const all = await this.loadAttendees(plannerEventId);
+            rows = all.filter(a => a.checkedIn);
+        }
+
+        const link = this.link(plannerEventId);
+        link.checkedIn = rows;
+        link.lastSync = new Date().toISOString();
+
+        const patrons = rows.map(attendee => {
+            const customer = this.upsertCustomerFromAttendee({ ...attendee, checkedIn: true });
+            this.attachPatron(plannerEventId, customer.id);
+            return customer;
+        });
+
+        this.save();
+        return patrons;
+    },
+
+    findAttendeeByBarcode(plannerEventId, barcode) {
+        const value = String(barcode || "").trim();
+        const link = this.link(plannerEventId);
+        return [...(link.attendees || []), ...(link.checkedIn || [])].find(a => String(a.barcode || "") === value) || null;
+    },
+
+    async registerScannedPatron(plannerEventId, barcode) {
+        if (!this.link(plannerEventId).attendees.length) await this.loadAttendees(plannerEventId);
+        const attendee = this.findAttendeeByBarcode(plannerEventId, barcode);
+        if (!attendee) throw new Error("This ticket barcode was not found on the Eventbrite attendee list for this event.");
+
+        const customer = this.upsertCustomerFromAttendee({ ...attendee, checkedIn: true });
+        this.attachPatron(plannerEventId, customer.id);
+
+        const link = this.link(plannerEventId);
+        if (!link.checkedIn.some(a => a.id === attendee.id)) link.checkedIn.push({ ...attendee, checkedIn: true, status: "Checked In" });
+        this.save();
+
+        return { attendee, customer };
     },
 
     async loadTicketClasses(plannerEventId) {
         const data = await this.connectorRequest("/ticket-classes", plannerEventId);
         const link = this.link(plannerEventId);
-        link.ticketClasses = (data.ticket_classes || data.ticketClasses || []).map(item => ({
-            id: String(item.id),
-            name: item.name || ""
-        }));
+        link.ticketClasses = (data.ticket_classes || data.ticketClasses || []).map(item => ({ id: String(item.id), name: item.name || "" }));
         link.lastSync = new Date().toISOString();
         this.save();
         return link.ticketClasses;
@@ -115,11 +230,7 @@ const Eventbrite = {
             actualRevenue: Number(link.manualRevenue || 0) + eventbriteRevenue
         });
 
-        return {
-            eventbriteTicketsSold,
-            eventbriteRevenue,
-            sales: link.sales
-        };
+        return { eventbriteTicketsSold, eventbriteRevenue, sales: link.sales };
     }
 };
 
