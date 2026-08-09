@@ -28,6 +28,7 @@ const Events = {
             theme: "",
             instructor: "",
             offerings: [],
+            patronIds: [],
             notes: "",
             setupStartedAt: "",
             eventStartedAt: "",
@@ -83,26 +84,17 @@ const Events = {
     },
 
     totalTicketsSold() {
-        return this.data.reduce(
-            (sum, event) => sum + Number(event.ticketsSold || 0),
-            0
-        );
+        return this.data.reduce((sum, event) => sum + Number(event.ticketsSold || 0), 0);
     },
 
     totalRevenue() {
-        return this.data.reduce(
-            (sum, event) => sum + Number(event.actualRevenue || 0),
-            0
-        );
+        return this.data.reduce((sum, event) => sum + Number(event.actualRevenue || 0), 0);
     },
 
     addOffering(eventId) {
         const event = this.get(eventId);
         if (!event) return;
-
-        if (!Array.isArray(event.offerings)) {
-            event.offerings = [];
-        }
+        if (!Array.isArray(event.offerings)) event.offerings = [];
 
         event.offerings.push({
             id: Utils.id(),
@@ -120,10 +112,8 @@ const Events = {
     updateOffering(eventId, offeringId, updates) {
         const event = this.get(eventId);
         if (!event || !Array.isArray(event.offerings)) return;
-
         const offering = event.offerings.find(item => item.id === offeringId);
         if (!offering) return;
-
         Object.assign(offering, updates);
         this.save();
     },
@@ -131,7 +121,6 @@ const Events = {
     removeOffering(eventId, offeringId) {
         const event = this.get(eventId);
         if (!event || !Array.isArray(event.offerings)) return;
-
         event.offerings = event.offerings.filter(item => item.id !== offeringId);
         this.save();
     },
