@@ -73,6 +73,7 @@ const Utils = {
             exported: new Date().toISOString(),
             business: typeof Business !== "undefined" ? Business.data : {},
             settings: typeof Settings !== "undefined" ? Settings.data : {},
+            eventbrite: typeof Eventbrite !== "undefined" ? Eventbrite.data : {},
             events: typeof Events !== "undefined" ? Events.all() : [],
             venues: typeof Venues !== "undefined" ? Venues.all() : [],
             vendors: typeof Vendors !== "undefined" ? Vendors.all() : [],
@@ -108,6 +109,7 @@ const Utils = {
                 const entries = [
                     ["business", backup.business, value => !!value],
                     ["settings", backup.settings, value => !!value],
+                    ["eventbrite", backup.eventbrite, value => !!value && typeof value === "object"],
                     ["events", backup.events, Array.isArray],
                     ["venues", backup.venues, Array.isArray],
                     ["vendors", backup.vendors, Array.isArray],
