@@ -33,6 +33,8 @@ const Vendors = {
             country: "",
             paymentType: "Flat Rate",
             flatRate: 0,
+            hourlyRate: 0,
+            hours: 0,
             percentage: 0,
             minimumGuarantee: 0,
             payoutStatus: "Unpaid",
@@ -88,6 +90,10 @@ const Vendors = {
                 Number(vendor.minimumGuarantee || 0),
                 Number(revenue || 0) * Number(vendor.percentage || 0) / 100
             );
+        }
+
+        if (vendor.paymentType === "Hourly") {
+            return Number(vendor.hourlyRate || 0) * Number(vendor.hours || 0);
         }
 
         return Number(vendor.flatRate || 0);
