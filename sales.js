@@ -39,11 +39,33 @@ const SalesUI = {
         return ids.map(id => CRM.get(id)).filter(Boolean);
     },
 
+    async refreshCloudState() {
+        try {
+            if (SNPDatabase.session?.access_token) {
+                await SNPDatabase.syncCloudToLocal();
+                CRM.load();
+                Events.load();
+                Inventory.load();
+                Eventbrite.load();
+            }
+        } catch (error) {
+            console.warn("Sales cloud refresh skipped:", error);
+        }
+    },
+
     async open() {
         const liveId = window.LiveEvent?.activeId || "";
         if (liveId) this.selectedEventId = liveId;
         this.selectedCustomerId = "";
         this.cart = {};
+
+        await this.refreshCloudState();
+
+        const eventId = this.activeEventId();
+        if (eventId && Eventbrite.link(eventId).eventbriteEventId) {
+            try { await Eventbrite.syncCheckedIn(eventId); } catch (error) { console.warn("Eventbrite auto check-in sync skipped:", error); }
+        }
+
         await this.renderPatronPicker();
     },
 
@@ -70,13 +92,13 @@ const SalesUI = {
         }
 
         const event = Events.get(eventId);
-        let patrons = this.patronsForEvent(eventId);
+        const patrons = this.patronsForEvent(eventId);
 
         workspace.innerHTML = `
             <h2>Sales — ${UI.esc(event?.name || "Event")}</h2>
             <div class="card">
                 <h3>Who are you charging?</h3>
-                <p>Checked-in Eventbrite patrons appear here automatically after sync.</p>
+                <p>Checked-in Eventbrite patrons appear here automatically.</p>
                 <button type="button" onclick="SalesUI.syncPatrons()">Refresh Checked-In Patrons</button>
                 <button type="button" onclick="CheckInUI.open('${UI.esc(eventId)}')">Check In / Scan Ticket</button>
                 ${window.LiveEvent?.activeId ? "" : `<button type="button" onclick="SalesUI.changeEvent()">Change Event</button>`}
@@ -97,7 +119,7 @@ const SalesUI = {
 
     chooseEvent(eventId) {
         this.selectedEventId = eventId;
-        this.renderPatronPicker();
+        this.open();
     },
 
     changeEvent() {
