@@ -151,6 +151,7 @@
                 topbarRight.innerHTML = `
                     <button type="button" onclick="LiveEvent.chooseEvent()">Event</button>
                     <button type="button" onclick="SalesUI.open()">Sales</button>
+                    <button type="button" onclick="SalesUI.openMenu('${UI.esc(eventId)}')">Menu</button>
                     <button type="button" onclick="TicketSalesUI.open('${UI.esc(eventId)}')">Sell Ticket</button>
                     <button type="button" onclick="CheckInUI.open('${UI.esc(eventId)}')">Scan / Check In</button>
                     <button type="button" onclick="LiveEvent.practiceQR('${UI.esc(eventId)}')">Practice QR</button>
