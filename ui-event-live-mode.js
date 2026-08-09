@@ -1,4 +1,4 @@
-/* Live Event Mode: setup -> event -> breakdown timing, with focused event controls. */
+/* Live Event Mode: setup -> event -> breakdown timing, with focused event controls in the top bar. */
 (function () {
     if (typeof UI === "undefined" || typeof Events === "undefined") return;
 
@@ -23,7 +23,6 @@
 
     const LiveEvent = {
         activeId: localStorage.getItem(ACTIVE_KEY) || "",
-
         get activeEvent() { return this.activeId ? Events.get(this.activeId) : null; },
 
         startSetup(eventId) {
@@ -98,6 +97,31 @@
             if (goDashboard) UI.renderDashboard();
         },
 
+        chooseEvent() {
+            const choices = Events.all().filter(e => e.status !== "Cancelled");
+            const workspace = document.getElementById("workspace");
+            if (!workspace) return;
+            workspace.innerHTML = `
+                <div class="card">
+                    <h2>Select Event</h2>
+                    ${choices.length ? choices.map(e => `
+                        <button type="button" style="display:block;width:100%;margin:8px 0;padding:14px;text-align:left;" onclick="LiveEvent.selectEvent('${UI.esc(e.id)}')">
+                            <strong>${UI.esc(e.name || "Untitled Event")}</strong>${e.date ? `<br><small>${UI.esc(e.date)}</small>` : ""}
+                        </button>
+                    `).join("") : `<p>No events available.</p>`}
+                </div>
+            `;
+        },
+
+        selectEvent(eventId) {
+            const event = Events.get(eventId);
+            if (!event) return;
+            this.activeId = eventId;
+            localStorage.setItem(ACTIVE_KEY, eventId);
+            if (["setup","event","breakdown"].includes(event.lifecycleStage)) this.enter(eventId);
+            else UI.renderEventDetail(eventId);
+        },
+
         applyFocusedLayout() {
             const sidebar = document.getElementById("sidebar");
             if (sidebar) sidebar.style.display = "none";
@@ -105,9 +129,19 @@
             if (layout) layout.style.gridTemplateColumns = "1fr";
 
             const eventId = this.activeId;
+            const topbar = document.querySelector(".topbar");
+            if (topbar) topbar.classList.add("live-event-topbar");
+            const logo = document.querySelector(".logo");
+            if (logo) logo.style.display = "none";
+
             const topbarRight = document.querySelector(".topbar-right");
             if (topbarRight) {
+                topbarRight.style.width = "100%";
+                topbarRight.style.display = "grid";
+                topbarRight.style.gridTemplateColumns = "repeat(auto-fit,minmax(150px,1fr))";
+                topbarRight.style.gap = "10px";
                 topbarRight.innerHTML = `
+                    <button type="button" onclick="LiveEvent.chooseEvent()">Event</button>
                     <button type="button" onclick="SalesUI.open()">Sales</button>
                     <button type="button" onclick="TicketSalesUI.open('${UI.esc(eventId)}')">Sell Ticket</button>
                     <button type="button" onclick="CheckInUI.open('${UI.esc(eventId)}')">Check In</button>
@@ -149,10 +183,6 @@
                     <p><strong>Total operational time:</strong> ${formatDuration(total)}</p>
                     <br>
                     ${this.renderStageControls(event)}
-                    <button type="button" onclick="SalesUI.open()">Sales</button>
-                    <button type="button" onclick="TicketSalesUI.open('${UI.esc(event.id)}')">Sell Ticket</button>
-                    <button type="button" onclick="CheckInUI.open('${UI.esc(event.id)}')">Check In / Scan Ticket</button>
-                    <button type="button" onclick="LiveEvent.exit(true)">Back to Dashboard</button>
                 </div>
             `;
         },
@@ -187,11 +217,20 @@
 
     window.LiveEvent = LiveEvent;
 
-    /* Always-visible Sales shortcut in the normal top bar. */
     const originalRenderLayout = UI.renderLayout;
     UI.renderLayout = function (...args) {
         const result = originalRenderLayout.apply(this, args);
         const topbarRight = document.querySelector(".topbar-right");
+        if (topbarRight && !document.getElementById("topEventButton")) {
+            const eventBtn = document.createElement("button");
+            eventBtn.id = "topEventButton";
+            eventBtn.type = "button";
+            eventBtn.textContent = "Event";
+            eventBtn.onclick = () => LiveEvent.chooseEvent();
+            const firstButton = topbarRight.querySelector("button");
+            if (firstButton) topbarRight.insertBefore(eventBtn, firstButton);
+            else topbarRight.appendChild(eventBtn);
+        }
         if (topbarRight && !document.getElementById("topSalesButton") && typeof SalesUI !== "undefined") {
             const sales = document.createElement("button");
             sales.id = "topSalesButton";
