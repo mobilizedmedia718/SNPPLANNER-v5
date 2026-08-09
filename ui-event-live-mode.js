@@ -123,6 +123,13 @@
             else UI.renderEventDetail(eventId);
         },
 
+        async practiceQR(eventId = "") {
+            const id = eventId || this.activeId;
+            if (!id || typeof CheckInUI === "undefined") return;
+            await CheckInUI.open(id);
+            setTimeout(() => CheckInUI.showPracticeQR(), 0);
+        },
+
         applyFocusedLayout() {
             const sidebar = document.getElementById("sidebar");
             if (sidebar) sidebar.style.display = "none";
@@ -139,22 +146,21 @@
             if (topbarRight) {
                 topbarRight.style.width = "100%";
                 topbarRight.style.display = "grid";
-                topbarRight.style.gridTemplateColumns = "repeat(auto-fit,minmax(150px,1fr))";
+                topbarRight.style.gridTemplateColumns = "repeat(auto-fit,minmax(130px,1fr))";
                 topbarRight.style.gap = "10px";
                 topbarRight.innerHTML = `
                     <button type="button" onclick="LiveEvent.chooseEvent()">Event</button>
                     <button type="button" onclick="SalesUI.open()">Sales</button>
                     <button type="button" onclick="TicketSalesUI.open('${UI.esc(eventId)}')">Sell Ticket</button>
-                    <button type="button" onclick="CheckInUI.open('${UI.esc(eventId)}')">Check In</button>
+                    <button type="button" onclick="CheckInUI.open('${UI.esc(eventId)}')">Scan / Check In</button>
+                    <button type="button" onclick="LiveEvent.practiceQR('${UI.esc(eventId)}')">Practice QR</button>
                     <button type="button" onclick="LiveEvent.enter('${UI.esc(eventId)}')">Event Controls</button>
                     <button type="button" onclick="LiveEvent.exit(true)">Dashboard</button>
                 `;
             }
         },
 
-        restoreLayout() {
-            UI.renderLayout();
-        },
+        restoreLayout() { UI.renderLayout(); },
 
         renderStageControls(event) {
             const stage = event.lifecycleStage || "";
@@ -200,19 +206,7 @@
 
         timingSummary(event) {
             if (!event?.setupStartedAt) return "";
-            return `
-                <div class="card">
-                    <h3>Operational Time Tracking</h3>
-                    <p><strong>Setup started:</strong> ${formatTimestamp(event.setupStartedAt)}</p>
-                    <p><strong>Event started:</strong> ${formatTimestamp(event.eventStartedAt)}</p>
-                    <p><strong>Event ended:</strong> ${formatTimestamp(event.eventEndedAt)}</p>
-                    <p><strong>Breakdown finished:</strong> ${formatTimestamp(event.breakdownEndedAt)}</p>
-                    <p><strong>Setup:</strong> ${formatDuration(event.setupMinutes)}</p>
-                    <p><strong>Event:</strong> ${formatDuration(event.eventRunMinutes)}</p>
-                    <p><strong>Breakdown:</strong> ${formatDuration(event.breakdownMinutes)}</p>
-                    <p><strong>Total operational time:</strong> ${formatDuration(event.totalOperationalMinutes)}</p>
-                </div>
-            `;
+            return `<div class="card"><h3>Operational Time Tracking</h3><p><strong>Setup started:</strong> ${formatTimestamp(event.setupStartedAt)}</p><p><strong>Event started:</strong> ${formatTimestamp(event.eventStartedAt)}</p><p><strong>Event ended:</strong> ${formatTimestamp(event.eventEndedAt)}</p><p><strong>Breakdown finished:</strong> ${formatTimestamp(event.breakdownEndedAt)}</p><p><strong>Setup:</strong> ${formatDuration(event.setupMinutes)}</p><p><strong>Event:</strong> ${formatDuration(event.eventRunMinutes)}</p><p><strong>Breakdown:</strong> ${formatDuration(event.breakdownMinutes)}</p><p><strong>Total operational time:</strong> ${formatDuration(event.totalOperationalMinutes)}</p></div>`;
         }
     };
 
@@ -223,28 +217,14 @@
         const result = originalRenderLayout.apply(this, args);
         const topbarRight = document.querySelector(".topbar-right");
         if (topbarRight && !document.getElementById("topEventButton")) {
-            const eventBtn = document.createElement("button");
-            eventBtn.id = "topEventButton";
-            eventBtn.type = "button";
-            eventBtn.textContent = "Event";
-            eventBtn.onclick = () => LiveEvent.chooseEvent();
-            const firstButton = topbarRight.querySelector("button");
-            if (firstButton) topbarRight.insertBefore(eventBtn, firstButton);
-            else topbarRight.appendChild(eventBtn);
+            const eventBtn = document.createElement("button"); eventBtn.id = "topEventButton"; eventBtn.type = "button"; eventBtn.textContent = "Event"; eventBtn.onclick = () => LiveEvent.chooseEvent();
+            const firstButton = topbarRight.querySelector("button"); if (firstButton) topbarRight.insertBefore(eventBtn, firstButton); else topbarRight.appendChild(eventBtn);
         }
         if (topbarRight && !document.getElementById("topSalesButton") && typeof SalesUI !== "undefined") {
-            const sales = document.createElement("button");
-            sales.id = "topSalesButton";
-            sales.type = "button";
-            sales.textContent = "Sales";
-            sales.onclick = () => SalesUI.open();
-            const firstButton = topbarRight.querySelector("button");
-            if (firstButton) topbarRight.insertBefore(sales, firstButton);
-            else topbarRight.appendChild(sales);
+            const sales = document.createElement("button"); sales.id = "topSalesButton"; sales.type = "button"; sales.textContent = "Sales"; sales.onclick = () => SalesUI.open();
+            const firstButton = topbarRight.querySelector("button"); if (firstButton) topbarRight.insertBefore(sales, firstButton); else topbarRight.appendChild(sales);
         }
-        if (LiveEvent.activeEvent && ["setup","event","breakdown"].includes(LiveEvent.activeEvent.lifecycleStage)) {
-            setTimeout(() => LiveEvent.enter(LiveEvent.activeId), 0);
-        }
+        if (LiveEvent.activeEvent && ["setup","event","breakdown"].includes(LiveEvent.activeEvent.lifecycleStage)) setTimeout(() => LiveEvent.enter(LiveEvent.activeId), 0);
         return result;
     };
 
@@ -254,11 +234,9 @@
         const event = Events.get(id);
         const workspace = document.getElementById("workspace");
         if (!event || !workspace) return result;
-
         const card = workspace.querySelector(".card");
         if (card) {
-            const controls = document.createElement("div");
-            controls.className = "card";
+            const controls = document.createElement("div"); controls.className = "card";
             controls.innerHTML = event.setupStartedAt && !["finished"].includes(event.lifecycleStage)
                 ? `<h3>Event Operations</h3><button type="button" onclick="LiveEvent.enter('${UI.esc(id)}')">Return to Live Event Mode</button>`
                 : event.lifecycleStage === "finished"
