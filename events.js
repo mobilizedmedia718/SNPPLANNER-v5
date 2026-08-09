@@ -29,6 +29,8 @@ const Events = {
             instructor: "",
             offerings: [],
             notes: "",
+            closedOutAt: "",
+            closeoutSnapshot: null,
             created: Utils.date(),
             ...eventData
         };
