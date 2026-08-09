@@ -34,8 +34,8 @@ const Inventory = {
             calculatedUnitCost: 0,
 
             purchaseDate: "",
-invoiceNumber: "",
-purchaseNotes: "",
+            invoiceNumber: "",
+            purchaseNotes: "",
 
             /* Existing cost field remains for reports */
             cost: 0,
@@ -50,99 +50,51 @@ purchaseNotes: "",
         };
 
         this.items.push(item);
-
         this.recalculatePurchase(item.id);
-
         this.save();
-
         return item;
     },
 
     update(id, updates) {
-
         const item = this.items.find(i => i.id === id);
-
         if (!item) return;
-
         Object.assign(item, updates);
-
         this.recalculatePurchase(id);
-
         this.save();
     },
 
     recalculatePurchase(id) {
-
         const item = this.get(id);
-
         if (!item) return;
 
-        const purchaseQuantity =
-            Math.max(0, Number(item.purchaseQuantity || 0));
-
-        const unitsPerPurchase =
-            Math.max(1, Number(item.unitsPerPurchase || 1));
-
-        const purchaseCost =
-            Math.max(0, Number(item.purchaseCost || 0));
-
-        const totalUnits =
-            purchaseQuantity * unitsPerPurchase;
+        const purchaseQuantity = Math.max(0, Number(item.purchaseQuantity || 0));
+        const unitsPerPurchase = Math.max(1, Number(item.unitsPerPurchase || 1));
+        const purchaseCost = Math.max(0, Number(item.purchaseCost || 0));
+        const totalUnits = purchaseQuantity * unitsPerPurchase;
 
         let totalPurchaseCost = 0;
         let unitCost = 0;
 
         if (item.purchaseCostType === "Per Purchase Unit") {
-
-            totalPurchaseCost =
-                purchaseCost * purchaseQuantity;
-
-            unitCost =
-                unitsPerPurchase > 0
-                    ? purchaseCost / unitsPerPurchase
-                    : 0;
-
-        } else if (
-            item.purchaseCostType === "Per Individual Unit"
-        ) {
-
-            totalPurchaseCost =
-                purchaseCost * totalUnits;
-
+            totalPurchaseCost = purchaseCost * purchaseQuantity;
+            unitCost = unitsPerPurchase > 0 ? purchaseCost / unitsPerPurchase : 0;
+        } else if (item.purchaseCostType === "Per Individual Unit") {
+            totalPurchaseCost = purchaseCost * totalUnits;
             unitCost = purchaseCost;
-
         } else {
-
-            /* Total Purchase */
-
             totalPurchaseCost = purchaseCost;
-
-            unitCost =
-                totalUnits > 0
-                    ? totalPurchaseCost / totalUnits
-                    : 0;
+            unitCost = totalUnits > 0 ? totalPurchaseCost / totalUnits : 0;
         }
 
         item.totalPurchaseCost = totalPurchaseCost;
         item.calculatedUnitCost = unitCost;
-
-        /*
-         Keep the existing cost field synchronized
-         so reports continue working.
-        */
         item.cost = unitCost;
     },
 
     purchaseUnits(id) {
-
         const item = this.get(id);
-
         if (!item) return 0;
-
-        return (
-            Number(item.purchaseQuantity || 0) *
-            Number(item.unitsPerPurchase || 1)
-        );
+        return Number(item.purchaseQuantity || 0) * Number(item.unitsPerPurchase || 1);
     },
 
     remove(id) {
@@ -159,58 +111,35 @@ purchaseNotes: "",
     },
 
     lowStock() {
-        return this.items.filter(
-            item =>
-                item.status !== "Inactive" &&
-                Number(item.quantity || 0) <=
-                Number(item.minimum || 0)
-        );
+        return this.items.filter(item => item.status !== "Inactive" && Number(item.quantity || 0) <= Number(item.minimum || 0));
     },
 
     totalUnits() {
-        return this.items.reduce(
-            (sum, item) =>
-                sum + Number(item.quantity || 0),
-            0
-        );
+        return this.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     },
 
     totalCostValue() {
-        return this.items.reduce(
-            (sum, item) =>
-                sum +
-                Number(item.quantity || 0) *
-                Number(item.cost || 0),
-            0
-        );
+        return this.items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.cost || 0), 0);
     },
 
     totalRetailValue() {
-        return this.items.reduce(
-            (sum, item) =>
-                sum +
-                Number(item.quantity || 0) *
-                Number(item.sellPrice || 0),
-            0
-        );
+        return this.items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.sellPrice || 0), 0);
     },
 
     potentialProfit() {
-        return (
-            this.totalRetailValue() -
-            this.totalCostValue()
-        );
+        return this.totalRetailValue() - this.totalCostValue();
     },
-    categories() {
 
-    return [
-        ...new Set(
-            this.items
-                .map(item => String(item.category || "").trim())
-                .filter(Boolean)
-        )
-    ].sort();
-},
+    categories() {
+        return [
+            ...new Set([
+                "Event Sales",
+                ...this.items
+                    .map(item => String(item.category || "").trim())
+                    .filter(Boolean)
+            ])
+        ].sort();
+    }
 
 };
 
