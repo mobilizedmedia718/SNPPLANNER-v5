@@ -1,4 +1,4 @@
-/* Live Event Mode: setup -> event -> breakdown timing, with focused Sales navigation. */
+/* Live Event Mode: setup -> event -> breakdown timing, with focused event controls. */
 (function () {
     if (typeof UI === "undefined" || typeof Events === "undefined") return;
 
@@ -104,10 +104,14 @@
             const layout = document.querySelector(".layout");
             if (layout) layout.style.gridTemplateColumns = "1fr";
 
+            const eventId = this.activeId;
             const topbarRight = document.querySelector(".topbar-right");
             if (topbarRight) {
                 topbarRight.innerHTML = `
-                    <button type="button" onclick="SalesUI.render()">Sales</button>
+                    <button type="button" onclick="SalesUI.open()">Sales</button>
+                    <button type="button" onclick="TicketSalesUI.open('${UI.esc(eventId)}')">Sell Ticket</button>
+                    <button type="button" onclick="CheckInUI.open('${UI.esc(eventId)}')">Check In</button>
+                    <button type="button" onclick="LiveEvent.enter('${UI.esc(eventId)}')">Event Controls</button>
                     <button type="button" onclick="LiveEvent.exit(true)">Dashboard</button>
                 `;
             }
@@ -145,7 +149,9 @@
                     <p><strong>Total operational time:</strong> ${formatDuration(total)}</p>
                     <br>
                     ${this.renderStageControls(event)}
-                    <button type="button" onclick="SalesUI.render()">Open Sales</button>
+                    <button type="button" onclick="SalesUI.open()">Sales</button>
+                    <button type="button" onclick="TicketSalesUI.open('${UI.esc(event.id)}')">Sell Ticket</button>
+                    <button type="button" onclick="CheckInUI.open('${UI.esc(event.id)}')">Check In / Scan Ticket</button>
                     <button type="button" onclick="LiveEvent.exit(true)">Back to Dashboard</button>
                 </div>
             `;
@@ -191,7 +197,7 @@
             sales.id = "topSalesButton";
             sales.type = "button";
             sales.textContent = "Sales";
-            sales.onclick = () => SalesUI.render();
+            sales.onclick = () => SalesUI.open();
             const firstButton = topbarRight.querySelector("button");
             if (firstButton) topbarRight.insertBefore(sales, firstButton);
             else topbarRight.appendChild(sales);
