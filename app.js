@@ -24,7 +24,7 @@ const SNPPlanner = {
 
     async startApplication() {
         try {
-            // Pull this user's cloud records before any module reads local state.
+            // Pull this user's cloud records before modules refresh their in-memory state.
             // On the first migration, an empty cloud account is seeded from the
             // SNP Planner records already present in this browser.
             await SNPDatabase.syncCloudToLocal();
@@ -32,6 +32,7 @@ const SNPPlanner = {
             Settings.load();
             Business.load();
             Events.load();
+            if (typeof Eventbrite !== "undefined" && typeof Eventbrite.load === "function") Eventbrite.load();
             Venues.load();
             Vendors.load();
             Inventory.load();
