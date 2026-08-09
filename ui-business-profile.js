@@ -4,6 +4,7 @@
     if (typeof UI === "undefined" || typeof Business === "undefined" || typeof Utils === "undefined") return;
 
     UI._businessEditing = false;
+    UI._pendingBusinessLogo = null;
 
     UI.renderBusiness = function () {
         const b = Business.data || {};
@@ -11,7 +12,7 @@
             b.name || b.owner || b.ownerTitle || b.phone || b.alternatePhone ||
             b.email || b.website || b.instagram || b.facebook || b.address ||
             b.address2 || b.city || b.state || b.zip || b.country || b.taxId ||
-            b.notes || Number(b.taxRate || 0)
+            b.notes || b.logo || Number(b.taxRate || 0)
         );
 
         if (!hasSavedData || this._businessEditing) {
@@ -26,6 +27,7 @@
         document.getElementById("workspace").innerHTML = `
             <h2>Business Profile</h2>
             <div class="card">
+                ${b.logo ? `<div style="margin-bottom:18px;"><img src="${this.esc(b.logo)}" alt="Business logo" style="max-width:220px;max-height:140px;object-fit:contain;"></div>` : ""}
                 <h3>${this.esc(b.name || "Business Profile")}</h3>
                 ${b.owner ? `<p><strong>Owner:</strong> ${this.esc(b.owner)}${b.ownerTitle ? ` — ${this.esc(b.ownerTitle)}` : ""}</p>` : ""}
                 ${b.phone ? `<p><strong>Phone:</strong> ${this.esc(b.phone)}</p>` : ""}
@@ -46,6 +48,7 @@
 
     UI.renderBusinessEditor = function () {
         const b = Business.data || {};
+        this._pendingBusinessLogo = null;
 
         document.getElementById("workspace").innerHTML = `
             <h2>Business Profile</h2>
@@ -53,7 +56,16 @@
                 <label>Business Name</label><input id="businessName" value="${this.esc(b.name || "")}">
                 <label>Owner</label><input id="businessOwner" value="${this.esc(b.owner || "")}">
                 <label>Owner Title</label><input id="businessOwnerTitle" value="${this.esc(b.ownerTitle || "")}">
-                <label>Logo URL</label><input id="businessLogo" value="${this.esc(b.logo || "")}">
+
+                <label>Business Logo</label>
+                <input id="businessLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onchange="UI.previewBusinessLogo(this.files[0])">
+                <p style="font-size:.9em;opacity:.8;">Choose a PNG, JPG, WebP, or GIF. The logo will be saved with your business profile and synced with your account.</p>
+                <div id="businessLogoPreview" style="margin:10px 0 18px;">
+                    ${b.logo ? `<img src="${this.esc(b.logo)}" alt="Business logo preview" style="max-width:220px;max-height:140px;object-fit:contain;display:block;margin-bottom:8px;">` : ""}
+                    ${b.logo ? `<button type="button" onclick="UI.removeBusinessLogo();">Remove Logo</button>` : ""}
+                </div>
+
+                <label>Logo URL (optional alternative)</label><input id="businessLogo" value="${b.logo && !String(b.logo).startsWith("data:") ? this.esc(b.logo) : ""}" placeholder="https://...">
                 <label>Phone</label><input id="businessPhone" value="${this.esc(b.phone || "")}">
                 <label>Alternate Phone</label><input id="businessAlternatePhone" value="${this.esc(b.alternatePhone || "")}">
                 <label>Email</label><input id="businessEmail" type="email" value="${this.esc(b.email || "")}">
@@ -76,13 +88,55 @@
         `;
     };
 
+    UI.previewBusinessLogo = function (file) {
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            alert("Please choose an image file.");
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            alert("Please use a logo image smaller than 2 MB.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function () {
+            UI._pendingBusinessLogo = String(reader.result || "");
+            const preview = document.getElementById("businessLogoPreview");
+            if (preview) {
+                preview.innerHTML = `
+                    <img src="${UI.esc(UI._pendingBusinessLogo)}" alt="Business logo preview" style="max-width:220px;max-height:140px;object-fit:contain;display:block;margin-bottom:8px;">
+                    <button type="button" onclick="UI.removeBusinessLogo();">Remove Logo</button>
+                `;
+            }
+            const url = document.getElementById("businessLogo");
+            if (url) url.value = "";
+        };
+        reader.readAsDataURL(file);
+    };
+
+    UI.removeBusinessLogo = function () {
+        UI._pendingBusinessLogo = "";
+        const preview = document.getElementById("businessLogoPreview");
+        if (preview) preview.innerHTML = "<p>No logo selected.</p>";
+        const file = document.getElementById("businessLogoFile");
+        if (file) file.value = "";
+        const url = document.getElementById("businessLogo");
+        if (url) url.value = "";
+    };
+
     UI.saveBusinessProfile = function () {
+        const urlLogo = document.getElementById("businessLogo").value.trim();
+        const logo = this._pendingBusinessLogo !== null
+            ? this._pendingBusinessLogo
+            : (urlLogo || Business.data.logo || "");
+
         Business.data = {
             ...Business.data,
             name: document.getElementById("businessName").value,
             owner: document.getElementById("businessOwner").value,
             ownerTitle: document.getElementById("businessOwnerTitle").value,
-            logo: document.getElementById("businessLogo").value,
+            logo,
             phone: document.getElementById("businessPhone").value,
             alternatePhone: document.getElementById("businessAlternatePhone").value,
             email: document.getElementById("businessEmail").value,
@@ -101,6 +155,7 @@
         };
 
         Utils.save("business", Business.data);
+        this._pendingBusinessLogo = null;
         this._businessEditing = false;
         this.renderBusiness();
     };
