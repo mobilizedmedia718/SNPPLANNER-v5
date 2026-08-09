@@ -81,7 +81,8 @@ const Utils = {
             customers: typeof CRM !== "undefined" ? CRM.all() : [],
             transactions: typeof Finance !== "undefined" ? Finance.all() : [],
             assets: typeof Assets !== "undefined" ? Assets.all() : [],
-            calendar: typeof Calendar !== "undefined" ? Calendar.all() : []
+            calendar: typeof Calendar !== "undefined" ? Calendar.all() : [],
+            promoAgent: typeof PromoAgent !== "undefined" ? PromoAgent.state : {}
         };
     },
 
@@ -117,7 +118,8 @@ const Utils = {
                     ["customers", backup.customers, Array.isArray],
                     ["transactions", backup.transactions, Array.isArray],
                     ["assets", backup.assets, Array.isArray],
-                    ["calendar", backup.calendar, Array.isArray]
+                    ["calendar", backup.calendar, Array.isArray],
+                    ["promoAgent", backup.promoAgent, value => !!value && typeof value === "object"]
                 ];
 
                 const cloudWrites = [];
