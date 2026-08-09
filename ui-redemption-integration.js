@@ -14,7 +14,11 @@
   }
   if(typeof EventMenu!=='undefined'){
     const oldCard=EventMenu.card.bind(EventMenu);
-    EventMenu.card=function(event){const base=oldCard(event);const link=`https://mobilizedmedia718.github.io/SNPPLANNER-v5/preorder.html?event_id=${encodeURIComponent(event.id)}`;return base.replace('</div>',`<hr><h4>Customer Preorder Link</h4><p>Customers can order and pay for event menu items before arrival. Their paid order receives a one-time redemption QR.</p><input readonly value="${UI.esc(link)}" onclick="this.select()"><button type="button" onclick="navigator.clipboard?.writeText('${UI.esc(link)}').then(()=>alert('Preorder link copied.')).catch(()=>alert('Select and copy the link above.'))">Copy Preorder Link</button><button type="button" onclick="window.open('${UI.esc(link)}','_blank')">Open Customer Menu</button></div>`);};
+    EventMenu.card=function(event){
+      const base=oldCard(event);
+      const link=`https://mobilizedmedia718.github.io/SNPPLANNER-v5/preorder.html?event_id=${encodeURIComponent(event.id)}`;
+      return base+`<div class="card"><h3>Customer Preorder Link</h3><p>Customers can order and pay for event menu items before arrival. Their paid order receives a QR code for one-time item redemption.</p><input readonly value="${UI.esc(link)}" onclick="this.select()"><button type="button" onclick="navigator.clipboard?.writeText('${UI.esc(link)}').then(()=>alert('Preorder link copied.')).catch(()=>alert('Select and copy the link above.'))">Copy Preorder Link</button><button type="button" onclick="window.open('${UI.esc(link)}','_blank')">Open Customer Menu</button></div>`;
+    };
   }
   if(typeof LiveEvent!=='undefined'){
     const oldApply=LiveEvent.applyFocusedLayout.bind(LiveEvent);
