@@ -1,4 +1,4 @@
-/* Stripe ticket sales + unified guest list for SNP Planner */
+/* Stripe ticket sales for SNP Planner */
 (function () {
     if (typeof UI === "undefined" || typeof Events === "undefined" || typeof SNPStripePayments === "undefined") return;
 
@@ -32,7 +32,6 @@
                         <button type="button" onclick="UI.renderEventEdit('${UI.esc(eventId)}')">Edit Ticket Price</button>
                     `}
                 </div>
-                ${this.guestListHtml(event)}
             `;
         },
 
@@ -67,45 +66,6 @@
             } catch (error) {
                 alert(error?.message || "Unable to start ticket checkout.");
             }
-        },
-
-        guestListHtml(event) {
-            const guests = Array.isArray(event.guestList) ? event.guestList : [];
-            const patrons = Array.isArray(event.patronIds) ? event.patronIds.map(id => CRM.get(id)).filter(Boolean) : [];
-            const sourceGuests = guests.map(g => {
-                const c = CRM.get(g.customerId);
-                return {
-                    name: c ? (CRM.fullName(c) || c.email || "Guest") : "Guest",
-                    email: c?.email || "",
-                    source: g.source || "Unknown",
-                    status: g.checkedIn ? "Checked In" : (g.status || "Confirmed"),
-                    quantity: Number(g.ticketQuantity || 1)
-                };
-            });
-            const knownIds = new Set(guests.map(g => String(g.customerId || "")));
-            patrons.forEach(c => {
-                if (!knownIds.has(String(c.id))) {
-                    sourceGuests.push({
-                        name: CRM.fullName(c) || c.email || "Patron",
-                        email: c.email || "",
-                        source: (c.tags || []).includes("Eventbrite") ? "Eventbrite" : ((c.tags || []).includes("Stripe") ? "Stripe" : "SNP Planner"),
-                        status: (c.tags || []).includes("Checked In") ? "Checked In" : "Confirmed",
-                        quantity: 1
-                    });
-                }
-            });
-
-            return `
-                <div class="card">
-                    <h3>Guest / Patron List</h3>
-                    ${sourceGuests.length ? sourceGuests.map(g => `
-                        <div style="padding:10px 0;border-bottom:1px solid #eee;">
-                            <strong>${UI.esc(g.name)}</strong>${g.email ? ` — ${UI.esc(g.email)}` : ""}<br>
-                            <small>${UI.esc(g.source)} • ${UI.esc(g.status)} • Tickets: ${Number(g.quantity || 1)}</small>
-                        </div>
-                    `).join("") : `<p>No confirmed guests or checked-in patrons yet.</p>`}
-                </div>
-            `;
         }
     };
 
@@ -116,17 +76,16 @@
         const result = originalRenderEventDetail.call(UI, id);
         const event = Events.get(id);
         const workspace = document.getElementById("workspace");
-        if (!event || !workspace) return result;
+        if (!event || !workspace || document.getElementById("ticketSalesActions")) return result;
 
         const actionCard = document.createElement("div");
         actionCard.className = "card";
         actionCard.id = "ticketSalesActions";
         actionCard.innerHTML = `
-            <h3>Tickets & Guests</h3>
+            <h3>Ticket Sales</h3>
             <button type="button" onclick="TicketSalesUI.open('${UI.esc(id)}')">Sell Ticket with Stripe</button>
             <button type="button" onclick="CheckInUI.open('${UI.esc(id)}')">Check In / Scan Ticket</button>
             <p><strong>Stripe tickets sold:</strong> ${Number(event.stripeTicketsSold || 0)}</p>
-            ${TicketSalesUI.guestListHtml(event)}
         `;
         workspace.appendChild(actionCard);
         return result;
