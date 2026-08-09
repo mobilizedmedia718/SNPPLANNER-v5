@@ -4,7 +4,10 @@
 
   SalesUI.inventoryForSale = function(){
     const event = Events.get(this.activeEventId());
-    const menu = Array.isArray(event?.menuItems) ? event.menuItems.filter(i=>i.active!==false && Number(i.price||0)>0) : [];
+    const menu = Array.isArray(event?.menuItems)
+      ? event.menuItems.filter(i=>i.active!==false && Number(i.price||0)>0)
+      : [];
+
     if (menu.length) return menu.map(i=>({
       id:i.id,
       name:i.name,
@@ -15,7 +18,23 @@
       description:i.description||"",
       includedWithVip:!!i.includedWithVip
     }));
-    return Inventory.all().filter(item => item.status !== "Inactive" && Number(item.sellPrice||0)>0 && String(item.category||"").trim().toLowerCase()==="event sales");
+
+    // Legacy fallback: only actual food/beverage/event-sale items.
+    // Ticket/admission inventory never belongs on the food & beverage sales menu.
+    return Inventory.all().filter(item => {
+      if (item.status === "Inactive" || Number(item.sellPrice||0) <= 0) return false;
+      if (String(item.category||"").trim().toLowerCase() !== "event sales") return false;
+      const text = `${item.name||""} ${item.category||""} ${item.notes||""}`.toLowerCase();
+      return !/(ticket|admission|paint admission|vip admission|mix and mingle|art exhibit)/.test(text);
+    });
+  };
+
+  SalesUI.openMenu = async function(eventId=""){
+    const id = eventId || window.LiveEvent?.activeId || this.selectedEventId || "";
+    if (id) this.selectedEventId = id;
+    this.cart = {};
+    await this.refreshCloudState();
+    this.renderMenu();
   };
 
   SalesUI.addItem = function(id){
@@ -43,9 +62,30 @@
     }).filter(Boolean);
   };
 
+  const baseRenderMenu = SalesUI.renderMenu.bind(SalesUI);
+  SalesUI.renderMenu = function(){
+    const event = Events.get(this.activeEventId());
+    const hasEventMenu = Array.isArray(event?.menuItems) && event.menuItems.some(i=>i.active!==false && Number(i.price||0)>0);
+    const hasLegacyMenu = this.inventoryForSale().length > 0;
+    if (!hasEventMenu && !hasLegacyMenu) {
+      const customer = this.selectedCustomerId ? CRM.get(this.selectedCustomerId) : null;
+      const workspace=document.getElementById("workspace");
+      if(!workspace) return;
+      workspace.innerHTML=`<h2>Event Menu</h2><div class="card"><p><strong>Event:</strong> ${UI.esc(event?.name||"Event")}</p><p><strong>Patron:</strong> ${UI.esc(customer ? (CRM.fullName(customer)||customer.email||"Patron") : "Walk-in / No Patron")}</p><button type="button" onclick="SalesUI.renderPatronPicker()">Choose / Change Patron</button></div><div class="card"><h3>Food & Beverage Menu</h3><p>No food or beverage items are active for this event yet.</p><p>Go to the event's <strong>Event Food & Beverage Menu</strong> section and add or activate items. Ticket types are sold separately through <strong>Sell Ticket</strong>.</p></div>`;
+      return;
+    }
+    baseRenderMenu();
+    const heading=document.querySelector('#workspace h2');
+    if(heading) heading.textContent='Food & Beverage Sales Menu';
+    const menuCard=[...document.querySelectorAll('#workspace .card')].find(c=>c.querySelector('h3')?.textContent==='Menu');
+    if(menuCard){
+      const h=menuCard.querySelector('h3'); if(h) h.textContent='Food & Beverage Menu';
+    }
+  };
+
   SalesUI.checkout = async function(){
     const items=this.selectedItems();
-    if(!items.length) return alert("Add at least one item.");
+    if(!items.length) return alert("Add at least one menu item.");
     const event=Events.get(this.activeEventId());
     for(const sold of items){
       if(sold.menuItemId){
