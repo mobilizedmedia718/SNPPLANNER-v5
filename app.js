@@ -40,6 +40,7 @@ const SNPPlanner = {
             Finance.load();
             Assets.load();
             Calendar.load();
+            if (typeof PromoAgent !== "undefined" && typeof PromoAgent.load === "function") PromoAgent.load();
 
             UI.renderLayout();
             UI.renderDashboard();
