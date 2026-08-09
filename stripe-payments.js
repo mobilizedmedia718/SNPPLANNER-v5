@@ -1,8 +1,30 @@
 /* SNP Planner Stripe checkout */
 const SNPStripePayments = {
+    async validAccessToken() {
+        let session = await SNPDatabase.getSession();
+        if (!session?.access_token) throw new Error("Please sign in before starting checkout.");
+
+        const expiresAt = Number(session.expires_at || 0);
+        const needsRefresh = expiresAt && expiresAt <= Math.floor(Date.now() / 1000) + 60;
+        if (needsRefresh && session.refresh_token) {
+            const response = await fetch(`${SNP_SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+                method: "POST",
+                headers: SNPDatabase.headers(),
+                body: JSON.stringify({ refresh_token: session.refresh_token })
+            });
+            const refreshed = await response.json();
+            if (!response.ok || !refreshed?.access_token) {
+                SNPDatabase.saveSession(null);
+                throw new Error("Your SNP Planner session expired. Please sign in again.");
+            }
+            SNPDatabase.saveSession(refreshed);
+            session = refreshed;
+        }
+        return session.access_token;
+    },
+
     async startCheckout(items, options = {}) {
-        const token = SNPDatabase.session?.access_token;
-        if (!token) throw new Error("Please sign in before starting checkout.");
+        const token = await this.validAccessToken();
 
         const response = await fetch(`${SNP_SUPABASE_URL}/functions/v1/create-stripe-checkout`, {
             method: "POST",
@@ -19,8 +41,12 @@ const SNPStripePayments = {
             })
         });
 
-        const data = await response.json();
+        let data = {};
+        try { data = await response.json(); } catch (_) {}
         if (!response.ok || !data?.checkoutUrl) {
+            if (response.status === 401) {
+                throw new Error("Your SNP Planner login expired. Sign out, sign back in, then try the ticket again.");
+            }
             throw new Error(data?.error || "Unable to start Stripe checkout.");
         }
         window.location.href = data.checkoutUrl;
