@@ -84,10 +84,11 @@
                 breakdownMinutes,
                 totalOperationalMinutes: setupMinutes + eventRunMinutes + breakdownMinutes,
                 lifecycleStage: "finished",
-                status: "Completed"
+                status: "Awaiting Closeout"
             });
             this.exit(false);
             UI.renderEventDetail(eventId);
+            if (typeof UI.openEventCloseout === "function") setTimeout(() => UI.openEventCloseout(eventId), 0);
         },
 
         exit(goDashboard = true) {
@@ -258,10 +259,10 @@
         if (card) {
             const controls = document.createElement("div");
             controls.className = "card";
-            controls.innerHTML = event.setupStartedAt && event.lifecycleStage !== "finished"
+            controls.innerHTML = event.setupStartedAt && !["finished"].includes(event.lifecycleStage)
                 ? `<h3>Event Operations</h3><button type="button" onclick="LiveEvent.enter('${UI.esc(id)}')">Return to Live Event Mode</button>`
                 : event.lifecycleStage === "finished"
-                    ? `<h3>Event Operations</h3><p>Setup, event, and breakdown timing are complete.</p>`
+                    ? `<h3>Event Operations</h3><p>Setup, event, and breakdown timing are complete. Event is awaiting financial closeout.</p>${typeof UI.openEventCloseout === "function" ? `<button type="button" onclick="UI.openEventCloseout('${UI.esc(id)}')">Open Event Closeout</button>` : ""}`
                     : `<h3>Event Operations</h3><p>Start this when setup begins. SNP Planner will time setup, the event itself, and breakdown separately.</p><button type="button" onclick="LiveEvent.startSetup('${UI.esc(id)}')">Start Setup / Event Mode</button>`;
             card.insertAdjacentElement("afterend", controls);
             controls.insertAdjacentHTML("afterend", LiveEvent.timingSummary(event));
