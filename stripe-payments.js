@@ -14,7 +14,8 @@ const SNPStripePayments = {
                 items,
                 eventId: options.eventId || "",
                 customerId: options.customerId || "",
-                customerEmail: options.customerEmail || ""
+                customerEmail: options.customerEmail || "",
+                purchaseType: options.purchaseType || "sale"
             })
         });
 
@@ -25,11 +26,16 @@ const SNPStripePayments = {
         window.location.href = data.checkoutUrl;
     },
 
+    async startTicketCheckout(items, options = {}) {
+        const ticketItems = (items || []).map(item => ({ ...item, saleType: "ticket" }));
+        return this.startCheckout(ticketItems, { ...options, purchaseType: "ticket" });
+    },
+
     async sandboxTest() {
         try {
             await this.startCheckout([
-                { name: "SNP Planner Sandbox Test Beverage", quantity: 1, price: 1.00 }
-            ], { eventId: "sandbox-test" });
+                { name: "SNP Planner Sandbox Test Beverage", quantity: 1, price: 1.00, saleType: "sale", category: "Event Sales" }
+            ], { eventId: "sandbox-test", purchaseType: "sale" });
         } catch (error) {
             alert(error?.message || "Unable to start sandbox checkout.");
         }
@@ -48,7 +54,7 @@ const SNPStripePayments = {
                 card.id = "stripeSandboxTest";
                 card.innerHTML = `
                     <h3>Stripe Payments</h3>
-                    <p>Sandbox mode is connected. Use Sales for normal inventory checkout.</p>
+                    <p>Sandbox mode is connected. Stripe purchasers are now tied to CRM/event patron records, and ticket purchases can be marked as confirmed guests.</p>
                     <button type="button" onclick="SNPStripePayments.sandboxTest()">Run $1 Sandbox Payment Test</button>
                 `;
                 workspace.appendChild(card);
