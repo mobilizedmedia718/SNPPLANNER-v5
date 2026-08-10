@@ -1,6 +1,18 @@
 (function () {
     const DEFAULT_EVENT_URL = "https://www.eventbrite.com/e/paint-the-town-a-sip-and-paint-experience-tickets-1995025559152?aff=oddtdtcreator";
     const STORAGE_KEY = "promoAgent";
+    const CREATIVE_DEFAULTS = {
+        mediaGoal: "Agent decides",
+        referenceUse: "Use as inspiration",
+        referenceFocus: "Color scheme and overall vibe",
+        visualDirection: "",
+        musicMode: "Agent decides",
+        musicStyle: "Oakland / Bay Area clean party energy",
+        musicNotes: "",
+        extraInstructions: "",
+        primaryReferenceId: "",
+        referenceFiles: []
+    };
 
     const DEFAULT_STATE = {
         selectedEventId: "",
@@ -12,6 +24,7 @@
         eventUrl: DEFAULT_EVENT_URL,
         approvalRequired: true,
         hashtags: "#PaintTheTown #OaklandEvents #SipAndPaint #OaklandNightlife #BayAreaEvents #OaklandArt #DateNightOakland #ThingsToDoInOakland #EastOakland #BlackOwnedEvents #CreativeNightOut #PaintAndSip",
+        creative: { ...CREATIVE_DEFAULTS },
         queue: [],
         lastPlan: null,
         lastRun: "",
@@ -26,6 +39,11 @@
             this.state = {
                 ...DEFAULT_STATE,
                 ...(saved || {}),
+                creative: {
+                    ...CREATIVE_DEFAULTS,
+                    ...(saved?.creative || {}),
+                    referenceFiles: Array.isArray(saved?.creative?.referenceFiles) ? saved.creative.referenceFiles : []
+                },
                 queue: Array.isArray(saved?.queue) ? saved.queue : [],
                 log: Array.isArray(saved?.log) ? saved.log : []
             };
@@ -89,6 +107,10 @@
                 .promo-agent-visual span{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
                 .promo-agent-preview-copy{font-size:.9rem;line-height:1.45;max-height:180px;overflow:auto}
                 .promo-agent-preview-note{font-size:.78rem;color:#64748b;margin-top:6px}
+                .promo-agent-reference-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px}
+                .promo-agent-reference{border:1px solid var(--border);border-radius:12px;padding:10px;background:#f8fafc}
+                .promo-agent-reference img{width:100%;height:120px;object-fit:cover;border-radius:9px;background:#e5e7eb;margin-bottom:8px}
+                .promo-agent-reference small{display:block;color:#64748b;word-break:break-word}
                 .promo-agent-queue{display:grid;gap:12px}
                 .promo-agent-item{border:1px solid var(--border);border-radius:12px;padding:14px;background:#fff}
                 .promo-agent-item-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
@@ -131,6 +153,68 @@
                 this.state[field] = value;
             }
             this.save();
+        },
+
+        updateCreative(field, value) {
+            if (!this.state.creative) this.state.creative = { ...CREATIVE_DEFAULTS };
+            if (!(field in CREATIVE_DEFAULTS)) return;
+            this.state.creative[field] = value;
+            this.save();
+        },
+
+        async handleReferenceUpload(input) {
+            const files = Array.from(input?.files || []);
+            if (!files.length) return;
+            if (!this.state.creative) this.state.creative = { ...CREATIVE_DEFAULTS };
+            const current = Array.isArray(this.state.creative.referenceFiles) ? this.state.creative.referenceFiles : [];
+            const accepted = [];
+            const maxBytes = 1600000;
+
+            for (const file of files.slice(0, 5)) {
+                if (file.size > maxBytes) {
+                    alert(`${file.name} is too large for planner storage. Use files under about 1.5 MB for now.`);
+                    continue;
+                }
+                const dataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                accepted.push({
+                    id: Utils.id(),
+                    name: file.name,
+                    type: file.type || "application/octet-stream",
+                    size: file.size,
+                    dataUrl,
+                    addedAt: new Date().toISOString()
+                });
+            }
+
+            this.state.creative.referenceFiles = [...accepted, ...current].slice(0, 8);
+            if (!this.state.creative.primaryReferenceId && accepted[0]) {
+                this.state.creative.primaryReferenceId = accepted[0].id;
+            }
+            input.value = "";
+            this.save();
+            this.render();
+        },
+
+        removeReference(id) {
+            if (!this.state.creative) return;
+            this.state.creative.referenceFiles = (this.state.creative.referenceFiles || []).filter(file => file.id !== id);
+            if (this.state.creative.primaryReferenceId === id) {
+                this.state.creative.primaryReferenceId = this.state.creative.referenceFiles[0]?.id || "";
+            }
+            this.save();
+            this.render();
+        },
+
+        setPrimaryReference(id) {
+            if (!this.state.creative) return;
+            this.state.creative.primaryReferenceId = id;
+            this.save();
+            this.render();
         },
 
         eventLabel(event) {
@@ -200,6 +284,58 @@
             return { eventName, date, time, location, theme };
         },
 
+        primaryReference() {
+            const files = this.state.creative?.referenceFiles || [];
+            return files.find(file => file.id === this.state.creative?.primaryReferenceId) || files.find(file => String(file.type || "").startsWith("image/")) || files[0] || null;
+        },
+
+        primaryImageReference() {
+            const file = this.primaryReference();
+            return file && String(file.type || "").startsWith("image/") ? file : null;
+        },
+
+        creativeSnapshot() {
+            const creative = this.state.creative || CREATIVE_DEFAULTS;
+            return {
+                mediaGoal: creative.mediaGoal,
+                referenceUse: creative.referenceUse,
+                referenceFocus: creative.referenceFocus,
+                visualDirection: creative.visualDirection,
+                musicMode: creative.musicMode,
+                musicStyle: creative.musicStyle,
+                musicNotes: creative.musicNotes,
+                extraInstructions: creative.extraInstructions,
+                primaryReferenceName: this.primaryReference()?.name || "",
+                referenceNames: (creative.referenceFiles || []).map(file => file.name)
+            };
+        },
+
+        productionNotes() {
+            const snap = this.creativeSnapshot();
+            const lines = [
+                `Media goal: ${snap.mediaGoal || "Agent decides"}`,
+                `Reference use: ${snap.referenceUse || "Use as inspiration"}`,
+                `Reference focus: ${snap.referenceFocus || "Color scheme and overall vibe"}`
+            ];
+            if (snap.primaryReferenceName) lines.push(`Primary reference: ${snap.primaryReferenceName}`);
+            if (snap.visualDirection) lines.push(`User visual direction: ${snap.visualDirection}`);
+            if (snap.musicMode === "Agent decides") {
+                lines.push(`Music: Agent chooses a track that matches ${snap.musicStyle || "the event vibe"}.`);
+            } else if (snap.musicMode === "No music") {
+                lines.push("Music: No background music.");
+            } else {
+                lines.push(`Music: ${snap.musicStyle || snap.musicMode}`);
+            }
+            if (snap.musicNotes) lines.push(`Music notes: ${snap.musicNotes}`);
+            if (snap.extraInstructions) lines.push(`Extra instructions: ${snap.extraInstructions}`);
+            return lines.join("\n");
+        },
+
+        postBrief(publicCopy) {
+            const notes = this.productionNotes();
+            return `PUBLIC COPY:\n${publicCopy}\n\nPRODUCTION NOTES:\n${notes}`;
+        },
+
         buildPlan(event) {
             const facts = this.eventFacts(event);
             const goal = Number(event?.capacity || this.state.ticketGoal || 100);
@@ -226,6 +362,7 @@
             const eventbriteUpdate = `${facts.eventName} is coming up ${facts.date}. Seats are limited, and this is built for beginners, couples, friends, and anyone who wants a creative night out in Oakland. ${offer}`;
 
             const adCopy = `Headline: ${facts.eventName}\nText: A creative ${localAngle} sip and paint night with guided painting, music, and good energy. ${offer}\nCTA: Get Tickets\nAudience: ${audience}\nBudget test: ${Utils.money(Math.max(15, Math.min(adBudget || 75, 150)))} for 3-5 days. Keep running only if ticket sales move.`;
+            const creative = this.creativeSnapshot();
 
             return {
                 createdAt: new Date().toISOString(),
@@ -239,13 +376,14 @@
                 daysLeft,
                 dailyTarget,
                 adBudget,
+                creative,
                 content: [
-                    { channel: "Instagram/Reel", title: "Main caption", copy: caption },
-                    { channel: "Instagram Story", title: "Story sequence", copy: story },
-                    { channel: "Facebook Groups", title: "Local group post", copy: facebook },
+                    { channel: "Instagram/Reel", title: "Main caption", copy: this.postBrief(caption) },
+                    { channel: "Instagram Story", title: "Story sequence", copy: this.postBrief(story) },
+                    { channel: "Facebook Groups", title: "Local group post", copy: this.postBrief(facebook) },
                     { channel: "DM Outreach", title: "Personal invite script", copy: dm },
-                    { channel: "Eventbrite", title: "Event update", copy: eventbriteUpdate },
-                    { channel: "Eventbrite Ads", title: "Ad draft", copy: adCopy }
+                    { channel: "Eventbrite", title: "Event update", copy: this.postBrief(eventbriteUpdate) },
+                    { channel: "Eventbrite Ads", title: "Ad draft", copy: this.postBrief(adCopy) }
                 ],
                 tasks: this.tasksFor(phase, dailyTarget, adBudget)
             };
@@ -283,6 +421,7 @@
                     title: item.title,
                     channel: item.channel,
                     copy: item.copy,
+                    creative: plan.creative,
                     status: this.state.approvalRequired ? "Needs Approval" : "Draft",
                     createdAt: now
                 })),
@@ -364,9 +503,10 @@
             const facts = this.eventFacts(this.eventForQueue(item));
             const channel = String(item.channel || "Social");
             const copy = this.shortText(item.copy, 340);
+            const background = this.previewBackgroundStyle();
             return `
                 <div class="promo-agent-social-preview">
-                    <div class="promo-agent-visual">
+                    <div class="promo-agent-visual" style="${this.esc(background)}">
                         <span>${this.esc(channel)} Preview</span>
                         <strong>${this.esc(facts.eventName)}</strong>
                         <div>
@@ -389,6 +529,8 @@
             const facts = this.eventFacts(this.eventForQueue(item));
             const fullCopy = this.esc(item.copy).replace(/\n/g, "<br>");
             const title = `${this.esc(item.channel)} - ${this.esc(item.title)}`;
+            const background = this.previewBackgroundStyle(true);
+            const references = this.referencePreviewHtml();
             return `<!doctype html>
 <html lang="en">
 <head>
@@ -405,7 +547,7 @@ body{margin:0;font-family:Arial,sans-serif;background:#eef2f7;color:#111827;padd
 .post{background:#fff;border-radius:20px;overflow:hidden}
 .post-head{display:flex;gap:10px;align-items:center;padding:14px;border-bottom:1px solid #e5e7eb}
 .avatar{width:36px;height:36px;border-radius:50%;background:#17324d}
-.visual{min-height:320px;background:linear-gradient(135deg,#17324d,#2f75b5 55%,#e6b94a);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:22px}
+.visual{min-height:320px;${background};color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:22px}
 .visual h1{font-size:28px;line-height:1.05;margin:0}
 .visual p{margin:4px 0}
 .caption{padding:14px;line-height:1.45;font-size:14px}
@@ -439,11 +581,34 @@ button{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:11px 14p
 <h2>Full Post Copy</h2>
 <p>This preview is for visual approval before posting, scheduling, or launching ads.</p>
 <div class="copy">${fullCopy}</div>
+${references}
 </div>
 </div>
 </div>
 </body>
 </html>`;
+        },
+
+        previewBackgroundStyle(forFullPage = false) {
+            const image = this.primaryImageReference();
+            if (!image?.dataUrl) {
+                return "background:linear-gradient(135deg,#17324d,#2f75b5 55%,#e6b94a)";
+            }
+            const overlay = forFullPage
+                ? "linear-gradient(135deg,rgba(23,50,77,.82),rgba(47,117,181,.52),rgba(230,185,74,.42))"
+                : "linear-gradient(135deg,rgba(23,50,77,.78),rgba(47,117,181,.42),rgba(230,185,74,.35))";
+            return `background-image:${overlay},url("${String(image.dataUrl).replace(/"/g, "")}");background-size:cover;background-position:center`;
+        },
+
+        referencePreviewHtml() {
+            const files = this.state.creative?.referenceFiles || [];
+            if (!files.length) return "";
+            return `<h2>Reference Files</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">${files.map(file => {
+                if (String(file.type || "").startsWith("image/")) {
+                    return `<div><img src="${this.esc(file.dataUrl)}" style="width:100%;height:110px;object-fit:cover;border-radius:10px;"><small>${this.esc(file.name)}</small></div>`;
+                }
+                return `<div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;"><strong>${this.esc(file.type || "File")}</strong><br><small>${this.esc(file.name)}</small></div>`;
+            }).join("")}</div>`;
         },
 
         openPreview(id) {
@@ -542,6 +707,7 @@ button{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:11px 14p
                 </div>
 
                 ${this.renderSettings(event)}
+                ${this.renderCreativeControls()}
                 ${this.renderLastPlan(plan)}
                 ${this.renderQueue()}
                 ${this.renderPlatformControls()}
@@ -597,6 +763,87 @@ button{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:11px 14p
                     <div class="promo-agent-actions">
                         <button type="button" onclick="PromoAgent.save(); alert('Agent settings saved.');">Save Agent Settings</button>
                     </div>
+                </div>
+            `;
+        },
+
+        renderCreativeControls() {
+            const creative = this.state.creative || CREATIVE_DEFAULTS;
+            return `
+                <div class="card">
+                    <h3>Creative Direction</h3>
+                    <p class="promo-agent-muted">Add your own direction or upload references before running the agent. The approval preview will use these files and notes.</p>
+                    <div class="promo-agent-grid">
+                        <div>
+                            <label>Media Goal</label>
+                            <select onchange="PromoAgent.updateCreative('mediaGoal', this.value)">
+                                ${["Agent decides","Instagram Reel","Instagram Post","Instagram Story","Facebook Post","Eventbrite Ad","Flyer-style graphic","Caption only"].map(option => `<option value="${option}" ${creative.mediaGoal === option ? "selected" : ""}>${option}</option>`).join("")}
+                            </select>
+                        </div>
+                        <div>
+                            <label>How To Use Uploaded Reference</label>
+                            <select onchange="PromoAgent.updateCreative('referenceUse', this.value)">
+                                ${["Use as inspiration","Keep same color scheme","Keep same theme/vibe","Mimic layout/composition","Mimic one part only","Keep it close to original","Agent decides"].map(option => `<option value="${option}" ${creative.referenceUse === option ? "selected" : ""}>${option}</option>`).join("")}
+                            </select>
+                        </div>
+                        <div>
+                            <label>Reference Focus</label>
+                            <select onchange="PromoAgent.updateCreative('referenceFocus', this.value)">
+                                ${["Color scheme and overall vibe","Main subject only","Background only","Typography/font feel","Layout/composition","Luxury/premium feel","Street/Oakland energy","Afrocentric theme","Agent decides"].map(option => `<option value="${option}" ${creative.referenceFocus === option ? "selected" : ""}>${option}</option>`).join("")}
+                            </select>
+                        </div>
+                        <div>
+                            <label>Music Direction</label>
+                            <select onchange="PromoAgent.updateCreative('musicMode', this.value)">
+                                ${["Agent decides","Use my music notes","No music","Clean hip-hop / West Coast","Afrobeats","R&B / soul","House / dance","Jazz / lounge","Latin / Afro-Caribbean"].map(option => `<option value="${option}" ${creative.musicMode === option ? "selected" : ""}>${option}</option>`).join("")}
+                            </select>
+                        </div>
+                        <div>
+                            <label>Music Style / Mood</label>
+                            <input value="${this.esc(creative.musicStyle)}" placeholder="Example: upbeat Oakland clean hip-hop" onchange="PromoAgent.updateCreative('musicStyle', this.value)">
+                        </div>
+                        <div>
+                            <label>Upload Reference Files</label>
+                            <input type="file" accept="image/*,video/*,audio/*,.pdf" multiple onchange="PromoAgent.handleReferenceUpload(this)">
+                            <p class="promo-agent-preview-note">Use small files under about 1.5 MB each for now.</p>
+                        </div>
+                        <div>
+                            <label>Your Visual Instructions</label>
+                            <textarea placeholder="Example: Keep the flyer colors but make the post cleaner for Instagram." onchange="PromoAgent.updateCreative('visualDirection', this.value)">${this.esc(creative.visualDirection)}</textarea>
+                        </div>
+                        <div>
+                            <label>Music Notes</label>
+                            <textarea placeholder="Example: West Coast bounce, clean, no explicit lyrics, smooth but energetic." onchange="PromoAgent.updateCreative('musicNotes', this.value)">${this.esc(creative.musicNotes)}</textarea>
+                        </div>
+                        <div>
+                            <label>Extra Instructions</label>
+                            <textarea placeholder="Anything else the agent should follow before generating." onchange="PromoAgent.updateCreative('extraInstructions', this.value)">${this.esc(creative.extraInstructions)}</textarea>
+                        </div>
+                    </div>
+                    ${this.renderReferenceFiles()}
+                    <div class="promo-agent-actions">
+                        <button type="button" onclick="PromoAgent.save(); alert('Creative direction saved.');">Save Creative Direction</button>
+                    </div>
+                </div>
+            `;
+        },
+
+        renderReferenceFiles() {
+            const files = this.state.creative?.referenceFiles || [];
+            if (!files.length) return `<p class="promo-agent-muted">No reference files uploaded yet.</p>`;
+            return `
+                <div class="promo-agent-reference-list">
+                    ${files.map(file => `
+                        <div class="promo-agent-reference">
+                            ${String(file.type || "").startsWith("image/") ? `<img src="${this.esc(file.dataUrl)}" alt="">` : `<div style="height:120px;display:grid;place-items:center;background:#e5e7eb;border-radius:9px;margin-bottom:8px;">${this.esc(file.type || "File")}</div>`}
+                            <strong>${this.esc(file.name)}</strong>
+                            <small>${Math.round(Number(file.size || 0) / 1024)} KB</small>
+                            <div class="promo-agent-actions">
+                                <button type="button" onclick="PromoAgent.setPrimaryReference('${this.esc(file.id)}')">${this.state.creative?.primaryReferenceId === file.id ? "Primary" : "Make Primary"}</button>
+                                <button type="button" onclick="PromoAgent.removeReference('${this.esc(file.id)}')">Remove</button>
+                            </div>
+                        </div>
+                    `).join("")}
                 </div>
             `;
         },
