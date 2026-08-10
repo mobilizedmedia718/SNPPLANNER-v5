@@ -83,6 +83,12 @@
                 .promo-agent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
                 .promo-agent-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
                 .promo-agent-copy{width:100%;min-height:120px;font-size:.92rem;line-height:1.45;background:#f8fafc}
+                .promo-agent-social-preview{display:grid;grid-template-columns:180px minmax(0,1fr);gap:14px;align-items:stretch;background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:12px;margin:12px 0}
+                .promo-agent-visual{min-height:180px;border-radius:12px;background:linear-gradient(135deg,#17324d,#2f75b5 52%,#e6b94a);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:14px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+                .promo-agent-visual strong{font-size:1.05rem;line-height:1.15}
+                .promo-agent-visual span{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
+                .promo-agent-preview-copy{font-size:.9rem;line-height:1.45;max-height:180px;overflow:auto}
+                .promo-agent-preview-note{font-size:.78rem;color:#64748b;margin-top:6px}
                 .promo-agent-queue{display:grid;gap:12px}
                 .promo-agent-item{border:1px solid var(--border);border-radius:12px;padding:14px;background:#fff}
                 .promo-agent-item-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
@@ -93,6 +99,7 @@
                 .promo-agent-platforms{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
                 .promo-agent-platforms div{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px}
                 @media(max-width:900px){.promo-agent-hero{grid-template-columns:1fr}}
+                @media(max-width:700px){.promo-agent-social-preview{grid-template-columns:1fr}.promo-agent-visual{min-height:150px}}
             `;
             document.head.appendChild(style);
         },
@@ -340,6 +347,132 @@
             });
         },
 
+        shortText(value, limit = 260) {
+            const text = String(value || "").replace(/\s+/g, " ").trim();
+            if (text.length <= limit) return text;
+            return `${text.slice(0, limit).trim()}...`;
+        },
+
+        eventForQueue(item) {
+            if (item?.eventId && typeof Events !== "undefined" && typeof Events.get === "function") {
+                return Events.get(item.eventId) || this.currentEvent();
+            }
+            return this.currentEvent();
+        },
+
+        renderVisualPreview(item) {
+            const facts = this.eventFacts(this.eventForQueue(item));
+            const channel = String(item.channel || "Social");
+            const copy = this.shortText(item.copy, 340);
+            return `
+                <div class="promo-agent-social-preview">
+                    <div class="promo-agent-visual">
+                        <span>${this.esc(channel)} Preview</span>
+                        <strong>${this.esc(facts.eventName)}</strong>
+                        <div>
+                            <p>${this.esc(facts.date)}</p>
+                            <p>${this.esc(facts.time)}</p>
+                            <p>${this.esc(facts.location)}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Visual Confirmation</h4>
+                        <div class="promo-agent-preview-copy">${this.esc(copy)}</div>
+                        <p class="promo-agent-preview-note">Preview only. This does not publish or spend money.</p>
+                        ${item.previewedAt ? `<p class="promo-agent-preview-note">Last preview opened: ${this.esc(new Date(item.previewedAt).toLocaleString())}</p>` : ""}
+                    </div>
+                </div>
+            `;
+        },
+
+        previewHtml(item) {
+            const facts = this.eventFacts(this.eventForQueue(item));
+            const fullCopy = this.esc(item.copy).replace(/\n/g, "<br>");
+            const title = `${this.esc(item.channel)} - ${this.esc(item.title)}`;
+            return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Promo Approval Preview</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#eef2f7;color:#111827;padding:24px}
+.wrap{max-width:980px;margin:0 auto}
+.top{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.badge{display:inline-block;background:#dbeafe;color:#1e3a8a;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700}
+.grid{display:grid;grid-template-columns:360px minmax(0,1fr);gap:20px}
+.phone{background:#111827;border-radius:30px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.post{background:#fff;border-radius:20px;overflow:hidden}
+.post-head{display:flex;gap:10px;align-items:center;padding:14px;border-bottom:1px solid #e5e7eb}
+.avatar{width:36px;height:36px;border-radius:50%;background:#17324d}
+.visual{min-height:320px;background:linear-gradient(135deg,#17324d,#2f75b5 55%,#e6b94a);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:22px}
+.visual h1{font-size:28px;line-height:1.05;margin:0}
+.visual p{margin:4px 0}
+.caption{padding:14px;line-height:1.45;font-size:14px}
+.panel{background:#fff;border-radius:18px;padding:20px;box-shadow:0 8px 28px rgba(0,0,0,.08)}
+.copy{line-height:1.55;white-space:normal}
+button{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:11px 14px;font-weight:700;cursor:pointer}
+@media(max-width:820px){.grid{grid-template-columns:1fr}.phone{max-width:420px;margin:auto;width:100%;box-sizing:border-box}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top">
+<div>
+<span class="badge">Approval Preview - Not Live</span>
+<h1>${title}</h1>
+</div>
+<button onclick="window.print()">Print / Save Preview</button>
+</div>
+<div class="grid">
+<div class="phone">
+<div class="post">
+<div class="post-head"><div class="avatar"></div><div><strong>Paint The Town</strong><br><small>${this.esc(item.channel)}</small></div></div>
+<div class="visual">
+<div><small>${this.esc(facts.location)}</small><h1>${this.esc(facts.eventName)}</h1></div>
+<div><p>${this.esc(facts.date)}</p><p>${this.esc(facts.time)}</p><p>${this.esc(facts.theme)}</p></div>
+</div>
+<div class="caption">${this.esc(this.shortText(item.copy, 240)).replace(/\n/g, "<br>")}</div>
+</div>
+</div>
+<div class="panel">
+<h2>Full Post Copy</h2>
+<p>This preview is for visual approval before posting, scheduling, or launching ads.</p>
+<div class="copy">${fullCopy}</div>
+</div>
+</div>
+</div>
+</body>
+</html>`;
+        },
+
+        openPreview(id) {
+            const item = this.state.queue.find(row => row.id === id);
+            if (!item) return;
+            const blob = new Blob([this.previewHtml(item)], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            const opened = window.open(url, "_blank", "noopener");
+            item.previewedAt = new Date().toISOString();
+            if (item.status === "Needs Approval") item.status = "Previewed";
+            this.save();
+            this.render();
+            if (!opened) prompt("Popup was blocked. Copy and open this preview link:", url);
+        },
+
+        approveQueue(id) {
+            const item = this.state.queue.find(row => row.id === id);
+            if (!item) return;
+            if (!item.previewedAt) {
+                this.openPreview(id);
+                alert("Review the visual preview first. After it looks right, click Approve again.");
+                return;
+            }
+            this.updateQueue(id, {
+                status: "Approved",
+                approvedAt: new Date().toISOString()
+            });
+        },
+
         exportPlan() {
             const plan = this.state.lastPlan;
             if (!plan) return;
@@ -525,10 +658,12 @@
                         </div>
                         <strong>${this.esc(item.status)}</strong>
                     </div>
+                    ${this.renderVisualPreview(item)}
                     <textarea class="promo-agent-copy" readonly>${this.esc(item.copy)}</textarea>
                     <div class="promo-agent-actions">
                         <button type="button" onclick="PromoAgent.copyQueue('${this.esc(item.id)}')">Copy</button>
-                        <button type="button" onclick="PromoAgent.updateQueue('${this.esc(item.id)}',{status:'Approved'})">Approve</button>
+                        <button type="button" onclick="PromoAgent.openPreview('${this.esc(item.id)}')">Open Preview Link</button>
+                        <button type="button" onclick="PromoAgent.approveQueue('${this.esc(item.id)}')">Approve</button>
                         <button type="button" onclick="PromoAgent.updateQueue('${this.esc(item.id)}',{status:'Done'})">Done</button>
                         <button type="button" onclick="PromoAgent.removeQueue('${this.esc(item.id)}')">Delete</button>
                     </div>
