@@ -127,6 +127,7 @@
                 .promo-agent-kpi strong{display:block;font-size:1.35rem;margin-top:5px}
                 .promo-agent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
                 .promo-agent-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+                .promo-agent-danger-button{background:#fee2e2;color:#991b1b;border-color:#fecaca}
                 .promo-agent-copy{width:100%;min-height:120px;font-size:.92rem;line-height:1.45;background:#f8fafc}
                 .promo-agent-social-preview{display:grid;grid-template-columns:180px minmax(0,1fr);gap:14px;align-items:stretch;background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:12px;margin:12px 0}
                 .promo-agent-visual{min-height:180px;border-radius:12px;background:linear-gradient(135deg,#17324d,#2f75b5 52%,#e6b94a);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:14px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
@@ -838,6 +839,29 @@
             this.render();
         },
 
+        clearGeneratedAds() {
+            const hasGeneratedContent = this.state.queue.length || this.state.lastPlan || this.state.lastRun;
+            if (!hasGeneratedContent) {
+                alert("No generated ads to clear.");
+                return;
+            }
+
+            const approved = confirm("Clear all generated ads and the last promo plan? Your uploaded media, connector settings, and event settings will stay saved.");
+            if (!approved) return;
+
+            const now = new Date().toISOString();
+            this.state.queue = [];
+            this.state.lastPlan = null;
+            this.state.lastRun = "";
+            this.state.log = [
+                { id: Utils.id(), at: now, message: "Cleared generated promo approval queue to start fresh" },
+                ...this.state.log
+            ].slice(0, 25);
+            this.save();
+            this.render();
+            alert("Generated ads cleared. You can run a fresh promotion plan now.");
+        },
+
         copyQueue(id) {
             const item = this.state.queue.find(row => row.id === id);
             if (!item) return;
@@ -1363,7 +1387,10 @@ ${references}
                 <div class="card">
                     <div class="promo-agent-item-head">
                         <h3>Approval Queue</h3>
-                        <button type="button" onclick="PromoAgent.clearDone()">Clear Done</button>
+                        <div class="promo-agent-actions" style="margin-top:0">
+                            <button type="button" onclick="PromoAgent.clearDone()">Clear Done</button>
+                            <button type="button" class="promo-agent-danger-button" onclick="PromoAgent.clearGeneratedAds()">Start Fresh</button>
+                        </div>
                     </div>
                     <div class="promo-agent-queue">
                         ${queue.length ? queue.map(item => this.renderQueueItem(item)).join("") : `<p class="promo-agent-muted">No queued content yet.</p>`}
