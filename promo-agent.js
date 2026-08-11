@@ -14,6 +14,22 @@
         referenceFiles: []
     };
 
+    const META_CONNECTION_DEFAULTS = {
+        instagramHandle: "@painttownevents",
+        facebookPageName: "Paint the Town Events",
+        businessPortfolioName: "Paint the Town Events",
+        connectionMode: "Manual Meta Business Suite",
+        connectorUrl: "",
+        instagramBusinessReady: false,
+        facebookPageReady: false,
+        businessSuiteReady: false,
+        twoFactorReady: false,
+        allowConnectorPublishing: false,
+        lastStatus: "Not tested",
+        lastStatusDetail: "Create the Facebook Page, connect Instagram, then test a secure connector when it is ready.",
+        lastTestAt: ""
+    };
+
     const DEFAULT_STATE = {
         selectedEventId: "",
         ticketGoal: 100,
@@ -25,6 +41,7 @@
         approvalRequired: true,
         hashtags: "#PaintTheTown #OaklandEvents #SipAndPaint #OaklandNightlife #BayAreaEvents #OaklandArt #DateNightOakland #ThingsToDoInOakland #EastOakland #BlackOwnedEvents #CreativeNightOut #PaintAndSip",
         creative: { ...CREATIVE_DEFAULTS },
+        metaConnection: { ...META_CONNECTION_DEFAULTS },
         queue: [],
         lastPlan: null,
         lastRun: "",
@@ -43,6 +60,10 @@
                     ...CREATIVE_DEFAULTS,
                     ...(saved?.creative || {}),
                     referenceFiles: Array.isArray(saved?.creative?.referenceFiles) ? saved.creative.referenceFiles : []
+                },
+                metaConnection: {
+                    ...META_CONNECTION_DEFAULTS,
+                    ...(saved?.metaConnection || {})
                 },
                 queue: Array.isArray(saved?.queue) ? saved.queue : [],
                 log: Array.isArray(saved?.log) ? saved.log : []
@@ -120,6 +141,12 @@
                 .promo-agent-danger{border-left:5px solid #ef4444}
                 .promo-agent-platforms{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
                 .promo-agent-platforms div{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px}
+                .promo-agent-connection-status{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-weight:700;font-size:.82rem;background:#f1f5f9;color:#334155}
+                .promo-agent-connection-status.connected{background:#dcfce7;color:#166534}
+                .promo-agent-connection-status.warning{background:#fef3c7;color:#92400e}
+                .promo-agent-connection-status.failed{background:#fee2e2;color:#991b1b}
+                .promo-agent-checklist{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
+                .promo-agent-checklist label{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:10px}
                 @media(max-width:900px){.promo-agent-hero{grid-template-columns:1fr}}
                 @media(max-width:700px){.promo-agent-social-preview{grid-template-columns:1fr}.promo-agent-visual{min-height:150px}}
             `;
@@ -153,6 +180,153 @@
                 this.state[field] = value;
             }
             this.save();
+        },
+
+        updateMetaConnection(field, value) {
+            if (!this.state.metaConnection) this.state.metaConnection = { ...META_CONNECTION_DEFAULTS };
+            if (!(field in META_CONNECTION_DEFAULTS)) return;
+            if (["instagramBusinessReady", "facebookPageReady", "businessSuiteReady", "twoFactorReady", "allowConnectorPublishing"].includes(field)) {
+                this.state.metaConnection[field] = Boolean(value);
+            } else {
+                this.state.metaConnection[field] = value;
+            }
+            this.save();
+        },
+
+        metaPrerequisitesReady() {
+            const connection = this.state.metaConnection || META_CONNECTION_DEFAULTS;
+            return Boolean(
+                connection.instagramBusinessReady &&
+                connection.facebookPageReady &&
+                connection.businessSuiteReady &&
+                connection.twoFactorReady
+            );
+        },
+
+        connectorConfigured() {
+            const connection = this.state.metaConnection || META_CONNECTION_DEFAULTS;
+            return Boolean(String(connection.connectorUrl || "").trim());
+        },
+
+        connectorReady() {
+            const connection = this.state.metaConnection || META_CONNECTION_DEFAULTS;
+            return this.metaPrerequisitesReady() && this.connectorConfigured() && connection.lastStatus === "Connected";
+        },
+
+        connectionStatusClass() {
+            const connection = this.state.metaConnection || META_CONNECTION_DEFAULTS;
+            if (connection.lastStatus === "Connected") return "connected";
+            if (connection.lastStatus === "Test failed") return "failed";
+            return this.metaPrerequisitesReady() ? "warning" : "";
+        },
+
+        async testMetaConnector() {
+            const connection = this.state.metaConnection || META_CONNECTION_DEFAULTS;
+            const url = String(connection.connectorUrl || "").trim();
+            if (!url) {
+                alert("Add the secure connector URL first. This should be a Supabase Edge Function or Cloudflare Worker, not an Instagram password.");
+                return;
+            }
+
+            const headers = { "Accept": "application/json" };
+            const token = window.SNPDatabase?.session?.access_token;
+            if (token) headers.Authorization = `Bearer ${token}`;
+
+            try {
+                const response = await fetch(url, { method: "GET", headers });
+                const text = await response.text();
+                let data = {};
+                try {
+                    data = text ? JSON.parse(text) : {};
+                } catch (_) {
+                    data = { message: text };
+                }
+                const message = data.message || data.status || data.account || (response.ok ? "Connector answered successfully." : "Connector rejected the test.");
+                this.state.metaConnection = {
+                    ...connection,
+                    lastStatus: response.ok ? "Connected" : "Test failed",
+                    lastStatusDetail: String(message),
+                    lastTestAt: new Date().toISOString()
+                };
+                this.save();
+                this.render();
+            } catch (error) {
+                this.state.metaConnection = {
+                    ...connection,
+                    lastStatus: "Test failed",
+                    lastStatusDetail: error?.message || "Unable to reach connector.",
+                    lastTestAt: new Date().toISOString()
+                };
+                this.save();
+                this.render();
+            }
+        },
+
+        canSendToConnector(item) {
+            const channel = String(item?.channel || "").toLowerCase();
+            return channel.includes("instagram") || channel.includes("facebook");
+        },
+
+        async sendToMetaConnector(id) {
+            const item = this.state.queue.find(row => row.id === id);
+            if (!item) return;
+            if (!this.canSendToConnector(item)) {
+                alert("This item is not an Instagram/Facebook post. Copy it or use the matching platform manually.");
+                return;
+            }
+            if (!item.previewedAt) {
+                this.openPreview(id);
+                alert("Review the visual preview first. After it looks right, approve it before sending to the connector.");
+                return;
+            }
+            if (item.status !== "Approved" && item.status !== "Sent to Connector") {
+                alert("Approve this post first. The agent will not send anything blind.");
+                return;
+            }
+
+            const connection = this.state.metaConnection || META_CONNECTION_DEFAULTS;
+            if (!this.connectorReady()) {
+                alert("The Instagram/Facebook connector is not ready yet. Complete the checklist and run a successful connector test first.");
+                return;
+            }
+            if (!connection.allowConnectorPublishing) {
+                alert("Turn on 'Allow connector to publish approved posts' before sending live content.");
+                return;
+            }
+
+            const headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            };
+            const token = window.SNPDatabase?.session?.access_token;
+            if (token) headers.Authorization = `Bearer ${token}`;
+
+            try {
+                const response = await fetch(connection.connectorUrl, {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        action: "publish_approved_social_item",
+                        connection: {
+                            instagramHandle: connection.instagramHandle,
+                            facebookPageName: connection.facebookPageName,
+                            businessPortfolioName: connection.businessPortfolioName
+                        },
+                        item,
+                        event: this.eventFacts(this.eventForQueue(item)),
+                        sentAt: new Date().toISOString()
+                    })
+                });
+                const text = await response.text();
+                if (!response.ok) throw new Error(text || "Connector publish failed.");
+                this.updateQueue(id, {
+                    status: "Sent to Connector",
+                    connectorSentAt: new Date().toISOString()
+                });
+                alert("Approved post sent to the secure connector.");
+            } catch (error) {
+                alert(`Connector could not publish yet: ${error?.message || error}`);
+            }
         },
 
         updateCreative(field, value) {
@@ -708,6 +882,7 @@ ${references}
 
                 ${this.renderSettings(event)}
                 ${this.renderCreativeControls()}
+                ${this.renderMetaConnectionControls()}
                 ${this.renderLastPlan(plan)}
                 ${this.renderQueue()}
                 ${this.renderPlatformControls()}
@@ -848,6 +1023,69 @@ ${references}
             `;
         },
 
+        renderMetaConnectionControls() {
+            const connection = this.state.metaConnection || META_CONNECTION_DEFAULTS;
+            const statusClass = this.connectionStatusClass();
+            const prerequisitesReady = this.metaPrerequisitesReady();
+            const connectorReady = this.connectorReady();
+            const tested = connection.lastTestAt ? new Date(connection.lastTestAt).toLocaleString() : "Not tested yet";
+            return `
+                <div class="card">
+                    <div class="promo-agent-item-head">
+                        <div>
+                            <h3>Instagram / Facebook Connection</h3>
+                            <p class="promo-agent-muted">Stores account labels and a secure connector URL only. Do not put Instagram passwords, Meta tokens, or app secrets in this planner.</p>
+                        </div>
+                        <span class="promo-agent-connection-status ${statusClass}">${this.esc(connection.lastStatus || "Not tested")}</span>
+                    </div>
+                    <div class="promo-agent-grid">
+                        <div>
+                            <label>Instagram Handle</label>
+                            <input value="${this.esc(connection.instagramHandle)}" placeholder="@painttownevents" onchange="PromoAgent.updateMetaConnection('instagramHandle', this.value)">
+                        </div>
+                        <div>
+                            <label>Facebook Page</label>
+                            <input value="${this.esc(connection.facebookPageName)}" placeholder="Paint the Town Events" onchange="PromoAgent.updateMetaConnection('facebookPageName', this.value)">
+                        </div>
+                        <div>
+                            <label>Meta Business Portfolio</label>
+                            <input value="${this.esc(connection.businessPortfolioName)}" placeholder="Paint the Town Events" onchange="PromoAgent.updateMetaConnection('businessPortfolioName', this.value)">
+                        </div>
+                        <div>
+                            <label>Connection Mode</label>
+                            <select onchange="PromoAgent.updateMetaConnection('connectionMode', this.value)">
+                                ${["Manual Meta Business Suite","Secure Connector","Scheduler Bridge","Draft Only"].map(option => `<option value="${option}" ${connection.connectionMode === option ? "selected" : ""}>${option}</option>`).join("")}
+                            </select>
+                        </div>
+                        <div>
+                            <label>Secure Connector URL</label>
+                            <input value="${this.esc(connection.connectorUrl)}" placeholder="Supabase Edge Function or Cloudflare Worker URL" onchange="PromoAgent.updateMetaConnection('connectorUrl', this.value)">
+                            <p class="promo-agent-preview-note">This URL should point to a backend that stores Meta credentials securely.</p>
+                        </div>
+                        <div>
+                            <label>Connector Test</label>
+                            <p class="promo-agent-muted">Last test: ${this.esc(tested)}</p>
+                            <p class="promo-agent-preview-note">${this.esc(connection.lastStatusDetail || "")}</p>
+                        </div>
+                    </div>
+                    <div class="promo-agent-checklist">
+                        <label><input type="checkbox" ${connection.instagramBusinessReady ? "checked" : ""} onchange="PromoAgent.updateMetaConnection('instagramBusinessReady', this.checked); PromoAgent.render();"> Instagram is Business/Professional</label>
+                        <label><input type="checkbox" ${connection.facebookPageReady ? "checked" : ""} onchange="PromoAgent.updateMetaConnection('facebookPageReady', this.checked); PromoAgent.render();"> Facebook Page exists</label>
+                        <label><input type="checkbox" ${connection.businessSuiteReady ? "checked" : ""} onchange="PromoAgent.updateMetaConnection('businessSuiteReady', this.checked); PromoAgent.render();"> Page and Instagram are in Meta Business Suite</label>
+                        <label><input type="checkbox" ${connection.twoFactorReady ? "checked" : ""} onchange="PromoAgent.updateMetaConnection('twoFactorReady', this.checked); PromoAgent.render();"> Two-factor authentication is on</label>
+                        <label><input type="checkbox" ${connection.allowConnectorPublishing ? "checked" : ""} onchange="PromoAgent.updateMetaConnection('allowConnectorPublishing', this.checked); PromoAgent.render();"> Allow connector to publish approved posts</label>
+                    </div>
+                    <div class="promo-agent-actions">
+                        <button type="button" onclick="PromoAgent.save(); alert('Instagram/Facebook connection settings saved.');">Save Connection</button>
+                        <button type="button" onclick="PromoAgent.testMetaConnector()" ${this.connectorConfigured() ? "" : "disabled"}>Test Secure Connector</button>
+                    </div>
+                    <p class="promo-agent-muted">
+                        ${connectorReady ? "Connector is ready for approved Instagram/Facebook posts." : prerequisitesReady ? "Account setup looks ready. Add and test a secure connector before publishing from the agent." : "Finish the account checklist first. Until then, the agent stays in preview and copy mode."}
+                    </p>
+                </div>
+            `;
+        },
+
         renderLastPlan(plan) {
             if (!plan) {
                 return `
@@ -911,6 +1149,7 @@ ${references}
                         <button type="button" onclick="PromoAgent.copyQueue('${this.esc(item.id)}')">Copy</button>
                         <button type="button" onclick="PromoAgent.openPreview('${this.esc(item.id)}')">Open Preview Link</button>
                         <button type="button" onclick="PromoAgent.approveQueue('${this.esc(item.id)}')">Approve</button>
+                        ${this.canSendToConnector(item) ? `<button type="button" onclick="PromoAgent.sendToMetaConnector('${this.esc(item.id)}')">Send to Connector</button>` : ""}
                         <button type="button" onclick="PromoAgent.updateQueue('${this.esc(item.id)}',{status:'Done'})">Done</button>
                         <button type="button" onclick="PromoAgent.removeQueue('${this.esc(item.id)}')">Delete</button>
                     </div>
@@ -919,13 +1158,19 @@ ${references}
         },
 
         renderPlatformControls() {
+            const connection = this.state.metaConnection || META_CONNECTION_DEFAULTS;
+            const socialStatus = this.connectorReady()
+                ? "Connected. Approved posts can be sent to the secure connector."
+                : this.metaPrerequisitesReady()
+                    ? "Account setup ready. Add/test a secure connector before direct publishing."
+                    : "Draft and approval queue ready. Finish Meta account setup before direct publishing.";
             return `
                 <div class="card">
                     <h3>Platform Control Status</h3>
                     <div class="promo-agent-platforms">
                         <div><strong>SNP Planner</strong><br>Active. Agent can read event data and create promotion tasks.</div>
                         <div><strong>Eventbrite</strong><br>Draft-ready. Use generated copy in Eventbrite Ads and updates.</div>
-                        <div><strong>Instagram/Facebook</strong><br>Approval queue ready. Direct posting needs a secure connector later.</div>
+                        <div><strong>Instagram/Facebook</strong><br>${this.esc(socialStatus)}<br><small>${this.esc(connection.instagramHandle)} / ${this.esc(connection.facebookPageName)}</small></div>
                         <div><strong>Ad Spend</strong><br>Human approval required before launch or budget changes.</div>
                     </div>
                 </div>
