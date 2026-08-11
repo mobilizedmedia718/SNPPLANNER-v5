@@ -1,6 +1,10 @@
 (function () {
     const DEFAULT_EVENT_URL = "https://www.eventbrite.com/e/paint-the-town-a-sip-and-paint-experience-tickets-1995025559152?aff=oddtdtcreator";
     const STORAGE_KEY = "promoAgent";
+    const SUPABASE_PROJECT_URL = "https://mmstqostdqouxaiyrxtv.supabase.co";
+    const PROMO_MEDIA_BUCKET = "promo-media";
+    const PROMO_MEDIA_MAX_BYTES = 52428800;
+    const PROMO_MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/quicktime", "video/webm"];
     const CREATIVE_DEFAULTS = {
         mediaGoal: "Agent decides",
         referenceUse: "Use as inspiration",
@@ -42,6 +46,7 @@
         hashtags: "#PaintTheTown #OaklandEvents #SipAndPaint #OaklandNightlife #BayAreaEvents #OaklandArt #DateNightOakland #ThingsToDoInOakland #EastOakland #BlackOwnedEvents #CreativeNightOut #PaintAndSip",
         creative: { ...CREATIVE_DEFAULTS },
         metaConnection: { ...META_CONNECTION_DEFAULTS },
+        mediaLibrary: [],
         queue: [],
         lastPlan: null,
         lastRun: "",
@@ -65,6 +70,7 @@
                     ...META_CONNECTION_DEFAULTS,
                     ...(saved?.metaConnection || {})
                 },
+                mediaLibrary: Array.isArray(saved?.mediaLibrary) ? saved.mediaLibrary : [],
                 queue: Array.isArray(saved?.queue) ? saved.queue : [],
                 log: Array.isArray(saved?.log) ? saved.log : []
             };
@@ -147,6 +153,11 @@
                 .promo-agent-connection-status.failed{background:#fee2e2;color:#991b1b}
                 .promo-agent-checklist{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
                 .promo-agent-checklist label{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:10px}
+                .promo-agent-media-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+                .promo-agent-media-card{border:1px solid var(--border);border-radius:12px;background:#f8fafc;padding:10px;min-width:0}
+                .promo-agent-media-card img,.promo-agent-media-card video{width:100%;height:150px;object-fit:cover;border-radius:9px;background:#e5e7eb;margin-bottom:8px}
+                .promo-agent-media-url{font-size:.78rem;line-height:1.35;word-break:break-all;background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:8px}
+                .promo-agent-media-attach{border:1px dashed var(--border);border-radius:10px;background:#f8fafc;padding:10px;margin:10px 0}
                 @media(max-width:900px){.promo-agent-hero{grid-template-columns:1fr}}
                 @media(max-width:700px){.promo-agent-social-preview{grid-template-columns:1fr}.promo-agent-visual{min-height:150px}}
             `;
@@ -327,6 +338,183 @@
             } catch (error) {
                 alert(`Connector could not publish yet: ${error?.message || error}`);
             }
+        },
+
+        supabaseUrl() {
+            if (typeof SNP_SUPABASE_URL !== "undefined") return SNP_SUPABASE_URL;
+            return SUPABASE_PROJECT_URL;
+        },
+
+        storageHeaders(contentType) {
+            const token = window.SNPDatabase?.session?.access_token || "";
+            if (!token || typeof SNPDatabase === "undefined" || typeof SNPDatabase.headers !== "function") return null;
+            const headers = SNPDatabase.headers(token);
+            headers.Authorization = `Bearer ${token}`;
+            headers["Content-Type"] = contentType || "application/octet-stream";
+            headers["x-upsert"] = "true";
+            headers["cache-control"] = "3600";
+            return headers;
+        },
+
+        safeMediaFileName(name) {
+            const cleaned = String(name || "media")
+                .toLowerCase()
+                .replace(/[^a-z0-9._-]+/g, "-")
+                .replace(/^-+|-+$/g, "");
+            return cleaned || `promo-media-${Date.now()}`;
+        },
+
+        encodeStoragePath(path) {
+            return String(path || "")
+                .split("/")
+                .map(part => encodeURIComponent(part))
+                .join("/");
+        },
+
+        publicStorageUrl(path) {
+            return `${this.supabaseUrl()}/storage/v1/object/public/${PROMO_MEDIA_BUCKET}/${this.encodeStoragePath(path)}`;
+        },
+
+        formatBytes(bytes) {
+            const amount = Number(bytes || 0);
+            if (amount >= 1048576) return `${(amount / 1048576).toFixed(1)} MB`;
+            return `${Math.max(1, Math.round(amount / 1024))} KB`;
+        },
+
+        mediaLibrary() {
+            return Array.isArray(this.state.mediaLibrary) ? this.state.mediaLibrary : [];
+        },
+
+        mediaById(id) {
+            return this.mediaLibrary().find(media => media.id === id) || null;
+        },
+
+        mediaForQueue(item) {
+            if (!item?.publicMediaUrl) return null;
+            return this.mediaLibrary().find(media => media.publicUrl === item.publicMediaUrl) || null;
+        },
+
+        async uploadPromoMedia(input) {
+            const files = Array.from(input?.files || []);
+            if (!files.length) return;
+
+            const headersBase = this.storageHeaders("");
+            if (!headersBase) {
+                alert("Sign in to the planner before uploading media to Supabase.");
+                input.value = "";
+                return;
+            }
+
+            const event = this.currentEvent();
+            const eventId = event?.id || "general";
+            const uploaded = [];
+
+            for (const file of files.slice(0, 10)) {
+                if (!PROMO_MEDIA_TYPES.includes(file.type)) {
+                    alert(`${file.name} is not an allowed media type. Use JPG, PNG, WebP, GIF, MP4, MOV, or WebM.`);
+                    continue;
+                }
+                if (file.size > PROMO_MEDIA_MAX_BYTES) {
+                    alert(`${file.name} is too large. Keep promo media under 50 MB.`);
+                    continue;
+                }
+
+                const mediaId = Utils.id();
+                const fileName = `${Date.now()}-${mediaId.slice(0, 8)}-${this.safeMediaFileName(file.name)}`;
+                const path = `events/${eventId}/${fileName}`;
+                const headers = this.storageHeaders(file.type);
+                const response = await fetch(`${this.supabaseUrl()}/storage/v1/object/${PROMO_MEDIA_BUCKET}/${this.encodeStoragePath(path)}`, {
+                    method: "POST",
+                    headers,
+                    body: file
+                });
+
+                if (!response.ok) {
+                    const detail = await response.text();
+                    alert(`Upload failed for ${file.name}: ${detail || response.statusText}`);
+                    continue;
+                }
+
+                uploaded.push({
+                    id: mediaId,
+                    eventId,
+                    eventName: event?.name || "",
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    bucket: PROMO_MEDIA_BUCKET,
+                    path,
+                    publicUrl: this.publicStorageUrl(path),
+                    uploadedAt: new Date().toISOString()
+                });
+            }
+
+            if (uploaded.length) {
+                this.state.mediaLibrary = [...uploaded, ...this.mediaLibrary()].slice(0, 80);
+                this.state.log = [
+                    { id: Utils.id(), at: new Date().toISOString(), message: `Uploaded ${uploaded.length} promo media file(s) to Supabase Storage` },
+                    ...this.state.log
+                ].slice(0, 25);
+                this.save();
+                this.render();
+            }
+            input.value = "";
+        },
+
+        attachMediaToQueue(queueId, mediaId) {
+            const item = this.state.queue.find(row => row.id === queueId);
+            if (!item) return;
+            if (!mediaId) {
+                delete item.publicMediaUrl;
+                delete item.mediaUrl;
+                delete item.mediaType;
+                delete item.mediaName;
+                delete item.mediaAttachedAt;
+                this.save();
+                this.render();
+                return;
+            }
+            const media = this.mediaById(mediaId);
+            if (!media) return;
+            Object.assign(item, {
+                publicMediaUrl: media.publicUrl,
+                mediaUrl: media.publicUrl,
+                mediaType: media.type,
+                mediaName: media.name,
+                mediaAttachedAt: new Date().toISOString()
+            });
+            this.save();
+            this.render();
+        },
+
+        copyText(text, label = "Copied.") {
+            navigator.clipboard?.writeText(text).then(() => {
+                alert(label);
+            }).catch(() => {
+                prompt("Copy this text:", text);
+            });
+        },
+
+        copyMediaUrl(id) {
+            const media = this.mediaById(id);
+            if (!media?.publicUrl) return;
+            this.copyText(media.publicUrl, "Media URL copied.");
+        },
+
+        copyQueueMediaUrl(queueId) {
+            const item = this.state.queue.find(row => row.id === queueId);
+            if (!item?.publicMediaUrl) return;
+            this.copyText(item.publicMediaUrl, "Attached media URL copied.");
+        },
+
+        removeMediaFromLibrary(id) {
+            const media = this.mediaById(id);
+            if (!media) return;
+            const attached = this.state.queue.some(item => item.publicMediaUrl === media.publicUrl);
+            if (attached && !confirm("This media is attached to a queued post. Remove it from the media library anyway? The public URL will stay attached to the post.")) return;
+            this.state.mediaLibrary = this.mediaLibrary().filter(row => row.id !== id);
+            this.save();
+            this.render();
         },
 
         updateCreative(field, value) {
@@ -882,6 +1070,7 @@ ${references}
 
                 ${this.renderSettings(event)}
                 ${this.renderCreativeControls()}
+                ${this.renderMediaLibrary()}
                 ${this.renderMetaConnectionControls()}
                 ${this.renderLastPlan(plan)}
                 ${this.renderQueue()}
@@ -1023,6 +1212,56 @@ ${references}
             `;
         },
 
+        renderMediaLibrary() {
+            const media = this.mediaLibrary();
+            return `
+                <div class="card">
+                    <div class="promo-agent-item-head">
+                        <div>
+                            <h3>Promo Media URLs</h3>
+                            <p class="promo-agent-muted">Upload the final post image or video here. Supabase stores it in the public <strong>${PROMO_MEDIA_BUCKET}</strong> bucket and gives the agent a URL Meta can fetch.</p>
+                        </div>
+                    </div>
+                    <div class="promo-agent-grid">
+                        <div>
+                            <label>Upload to Supabase Storage</label>
+                            <input type="file" accept="${PROMO_MEDIA_TYPES.join(",")}" multiple onchange="PromoAgent.uploadPromoMedia(this)">
+                            <p class="promo-agent-preview-note">Allowed: JPG, PNG, WebP, GIF, MP4, MOV, WebM. Max 50 MB each.</p>
+                        </div>
+                        <div>
+                            <label>Public URL Format</label>
+                            <div class="promo-agent-media-url">${this.esc(`${this.supabaseUrl()}/storage/v1/object/public/${PROMO_MEDIA_BUCKET}/...`)}</div>
+                            <p class="promo-agent-preview-note">Use these URLs for Instagram/Facebook connector media.</p>
+                        </div>
+                    </div>
+                    ${media.length ? `<div class="promo-agent-media-list">${media.map(item => this.renderMediaCard(item)).join("")}</div>` : `<p class="promo-agent-muted">No promo media uploaded yet.</p>`}
+                </div>
+            `;
+        },
+
+        renderMediaCard(media) {
+            const isImage = String(media.type || "").startsWith("image/");
+            const isVideo = String(media.type || "").startsWith("video/");
+            const preview = isImage
+                ? `<img src="${this.esc(media.publicUrl)}" alt="">`
+                : isVideo
+                    ? `<video src="${this.esc(media.publicUrl)}" controls preload="metadata"></video>`
+                    : `<div style="height:150px;display:grid;place-items:center;background:#e5e7eb;border-radius:9px;margin-bottom:8px;">Media</div>`;
+            return `
+                <div class="promo-agent-media-card">
+                    ${preview}
+                    <strong>${this.esc(media.name || "Promo media")}</strong>
+                    <small style="display:block;color:#64748b;">${this.esc(media.type || "File")} - ${this.esc(this.formatBytes(media.size))}</small>
+                    ${media.eventName ? `<small style="display:block;color:#64748b;">${this.esc(media.eventName)}</small>` : ""}
+                    <div class="promo-agent-media-url">${this.esc(media.publicUrl)}</div>
+                    <div class="promo-agent-actions">
+                        <button type="button" onclick="PromoAgent.copyMediaUrl('${this.esc(media.id)}')">Copy URL</button>
+                        <button type="button" onclick="PromoAgent.removeMediaFromLibrary('${this.esc(media.id)}')">Remove</button>
+                    </div>
+                </div>
+            `;
+        },
+
         renderMetaConnectionControls() {
             const connection = this.state.metaConnection || META_CONNECTION_DEFAULTS;
             const statusClass = this.connectionStatusClass();
@@ -1144,6 +1383,7 @@ ${references}
                         <strong>${this.esc(item.status)}</strong>
                     </div>
                     ${this.renderVisualPreview(item)}
+                    ${this.canSendToConnector(item) ? this.renderQueueMediaAttachment(item) : ""}
                     <textarea class="promo-agent-copy" readonly>${this.esc(item.copy)}</textarea>
                     <div class="promo-agent-actions">
                         <button type="button" onclick="PromoAgent.copyQueue('${this.esc(item.id)}')">Copy</button>
@@ -1153,6 +1393,28 @@ ${references}
                         <button type="button" onclick="PromoAgent.updateQueue('${this.esc(item.id)}',{status:'Done'})">Done</button>
                         <button type="button" onclick="PromoAgent.removeQueue('${this.esc(item.id)}')">Delete</button>
                     </div>
+                </div>
+            `;
+        },
+
+        renderQueueMediaAttachment(item) {
+            const media = this.mediaLibrary();
+            const attached = this.mediaForQueue(item);
+            const selectedId = attached?.id || "";
+            return `
+                <div class="promo-agent-media-attach">
+                    <label>Public Media URL for Meta</label>
+                    <select onchange="PromoAgent.attachMediaToQueue('${this.esc(item.id)}', this.value)">
+                        <option value="">No media attached</option>
+                        ${media.map(row => `<option value="${this.esc(row.id)}" ${row.id === selectedId ? "selected" : ""}>${this.esc(row.name || row.publicUrl)}</option>`).join("")}
+                    </select>
+                    ${item.publicMediaUrl ? `
+                        <div class="promo-agent-media-url">${this.esc(item.publicMediaUrl)}</div>
+                        <div class="promo-agent-actions">
+                            <button type="button" onclick="PromoAgent.copyQueueMediaUrl('${this.esc(item.id)}')">Copy Attached URL</button>
+                            <button type="button" onclick="PromoAgent.attachMediaToQueue('${this.esc(item.id)}','')">Detach</button>
+                        </div>
+                    ` : `<p class="promo-agent-preview-note">Upload media above, then attach it here before sending Instagram/Facebook posts to the connector.</p>`}
                 </div>
             `;
         },
