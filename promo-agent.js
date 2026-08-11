@@ -407,6 +407,7 @@
 
             const event = this.currentEvent();
             const eventId = event?.id || "general";
+            const userId = window.SNPDatabase?.user?.()?.id || "unknown-user";
             const uploaded = [];
 
             for (const file of files.slice(0, 10)) {
@@ -421,7 +422,7 @@
 
                 const mediaId = Utils.id();
                 const fileName = `${Date.now()}-${mediaId.slice(0, 8)}-${this.safeMediaFileName(file.name)}`;
-                const path = `events/${eventId}/${fileName}`;
+                const path = `users/${userId}/events/${eventId}/${fileName}`;
                 const headers = this.storageHeaders(file.type);
                 const response = await fetch(`${this.supabaseUrl()}/storage/v1/object/${PROMO_MEDIA_BUCKET}/${this.encodeStoragePath(path)}`, {
                     method: "POST",
