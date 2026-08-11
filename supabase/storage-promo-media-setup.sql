@@ -33,40 +33,60 @@ begin
     using (bucket_id = 'promo-media');
   end if;
 
+  drop policy if exists "Authenticated upload promo media" on storage.objects;
+  drop policy if exists "Authenticated update promo media" on storage.objects;
+  drop policy if exists "Authenticated delete promo media" on storage.objects;
+
   if not exists (
     select 1 from pg_policies
     where schemaname = 'storage'
       and tablename = 'objects'
-      and policyname = 'Authenticated upload promo media'
+      and policyname = 'Authenticated upload own promo media'
   ) then
-    create policy "Authenticated upload promo media"
+    create policy "Authenticated upload own promo media"
     on storage.objects for insert
     to authenticated
-    with check (bucket_id = 'promo-media');
+    with check (
+      bucket_id = 'promo-media'
+      and (storage.foldername(name))[1] = 'users'
+      and (storage.foldername(name))[2] = (select auth.uid())::text
+    );
   end if;
 
   if not exists (
     select 1 from pg_policies
     where schemaname = 'storage'
       and tablename = 'objects'
-      and policyname = 'Authenticated update promo media'
+      and policyname = 'Authenticated update own promo media'
   ) then
-    create policy "Authenticated update promo media"
+    create policy "Authenticated update own promo media"
     on storage.objects for update
     to authenticated
-    using (bucket_id = 'promo-media')
-    with check (bucket_id = 'promo-media');
+    using (
+      bucket_id = 'promo-media'
+      and (storage.foldername(name))[1] = 'users'
+      and (storage.foldername(name))[2] = (select auth.uid())::text
+    )
+    with check (
+      bucket_id = 'promo-media'
+      and (storage.foldername(name))[1] = 'users'
+      and (storage.foldername(name))[2] = (select auth.uid())::text
+    );
   end if;
 
   if not exists (
     select 1 from pg_policies
     where schemaname = 'storage'
       and tablename = 'objects'
-      and policyname = 'Authenticated delete promo media'
+      and policyname = 'Authenticated delete own promo media'
   ) then
-    create policy "Authenticated delete promo media"
+    create policy "Authenticated delete own promo media"
     on storage.objects for delete
     to authenticated
-    using (bucket_id = 'promo-media');
+    using (
+      bucket_id = 'promo-media'
+      and (storage.foldername(name))[1] = 'users'
+      and (storage.foldername(name))[2] = (select auth.uid())::text
+    );
   end if;
 end $$;
