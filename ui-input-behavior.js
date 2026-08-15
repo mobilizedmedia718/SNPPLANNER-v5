@@ -1,23 +1,35 @@
-/* Improves data-entry fields: default zero values clear when the user starts entering data. */
+/* Site-wide data-entry behavior for SNP Planner. */
 (function () {
+    function inPlanner(el) {
+        return !!el?.closest?.("#app");
+    }
+
+    function isTextField(el) {
+        return el instanceof HTMLTextAreaElement || (
+            el instanceof HTMLInputElement &&
+            ["text", "search", "url", "email", "tel"].includes(el.type)
+        );
+    }
+
     document.addEventListener("focusin", function (event) {
         const input = event.target;
-        if (!(input instanceof HTMLInputElement)) return;
-        if (!input.closest("#workspace")) return;
+        if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) return;
+        if (!inPlanner(input)) return;
 
-        if (input.type === "number" && String(input.value).trim() === "0") {
+        // Numeric fields frequently render 0 as a default. Clear that display
+        // when the user enters the field so typing replaces the default value.
+        if (input instanceof HTMLInputElement && input.type === "number" && String(input.value).trim() === "0") {
             input.dataset.snpWasDefaultZero = "1";
             input.value = "";
             return;
         }
 
-        // If a field contains placeholder-style text that exactly matches its
-        // placeholder, clear it so the user can type without deleting it first.
+        // Placeholder/help copy must never behave like saved data. If an older
+        // record contains the same text as the placeholder, clear it on focus.
         if (
-            (input.type === "text" || input.type === "search" || input.type === "url" || input.type === "email") &&
+            isTextField(input) &&
             input.placeholder &&
-            input.value &&
-            input.value.trim() === input.placeholder.trim()
+            String(input.value || "").trim() === String(input.placeholder || "").trim()
         ) {
             input.dataset.snpWasPlaceholderValue = "1";
             input.value = "";
@@ -26,11 +38,11 @@
 
     document.addEventListener("focusout", function (event) {
         const input = event.target;
-        if (!(input instanceof HTMLInputElement)) return;
-        if (!input.closest("#workspace")) return;
+        if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) return;
+        if (!inPlanner(input)) return;
 
-        // Keep blank numeric fields visually blank. Existing save handlers
-        // already convert blank numeric values to 0 where appropriate.
+        // Leave numeric fields visually blank after the user clears them.
+        // Save handlers already coerce blank numeric values to zero as needed.
         delete input.dataset.snpWasDefaultZero;
         delete input.dataset.snpWasPlaceholderValue;
     }, true);
