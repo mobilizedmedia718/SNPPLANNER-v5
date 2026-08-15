@@ -1,15 +1,44 @@
 const Utils = {
 
+    _cloudSaveQueues: {},
+
     save(key, data) {
+        const snapshot = JSON.parse(JSON.stringify(data));
+
         localStorage.setItem(
             `snpplanner_${key}`,
-            JSON.stringify(data)
+            JSON.stringify(snapshot)
         );
 
         if (window.SNPDatabase?.user?.()) {
-            SNPDatabase.saveStorage(key, data).catch(error => {
-                console.error(`Unable to sync ${key} to Supabase:`, error);
-            });
+            // Serialize cloud writes per storage key. A newly-created blank record
+            // often saves immediately before the user finishes the form. Without
+            // a queue, that older request can finish after the real Save and
+            // overwrite the completed record in Supabase.
+            const prior = this._cloudSaveQueues[key] || Promise.resolve();
+            const next = prior
+                .catch(() => {})
+                .then(() => SNPDatabase.saveStorage(key, snapshot))
+                .catch(error => {
+                    console.error(`Unable to sync ${key} to Supabase:`, error);
+                    throw error;
+                });
+
+            this._cloudSaveQueues[key] = next;
+            next.finally(() => {
+                if (this._cloudSaveQueues[key] === next) delete this._cloudSaveQueues[key];
+            }).catch(() => {});
+        }
+    },
+
+    async flushSave(key) {
+        const pending = this._cloudSaveQueues[key];
+        if (!pending) return true;
+        try {
+            await pending;
+            return true;
+        } catch (_) {
+            return false;
         }
     },
 
@@ -26,9 +55,18 @@ const Utils = {
     remove(key) {
         localStorage.removeItem(`snpplanner_${key}`);
         if (window.SNPDatabase?.user?.()) {
-            SNPDatabase.removeStorage(key).catch(error => {
-                console.error(`Unable to remove ${key} from Supabase:`, error);
-            });
+            const prior = this._cloudSaveQueues[key] || Promise.resolve();
+            const next = prior
+                .catch(() => {})
+                .then(() => SNPDatabase.removeStorage(key))
+                .catch(error => {
+                    console.error(`Unable to remove ${key} from Supabase:`, error);
+                    throw error;
+                });
+            this._cloudSaveQueues[key] = next;
+            next.finally(() => {
+                if (this._cloudSaveQueues[key] === next) delete this._cloudSaveQueues[key];
+            }).catch(() => {});
         }
     },
 
