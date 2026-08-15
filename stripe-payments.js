@@ -15,7 +15,7 @@ const SNPStripePayments = {
             const refreshed = await response.json();
             if (!response.ok || !refreshed?.access_token) {
                 SNPDatabase.saveSession(null);
-                throw new Error("Your SNP Planner session expired. Please sign in again.");
+                throw new Error("Your SNP Planner session expired. Please sign out, sign back in, then try the ticket again.");
             }
             SNPDatabase.saveSession(refreshed);
             session = refreshed;
@@ -49,12 +49,29 @@ const SNPStripePayments = {
             }
             throw new Error(data?.error || "Unable to start Stripe checkout.");
         }
+        if (options.navigate === false) return data;
         window.location.href = data.checkoutUrl;
+        return data;
     },
 
     async startTicketCheckout(items, options = {}) {
         const ticketItems = (items || []).map(item => ({ ...item, saleType: "ticket" }));
         return this.startCheckout(ticketItems, { ...options, purchaseType: "ticket" });
+    },
+
+    async copyCheckoutLink(items, options = {}) {
+        const data = options.purchaseType === "ticket"
+            ? await this.startTicketCheckout(items, { ...options, navigate:false })
+            : await this.startCheckout(items, { ...options, navigate:false });
+        const url = String(data?.checkoutUrl || "");
+        if (!url) throw new Error("Stripe did not return a checkout link.");
+        try {
+            await navigator.clipboard.writeText(url);
+            alert("Customer checkout link copied. Send this link to the customer so they can enter their own information and pay.");
+        } catch (_) {
+            window.prompt("Copy this customer checkout link:", url);
+        }
+        return data;
     },
 
     async sandboxTest() {
@@ -80,7 +97,7 @@ const SNPStripePayments = {
                 card.id = "stripeSandboxTest";
                 card.innerHTML = `
                     <h3>Stripe Payments</h3>
-                    <p>Sandbox mode is connected. Stripe purchasers are now tied to CRM/event patron records, and ticket purchases can be marked as confirmed guests.</p>
+                    <p>Sandbox mode is connected. Stripe purchasers are tied to CRM/event patron records after payment, and ticket purchases can be marked as confirmed guests.</p>
                     <button type="button" onclick="SNPStripePayments.sandboxTest()">Run $1 Sandbox Payment Test</button>
                 `;
                 workspace.appendChild(card);
