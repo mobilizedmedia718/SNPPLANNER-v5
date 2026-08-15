@@ -1,4 +1,4 @@
-const CACHE = "snpplanner-v5-15";
+const CACHE = "snpplanner-v5-16";
 
 const FILES = [
     "./styles.css",
@@ -29,8 +29,6 @@ self.addEventListener("fetch", event => {
     const request = event.request;
     const url = new URL(request.url);
 
-    // Always fetch the app shell and JavaScript from the network first so a
-    // second browser/device cannot keep running an older SNP Planner build.
     if (
         request.mode === "navigate" ||
         url.pathname.endsWith(".html") ||
