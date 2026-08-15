@@ -1,4 +1,4 @@
-const CACHE = "snpplanner-v5-18";
+const CACHE = "snpplanner-v5-19";
 
 const FILES = [
     "./styles.css",
