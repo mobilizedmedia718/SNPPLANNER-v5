@@ -4,6 +4,7 @@ const SalesUI = {
     selectedCustomerId: "",
     selectedEventId: "",
     syncingPatrons: false,
+    customerMode: "",
 
     install() {
         const originalSidebar = UI.renderSidebar;
@@ -60,6 +61,7 @@ const SalesUI = {
         const liveId = window.LiveEvent?.activeId || "";
         if (liveId) this.selectedEventId = liveId;
         this.selectedCustomerId = "";
+        this.customerMode = "";
         this.cart = {};
         await this.refreshCloudState();
         const eventId = this.activeEventId();
@@ -75,25 +77,112 @@ const SalesUI = {
         const workspace = document.getElementById("workspace");
         if (!workspace) return;
         if (!eventId) {
-            workspace.innerHTML = `<h2>Sales</h2><div class="card"><h3>Choose Event</h3><p>Sales starts with the event so SNP Planner can show only people actually present.</p>${events.length ? events.map(e => `<button type="button" style="margin:6px;" onclick="SalesUI.chooseEvent('${UI.esc(e.id)}')">${UI.esc(e.name || "Untitled Event")}${e.date ? ` — ${UI.esc(e.date)}` : ""}</button>`).join("") : `<p>No active events found.</p>`}</div>`;
+            workspace.innerHTML = `<h2>Sales</h2><div class="card"><h3>Choose Event</h3><p>Choose the event for this sale.</p>${events.length ? events.map(e => `<button type="button" style="margin:6px;" onclick="SalesUI.chooseEvent('${UI.esc(e.id)}')">${UI.esc(e.name || "Untitled Event")}${e.date ? ` — ${UI.esc(e.date)}` : ""}</button>`).join("") : `<p>No active events found.</p>`}</div>`;
             return;
         }
         const event = Events.get(eventId);
-        const patrons = this.patronsForEvent(eventId);
         workspace.innerHTML = `
             <h2>Sales — ${UI.esc(event?.name || "Event")}</h2>
             <div class="card">
-                <h3>Who are you charging?</h3>
-                <p>Only people actually checked in or manually admitted appear here. A purchase alone does not count as attendance.</p>
-                <button type="button" onclick="SalesUI.syncPatrons()">Refresh Checked-In Patrons</button>
-                <button type="button" onclick="CheckInUI.open('${UI.esc(eventId)}')">Check In / Scan Ticket</button>
+                <h3>Choose Customer Type</h3>
+                <p>Start every sale by choosing whether this is an existing customer or a new customer.</p>
+                <button type="button" onclick="SalesUI.showExistingCustomers()">Existing Customer</button>
+                <button type="button" onclick="SalesUI.showNewCustomer()">New Customer</button>
+                <button type="button" onclick="SalesUI.selectWalkIn()">Walk-in / No Customer Record</button>
                 ${window.LiveEvent?.activeId ? "" : `<button type="button" onclick="SalesUI.changeEvent()">Change Event</button>`}
-                <br><br>
-                <div id="salesPatronButtons">
-                    ${patrons.length ? patrons.map(c => `<button type="button" style="display:block;width:100%;margin:8px 0;padding:14px;text-align:left;" onclick="SalesUI.selectPatron('${UI.esc(c.id)}')"><strong>${UI.esc(CRM.fullName(c) || c.email || "Patron")}</strong>${c.email ? `<br><small>${UI.esc(c.email)}</small>` : ""}</button>`).join("") : `<p>No one is checked in yet. Scan a ticket or admit a walk-in/non-ticket guest.</p>`}
-                    <button type="button" style="display:block;width:100%;margin:8px 0;padding:14px;text-align:left;" onclick="SalesUI.selectPatron('')"><strong>Walk-in / No Patron</strong></button>
+            </div>`;
+    },
+
+    showExistingCustomers() {
+        this.customerMode = "existing";
+        const workspace = document.getElementById("workspace");
+        if (!workspace) return;
+        const eventId = this.activeEventId();
+        const event = Events.get(eventId);
+        const checked = new Set(this.patronsForEvent(eventId).map(c => String(c.id)));
+        const customers = CRM.all().slice().sort((a,b) => String(CRM.fullName(a) || a.email || "").localeCompare(String(CRM.fullName(b) || b.email || "")));
+        workspace.innerHTML = `
+            <h2>Existing Customer — ${UI.esc(event?.name || "Event")}</h2>
+            <div class="card">
+                <button type="button" onclick="SalesUI.renderPatronPicker()">← Customer Type</button>
+                <h3>Select Registered Customer</h3>
+                <input id="salesCustomerSearch" type="search" placeholder="Search name, email, phone" oninput="SalesUI.filterExistingCustomers(this.value)">
+                <div id="salesExistingCustomerList">
+                    ${this.customerButtons(customers, checked)}
                 </div>
             </div>`;
+    },
+
+    customerButtons(customers, checkedSet = new Set()) {
+        return customers.length ? customers.map(c => `<button type="button" style="display:block;width:100%;margin:8px 0;padding:14px;text-align:left;" onclick="SalesUI.selectPatron('${UI.esc(c.id)}')"><strong>${UI.esc(CRM.fullName(c) || c.email || "Customer")}</strong>${c.email ? `<br><small>${UI.esc(c.email)}</small>` : ""}${c.phone ? `<br><small>${UI.esc(c.phone)}</small>` : ""}${checkedSet.has(String(c.id)) ? `<br><small>Checked in to this event</small>` : ""}</button>`).join("") : `<p>No registered customers yet.</p>`;
+    },
+
+    filterExistingCustomers(term) {
+        const eventId = this.activeEventId();
+        const checked = new Set(this.patronsForEvent(eventId).map(c => String(c.id)));
+        const list = document.getElementById("salesExistingCustomerList");
+        if (!list) return;
+        const customers = String(term || "").trim() ? CRM.search(term) : CRM.all();
+        list.innerHTML = this.customerButtons(customers, checked);
+    },
+
+    showNewCustomer() {
+        this.customerMode = "new";
+        this.selectedCustomerId = "";
+        const workspace = document.getElementById("workspace");
+        if (!workspace) return;
+        const event = Events.get(this.activeEventId());
+        workspace.innerHTML = `
+            <h2>New Customer — ${UI.esc(event?.name || "Event")}</h2>
+            <div class="card">
+                <button type="button" onclick="SalesUI.renderPatronPicker()">← Customer Type</button>
+                <h3>How will the customer enter their information?</h3>
+                <button type="button" onclick="SalesUI.showManualNewCustomer()">Enter Customer Information Manually</button>
+                <button type="button" onclick="SalesUI.selectSelfCheckoutCustomer()">Customer Enters Information on Stripe Checkout</button>
+                <p><small>The second option creates the sale without attaching an old customer. Stripe collects the new buyer's email during checkout.</small></p>
+            </div>`;
+    },
+
+    showManualNewCustomer() {
+        const workspace = document.getElementById("workspace");
+        if (!workspace) return;
+        workspace.innerHTML = `
+            <h2>New Customer Information</h2>
+            <div class="card">
+                <button type="button" onclick="SalesUI.showNewCustomer()">← Back</button>
+                <label>First Name</label><input id="salesNewFirstName" autocomplete="given-name">
+                <label>Last Name</label><input id="salesNewLastName" autocomplete="family-name">
+                <label>Email</label><input id="salesNewEmail" type="email" autocomplete="email">
+                <label>Phone</label><input id="salesNewPhone" type="tel" autocomplete="tel">
+                <button type="button" onclick="SalesUI.saveNewCustomerAndContinue()">Save New Customer & Continue</button>
+            </div>`;
+    },
+
+    saveNewCustomerAndContinue() {
+        const firstName = String(document.getElementById("salesNewFirstName")?.value || "").trim();
+        const lastName = String(document.getElementById("salesNewLastName")?.value || "").trim();
+        const email = String(document.getElementById("salesNewEmail")?.value || "").trim();
+        const phone = String(document.getElementById("salesNewPhone")?.value || "").trim();
+        if (!firstName && !lastName && !email && !phone) return alert("Enter at least one customer detail, or choose Customer Enters Information on Stripe Checkout.");
+        const customer = CRM.create({ firstName, lastName, email, phone, tags:["New Customer"] });
+        this.selectedCustomerId = customer.id;
+        this.customerMode = "new-manual";
+        this.cart = {};
+        this.renderMenu();
+    },
+
+    selectSelfCheckoutCustomer() {
+        this.selectedCustomerId = "";
+        this.customerMode = "new-self";
+        this.cart = {};
+        this.renderMenu();
+    },
+
+    selectWalkIn() {
+        this.selectedCustomerId = "";
+        this.customerMode = "walkin";
+        this.cart = {};
+        this.renderMenu();
     },
 
     chooseEvent(eventId) { this.selectedEventId = eventId; this.open(); },
@@ -102,11 +191,11 @@ const SalesUI = {
         const eventId = this.activeEventId();
         if (!eventId || this.syncingPatrons) return;
         this.syncingPatrons = true;
-        try { await Eventbrite.syncCheckedIn(eventId); await this.renderPatronPicker(); }
+        try { await Eventbrite.syncCheckedIn(eventId); await this.showExistingCustomers(); }
         catch (error) { alert(error?.message || "Unable to sync Eventbrite check-ins."); }
         finally { this.syncingPatrons = false; }
     },
-    selectPatron(customerId) { this.selectedCustomerId = customerId || ""; this.cart = {}; this.renderMenu(); },
+    selectPatron(customerId) { this.selectedCustomerId = customerId || ""; this.customerMode = customerId ? "existing" : "walkin"; this.cart = {}; this.renderMenu(); },
     selectedItems() {
         return this.inventoryForSale().map(item => {
             const qty = Number(this.cart[item.id] || 0);
@@ -126,16 +215,25 @@ const SalesUI = {
         const eventId = this.activeEventId();
         const event = Events.get(eventId);
         const customer = this.selectedCustomerId ? CRM.get(this.selectedCustomerId) : null;
+        const customerLabel = customer ? (CRM.fullName(customer) || customer.email || "Customer") : this.customerMode === "new-self" ? "New customer — enters own details" : "Walk-in / no customer record";
         const workspace = document.getElementById("workspace"); if (!workspace) return;
-        workspace.innerHTML = `<h2>Event Sales Menu</h2><div class="card"><p><strong>Event:</strong> ${UI.esc(event?.name || "General")}</p><p><strong>Patron:</strong> ${UI.esc(customer ? (CRM.fullName(customer) || customer.email || "Patron") : "Walk-in")}</p><button type="button" onclick="SalesUI.renderPatronPicker()">Change Patron</button></div><div class="card"><h3>Menu</h3>${items.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">${items.map(item => `<button type="button" onclick="SalesUI.addItem('${UI.esc(item.id)}')" style="padding:16px;text-align:left;min-height:100px;"><strong>${UI.esc(item.name || "Item")}</strong><br><span>${Utils.money(item.sellPrice)}</span><br><small>Stock: ${Number(item.quantity || 0)}</small></button>`).join("")}</div>` : `<p>No Event Sales inventory is available. In Inventory, set an item's Category to <strong>Event Sales</strong> and give it a Sell Price.</p>`}</div><div class="card"><h3>Current Ticket</h3>${this.selectedItems().length ? this.selectedItems().map(item => `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eee;"><span>${UI.esc(item.name)}</span><span><button type="button" onclick="SalesUI.subtractItem('${UI.esc(item.inventoryId)}')">−</button><strong style="padding:0 10px;">${item.quantity}</strong><button type="button" onclick="SalesUI.addItem('${UI.esc(item.inventoryId)}')">+</button></span><strong>${Utils.money(item.price * item.quantity)}</strong></div>`).join("") : `<p>No items added yet.</p>`}<br><p style="font-size:1.3em;"><strong>Total: ${Utils.money(this.total())}</strong></p><button type="button" onclick="SalesUI.checkout()" ${this.selectedItems().length ? "" : "disabled"}>Charge with Stripe</button><button type="button" onclick="SalesUI.clearCart()">Clear Ticket</button></div>`;
+        workspace.innerHTML = `<h2>Event Sales Menu</h2><div class="card"><p><strong>Event:</strong> ${UI.esc(event?.name || "General")}</p><p><strong>Customer:</strong> ${UI.esc(customerLabel)}</p><button type="button" onclick="SalesUI.renderPatronPicker()">Change Customer</button></div><div class="card"><h3>Menu</h3>${items.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">${items.map(item => `<button type="button" onclick="SalesUI.addItem('${UI.esc(item.id)}')" style="padding:16px;text-align:left;min-height:100px;"><strong>${UI.esc(item.name || "Item")}</strong><br><span>${Utils.money(item.sellPrice)}</span><br><small>Stock: ${Number(item.quantity || 0)}</small></button>`).join("")}</div>` : `<p>No Event Sales inventory is available. In Inventory, set an item's Category to <strong>Event Sales</strong> and give it a Sell Price.</p>`}</div><div class="card"><h3>Current Ticket</h3>${this.selectedItems().length ? this.selectedItems().map(item => `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eee;"><span>${UI.esc(item.name)}</span><span><button type="button" onclick="SalesUI.subtractItem('${UI.esc(item.inventoryId)}')">−</button><strong style="padding:0 10px;">${item.quantity}</strong><button type="button" onclick="SalesUI.addItem('${UI.esc(item.inventoryId)}')">+</button></span><strong>${Utils.money(item.price * item.quantity)}</strong></div>`).join("") : `<p>No items added yet.</p>`}<br><p style="font-size:1.3em;"><strong>Total: ${Utils.money(this.total())}</strong></p><button type="button" onclick="SalesUI.checkout()" ${this.selectedItems().length ? "" : "disabled"}>Open Stripe Checkout</button><button type="button" onclick="SalesUI.createPaymentLink()" ${this.selectedItems().length ? "" : "disabled"}>Copy Customer Payment Link</button><button type="button" onclick="SalesUI.clearCart()">Clear Ticket</button></div>`;
     },
     clearCart() { this.cart = {}; this.renderMenu(); },
+    checkoutOptions() {
+        const customer = this.selectedCustomerId ? CRM.get(this.selectedCustomerId) : null;
+        return { eventId:this.activeEventId(), customerId:this.selectedCustomerId, customerEmail:customer?.email || "" };
+    },
     async checkout() {
         const items = this.selectedItems(); if (!items.length) return alert("Add at least one item.");
         for (const sold of items) { const item = Inventory.get(sold.inventoryId); if (!item || Number(sold.quantity) > Number(item.quantity || 0)) return alert(`${sold.name} does not have enough stock for this sale.`); }
-        const eventId = this.activeEventId(); const customer = this.selectedCustomerId ? CRM.get(this.selectedCustomerId) : null;
-        try { await SNPStripePayments.startCheckout(items, { eventId, customerId:this.selectedCustomerId, customerEmail:customer?.email || "" }); }
+        try { await SNPStripePayments.startCheckout(items, this.checkoutOptions()); }
         catch (error) { alert(error?.message || "Unable to start checkout."); }
+    },
+    async createPaymentLink() {
+        const items = this.selectedItems(); if (!items.length) return alert("Add at least one item.");
+        try { await SNPStripePayments.copyCheckoutLink(items, this.checkoutOptions()); }
+        catch (error) { alert(error?.message || "Unable to create customer payment link."); }
     },
     render() { return this.open(); }
 };
