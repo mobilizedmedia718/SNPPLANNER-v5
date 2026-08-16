@@ -37,6 +37,9 @@
                     seatMultiplier:2,
                     minimumOrderQuantity:2,
                     maximumOrderQuantity:2,
+                    regularValue:105,
+                    discountAmount:10,
+                    revenueAllocation:{admission:70,beverage_addon:25},
                     kind:"paint",
                     includesPainting:true,
                     canvasSize:"9×12",
@@ -129,6 +132,9 @@
                 eventbriteUnitPrice:Number(t.eventbriteUnitPrice || 0),
                 minimumOrderQuantity:Math.max(1,Number(t.minimumOrderQuantity || 1)),
                 maximumOrderQuantity:Math.max(1,Number(t.maximumOrderQuantity || t.minimumOrderQuantity || 1)),
+                regularValue:Number(t.regularValue || 0),
+                discountAmount:Number(t.discountAmount || 0),
+                revenueAllocation:JSON.parse(JSON.stringify(t.revenueAllocation && typeof t.revenueAllocation === "object" ? t.revenueAllocation : {})),
                 inclusions:JSON.parse(JSON.stringify(Array.isArray(t.inclusions) ? t.inclusions : []))
             };
             if (same) Object.assign(same, payload); else templates.push(payload);
