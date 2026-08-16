@@ -108,6 +108,14 @@
         color: #a40000;
         font-weight: 700;
       }
+      .notice {
+        padding: 11px 12px;
+        border-radius: 8px;
+        background: #eef4ff;
+        border: 1px solid #b9cdf5;
+        color: #173b73;
+        line-height: 1.4;
+      }
       video {
         width: 100%;
         max-height: 300px;
@@ -142,7 +150,8 @@
       let S = null,
         E = [],
         stream = null,
-        scanTimer = null;
+        scanTimer = null,
+        authRedirectType = "";
       const h = (t) => ({
         apikey: K,
         "Content-Type": "application/json",
@@ -163,8 +172,19 @@
       const money = (n) => "$" + Number(n || 0).toFixed(2);
       const invite = () =>
         new URLSearchParams(location.search).get("invite") || "";
-      function auth(msg = "") {
-        app.innerHTML = `${invite() ? '<div class="card"><h3>Employee / Staff Invitation</h3><p>Create your staff account or sign in with the email this invitation was sent to. After signing in, complete your employee profile.</p></div>' : ""}<div class="card"><h2>Staff Sign In</h2><p class="muted">Only assigned event duties are available here.</p>${msg ? `<p class="danger">${esc(msg)}</p>` : ""}<label>Email</label><input id="e" type="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"><label>Password</label><input id="p" type="password" minlength="8" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"><label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="showp" type="checkbox" style="width:auto" onchange="togglePassword()"> Show password</label><div class="grid" style="margin-top:10px"><button onclick="login()">Sign In</button><button onclick="signup()">Create Staff Account</button></div><div class="grid" style="margin-top:10px"><button type="button" onclick="forgotPassword()">Forgot Password</button></div><p class="muted">Use at least 8 characters. Sign in on each device separately.</p></div>`;
+      const pendingEmailKey = "snp_staff_pending_email";
+      function redirectUrl() {
+        const url = new URL(location.href);
+        url.hash = "";
+        ["code", "error", "error_code", "error_description", "type"].forEach(
+          (key) => url.searchParams.delete(key),
+        );
+        return url.toString();
+      }
+      function auth(msg = "", email = "") {
+        const remembered =
+          email || sessionStorage.getItem(pendingEmailKey) || "";
+        app.innerHTML = `${invite() ? '<div class="card"><h3>Employee / Staff Invitation</h3><p>Create your staff account or sign in with the email this invitation was sent to. After signing in, complete your employee profile.</p></div>' : ""}<div class="card"><h2>Staff Sign In</h2><p class="muted">Only assigned event duties are available here.</p>${msg ? `<p class="notice">${esc(msg)}</p>` : ""}<label>Email</label><input id="e" type="email" value="${esc(remembered)}" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"><label>Password</label><input id="p" type="password" minlength="8" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"><label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="showp" type="checkbox" style="width:auto" onchange="togglePassword()"> Show password</label><div class="grid" style="margin-top:10px"><button onclick="login()">Sign In</button><button onclick="signup()">Create Staff Account</button></div><div class="grid" style="margin-top:10px"><button class="secondary" type="button" onclick="forgotPassword()">Forgot Password</button><button class="secondary" type="button" onclick="resendConfirmation()">Resend Confirmation</button></div><p class="muted">New accounts must confirm their email once. Existing confirmed accounts should sign in; they will not receive another signup confirmation.</p></div>`;
       }
       function togglePassword() {
         const x = document.getElementById("p");
@@ -195,6 +215,7 @@
           }
           S = d;
           localStorage.setItem(SK, JSON.stringify(d));
+          sessionStorage.removeItem(pendingEmailKey);
           load();
         } catch (err) {
           auth(
@@ -209,7 +230,7 @@
             "Enter the staff email first, then choose Forgot Password.",
           );
         try {
-          const redirect = `${location.origin}${location.pathname}`;
+          const redirect = redirectUrl();
           const r = await fetch(
             `${U}/auth/v1/recover?redirect_to=${encodeURIComponent(redirect)}`,
             { method: "POST", headers: h(), body: JSON.stringify({ email }) },
@@ -224,7 +245,8 @@
                 `Unable to send reset email (${r.status}).`,
             );
           auth(
-            "Password reset email requested. Check that email account, then return here to sign in.",
+            "Password reset email requested. Open its link; it will return here so you can choose a new password.",
+            email,
           );
         } catch (err) {
           auth(
@@ -238,11 +260,14 @@
         if (!email) return auth("Enter your assigned staff email.");
         if (password.length < 8)
           return auth("Use a password with at least 8 characters.");
-        const r = await fetch(`${U}/auth/v1/signup`, {
+        const r = await fetch(
+            `${U}/auth/v1/signup?redirect_to=${encodeURIComponent(redirectUrl())}`,
+            {
             method: "POST",
             headers: h(),
             body: JSON.stringify({ email, password }),
-          }),
+            },
+          ),
           d = await r.json().catch(() => ({}));
         if (!r.ok)
           return auth(
@@ -255,26 +280,156 @@
         if (d.access_token) {
           S = d;
           localStorage.setItem(SK, JSON.stringify(d));
+          sessionStorage.removeItem(pendingEmailKey);
           load();
-        } else
+        } else if (
+          Array.isArray(d.user?.identities) &&
+          d.user.identities.length === 0
+        ) {
           auth(
-            "Account created. Confirm your email if required, then return and sign in.",
+            "No new account was created because this email may already be registered. Use Sign In with the existing password, or choose Forgot Password. An already-confirmed account will not receive another signup confirmation email.",
+            email,
           );
+        } else {
+          sessionStorage.setItem(pendingEmailKey, email);
+          auth(
+            "Account created. Check this email for the confirmation link, including Spam or Promotions. The link will return you directly to the Employee Portal.",
+            email,
+          );
+        }
       }
-      async function api(opts = {}) {
+      async function resendConfirmation() {
+        const email = document.getElementById("e")?.value.trim().toLowerCase();
+        if (!email)
+          return auth(
+            "Enter the staff email first, then choose Resend Confirmation.",
+          );
+        try {
+          const r = await fetch(
+              `${U}/auth/v1/resend?redirect_to=${encodeURIComponent(redirectUrl())}`,
+              {
+                method: "POST",
+                headers: h(),
+                body: JSON.stringify({ type: "signup", email }),
+              },
+            ),
+            d = await r.json().catch(() => ({}));
+          if (!r.ok)
+            return auth(
+              d.msg ||
+                d.message ||
+                d.error_description ||
+                d.error ||
+                `Unable to resend confirmation (${r.status}).`,
+              email,
+            );
+          sessionStorage.setItem(pendingEmailKey, email);
+          auth(
+            "If this is a new unconfirmed account, another confirmation email has been requested. Check Spam or Promotions too. If the account was already confirmed, use Sign In or Forgot Password instead.",
+            email,
+          );
+        } catch (err) {
+          auth(
+            `Unable to resend confirmation: ${err?.message || "network error"}`,
+            email,
+          );
+        }
+      }
+      async function consumeAuthRedirect() {
+        const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
+        const query = new URLSearchParams(location.search);
+        const accessToken = hash.get("access_token");
+        const error =
+          hash.get("error_description") || query.get("error_description");
+        if (error) {
+          history.replaceState({}, "", location.pathname);
+          auth(`Email link could not be completed: ${error}`);
+          return false;
+        }
+        if (!accessToken) return false;
+        authRedirectType = hash.get("type") || "";
+        S = {
+          access_token: accessToken,
+          refresh_token: hash.get("refresh_token") || "",
+          expires_in: Number(hash.get("expires_in") || 0),
+          token_type: hash.get("token_type") || "bearer",
+        };
+        try {
+          const r = await fetch(`${U}/auth/v1/user`, { headers: h(accessToken) });
+          if (r.ok) S.user = await r.json();
+        } catch (_) {}
+        localStorage.setItem(SK, JSON.stringify(S));
+        sessionStorage.removeItem(pendingEmailKey);
+        history.replaceState({}, "", location.pathname + location.search);
+        return true;
+      }
+      function passwordResetForm() {
+        app.innerHTML = `<div class="card"><h2>Choose a New Staff Password</h2><p class="muted">Use at least 8 characters.</p><label>New Password</label><input id="newPassword" type="password" minlength="8" autocomplete="new-password"><label>Confirm New Password</label><input id="confirmPassword" type="password" minlength="8" autocomplete="new-password"><button onclick="completePasswordReset()">Save New Password</button></div>`;
+      }
+      async function completePasswordReset() {
+        const password = document.getElementById("newPassword")?.value || "";
+        const confirm = document.getElementById("confirmPassword")?.value || "";
+        if (password.length < 8)
+          return alert("Use a password with at least 8 characters.");
+        if (password !== confirm) return alert("The passwords do not match.");
+        try {
+          const r = await fetch(`${U}/auth/v1/user`, {
+              method: "PUT",
+              headers: h(S?.access_token),
+              body: JSON.stringify({ password }),
+            }),
+            d = await r.json().catch(() => ({}));
+          if (!r.ok)
+            throw new Error(
+              d.msg || d.message || d.error || "Unable to update password.",
+            );
+          authRedirectType = "";
+          alert("Password updated. The Employee Portal will open now.");
+          load();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+      async function refreshSession() {
+        if (!S?.refresh_token) return false;
+        try {
+          const r = await fetch(`${U}/auth/v1/token?grant_type=refresh_token`, {
+              method: "POST",
+              headers: h(),
+              body: JSON.stringify({ refresh_token: S.refresh_token }),
+            }),
+            d = await r.json().catch(() => ({}));
+          if (!r.ok || !d.access_token) return false;
+          S = d;
+          localStorage.setItem(SK, JSON.stringify(S));
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+      async function api(opts = {}, retry = true) {
         const r = await fetch(`${U}/functions/v1/staff-event-api`, {
             ...opts,
             headers: { ...h(S?.access_token), ...(opts.headers || {}) },
-          }),
-          d = await r.json();
+          });
+        if (r.status === 401 && retry && (await refreshSession()))
+          return api(opts, false);
+        const d = await r.json();
         if (!r.ok || d.ok === false)
           throw new Error(d.error || "Request failed");
         return d;
       }
       async function load() {
         try {
+          if (
+            location.hash.includes("access_token=") ||
+            location.hash.includes("error_description=") ||
+            new URLSearchParams(location.search).has("error_description")
+          )
+            await consumeAuthRedirect();
           if (!S) S = JSON.parse(localStorage.getItem(SK) || "null");
           if (!S?.access_token) return auth();
+          if (authRedirectType === "recovery") return passwordResetForm();
           const d = await api();
           E = d.events || [];
           render();
