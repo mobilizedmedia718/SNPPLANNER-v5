@@ -1,6 +1,18 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SNP Planner Staff Invitation</title><style>body{font-family:Arial,sans-serif;margin:0;background:#f5f6f8;color:#161616}header{background:#111;color:#fff;padding:18px}main{max-width:620px;margin:auto;padding:18px}.card{background:#fff;border-radius:12px;padding:18px;margin:16px 0}input,button{font:inherit;padding:11px;border-radius:8px;border:1px solid #bbb;box-sizing:border-box;width:100%;margin:6px 0}button{background:#111;color:#fff;cursor:pointer}.muted{color:#666}.ok{color:#146c2e;font-weight:700}</style></head><body><header><strong>SNP Planner — Staff Invitation</strong></header><main id="app"></main><script>
-const U='https://mmstqostdqouxaiyrxtv.supabase.co',K='sb_publishable_6bxNaNPgezRwqyTrLtnUpA_zmXNoIsC',SK='snp_staff_session';const q=new URLSearchParams(location.search),invite=q.get('invite')||'';const hash=new URLSearchParams(location.hash.replace(/^#/,''));let access=hash.get('access_token')||'',refresh=hash.get('refresh_token')||'',expires=Number(hash.get('expires_in')||3600);const h=t=>({apikey:K,'Content-Type':'application/json',...(t?{Authorization:`Bearer ${t}`}:{})});const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function show(msg=''){app.innerHTML=`<div class="card"><h2>Create Your Staff Login</h2><p class="muted">This invitation connects your secure Staff Portal account to the employee record created by the organizer.</p>${msg?`<p>${esc(msg)}</p>`:''}${access?`<label>Full Name</label><input id="name" autocomplete="name"><label>Phone</label><input id="phone" type="tel" autocomplete="tel"><label>Create Password</label><input id="pw" type="password" minlength="8" autocomplete="new-password"><label>Confirm Password</label><input id="pw2" type="password" minlength="8" autocomplete="new-password"><button onclick="finish()">Create Login & Complete Profile</button>`:`<p>This invitation link is missing its secure sign-in token. Open the original invitation email and use the button/link from that message.</p>`}</div>`}
-async function finish(){try{const fullName=name.value.trim(),phoneValue=phone.value.trim(),password=pw.value,password2=pw2.value;if(!invite)throw new Error('Invite token is missing.');if(!fullName)throw new Error('Enter your full name.');if(password.length<8)throw new Error('Use a password with at least 8 characters.');if(password!==password2)throw new Error('Passwords do not match.');let r=await fetch(`${U}/auth/v1/user`,{method:'PUT',headers:h(access),body:JSON.stringify({password})}),d=await r.json();if(!r.ok)throw new Error(d.msg||d.message||'Unable to create password.');r=await fetch(`${U}/functions/v1/employee-directory-api`,{method:'POST',headers:h(access),body:JSON.stringify({action:'claim_invite',token:invite,fullName,phone:phoneValue})});d=await r.json();if(!r.ok||d.ok===false)throw new Error(d.error||'Unable to complete employee profile.');const session={access_token:access,refresh_token:refresh,expires_in:expires,token_type:'bearer',user:d.employee?.staff_user_id?{id:d.employee.staff_user_id,email:d.employee.email}:undefined};localStorage.setItem(SK,JSON.stringify(session));app.innerHTML='<div class="card ok"><h2>Staff account connected.</h2><p>Your login is ready. Opening the Staff Portal...</p></div>';setTimeout(()=>location.replace('staff.html'),1000)}catch(e){show(e.message)}}
-show();
-</script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>SNP Planner Staff Invitation</title>
+  </head>
+  <body>
+    <p>Opening secure employee onboarding…</p>
+    <script>
+      const invite = new URLSearchParams(location.search).get("invite") || "";
+      const target = new URL("staff.html", location.href);
+      if (invite) target.searchParams.set("invite", invite);
+      target.hash = location.hash;
+      location.replace(target.href);
+    </script>
+  </body>
+</html>
