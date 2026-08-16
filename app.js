@@ -10,6 +10,12 @@ const SNPPlanner = {
                 throw new Error("Supabase connection is not available.");
             }
 
+            const redirect = await SNPDatabase.consumeAuthRedirect();
+            if (redirect?.type === "recovery") {
+                SNPDatabase.renderPasswordReset();
+                return;
+            }
+
             const session = await SNPDatabase.getSession();
             if (!session) {
                 SNPDatabase.renderAuth();

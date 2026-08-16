@@ -755,7 +755,7 @@
         Conversion:
           "Start asking directly for ticket purchases. Use date-night, girls-night, creative night out, and limited-seat angles.",
         Urgency:
-          "Post daily. Push seat count, food/drink add-ons, group DMs, and Eventbrite ads with a small focused budget.",
+          "Post daily. Push seat count, food/beverage add-ons, group DMs, and Eventbrite ads with a small focused budget.",
         "Last call":
           "Use scarcity. Every post should say the date, time, ticket link, and that seats are almost gone.",
         "Sellout push":

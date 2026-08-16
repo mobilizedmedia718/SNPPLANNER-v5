@@ -28,6 +28,17 @@
                     preset:true
                 },
                 {
+                    id:"preset-art-exhibit-auction-20",
+                    name:"Art Exhibit & Silent Auction Admission",
+                    description:"Enjoy admission to the Art Exhibit & Silent Auction, featuring original works by participating artists. Twenty-five percent of ticket proceeds will be allocated among the artists whose work is featured.",
+                    price:20,
+                    kind:"exhibit",
+                    includesPainting:false,
+                    accessLevel:"gallery_only",
+                    sharedCapacityPool:"art-exhibit",
+                    preset:true
+                },
+                {
                     id:"preset-couples-paint-beverage-95",
                     name:"Couples Paint & Beverage Package — Serves 2",
                     description:"A complete experience for two guests, including two standard paint admissions with 9×12 canvases and one featured beverage package designed for two.",
@@ -105,9 +116,24 @@
         },
 
         ticketCapacityUsed(event) {
-            return (Array.isArray(event.ticketTypes) ? event.ticketTypes : [])
-                .filter(t => t.active !== false)
-                .reduce((s,t)=>s + Math.max(0, Number(t.quantity || 0)) * Math.max(1, Number(t.seatMultiplier || 1)), 0);
+            const active = (Array.isArray(event.ticketTypes) ? event.ticketTypes : [])
+                .filter(t => t.active !== false);
+            const sharedPools = new Map();
+            let independentSeats = 0;
+            active.forEach(t => {
+                const seats = Math.max(0, Number(t.quantity || 0)) * Math.max(1, Number(t.seatMultiplier || 1));
+                const pool = String(t.sharedCapacityPool || "").trim();
+                if (!pool) {
+                    independentSeats += seats;
+                    return;
+                }
+                sharedPools.set(pool, Math.max(sharedPools.get(pool) || 0, seats));
+            });
+            if (sharedPools.has("paint-instruction") && Number(event.sharedPaintCapacity || 0) > 0)
+                sharedPools.set("paint-instruction", Number(event.sharedPaintCapacity));
+            if (sharedPools.has("art-exhibit") && Number(event.sharedArtExhibitCapacity || 0) > 0)
+                sharedPools.set("art-exhibit", Number(event.sharedArtExhibitCapacity));
+            return independentSeats + [...sharedPools.values()].reduce((sum, seats) => sum + seats, 0);
         },
 
         templateOptions() {
@@ -253,6 +279,7 @@
                     <div><label>${groupSize>1?'Packages Available':'Quantity Available'}</label><input type="number" min="0" step="1" value="${Number(t.quantity || 0)}" onchange="TicketPlanning.updateTicket('${event.id}','${t.id}','quantity',this.value)"></div>
                     <div><label>Type</label><select onchange="TicketPlanning.updateTicket('${event.id}','${t.id}','kind',this.value)">
                         <option value="paint" ${t.kind === "paint" ? "selected" : ""}>Paint Admission</option>
+                        <option value="exhibit" ${t.kind === "exhibit" ? "selected" : ""}>Art Exhibit / Silent Auction</option>
                         <option value="observer" ${t.kind === "observer" ? "selected" : ""}>Observer / Gallery</option>
                         <option value="vip" ${t.kind === "vip" ? "selected" : ""}>VIP</option>
                         <option value="comp" ${t.kind === "comp" ? "selected" : ""}>Complimentary / Guest</option>

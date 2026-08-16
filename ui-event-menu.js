@@ -10,7 +10,19 @@
   const EventMenu = {
     templateKey: "event_menu_templates",
     templates() {
-      return Utils.load(this.templateKey, []);
+      const saved = Utils.load(this.templateKey, []);
+      let changed = false;
+      const normalized = (Array.isArray(saved) ? saved : []).map((item) => {
+        if (!Object.prototype.hasOwnProperty.call(item || {}, "alcohol"))
+          return item;
+        const next = { ...item };
+        if (next.alcohol === true) next.regulatedBeverage = true;
+        delete next.alcohol;
+        changed = true;
+        return next;
+      });
+      if (changed) Utils.save(this.templateKey, normalized);
+      return normalized;
     },
     saveTemplates(list) {
       Utils.save(this.templateKey, list);
@@ -25,7 +37,6 @@
           price: 10,
           preset: true,
           regulatedBeverage: true,
-          alcohol: true,
           licensedBarOnly: true,
         },
         {
@@ -37,7 +48,6 @@
           price: 25,
           preset: true,
           regulatedBeverage: true,
-          alcohol: true,
           licensedBarOnly: true,
         },
         {
@@ -49,7 +59,6 @@
           price: 50,
           preset: true,
           regulatedBeverage: true,
-          alcohol: true,
           licensedBarOnly: true,
         },
         {
@@ -110,10 +119,38 @@
     },
     ensureEvent(event) {
       if (!event) return null;
+      let changed = false;
       if (!Array.isArray(event.menuItems)) {
         event.menuItems = [];
-        Events.update(event.id, { menuItems: event.menuItems });
+        changed = true;
       }
+      event.menuItems = event.menuItems.map((item) => {
+        if (!Object.prototype.hasOwnProperty.call(item || {}, "alcohol"))
+          return item;
+        const next = { ...item };
+        if (next.alcohol === true) next.regulatedBeverage = true;
+        delete next.alcohol;
+        changed = true;
+        return next;
+      });
+      if (Array.isArray(event.finalizedMenuItems)) {
+        event.finalizedMenuItems = event.finalizedMenuItems.map((item) => {
+          if (!Object.prototype.hasOwnProperty.call(item || {}, "alcohol"))
+            return item;
+          const next = { ...item };
+          if (next.alcohol === true) next.regulatedBeverage = true;
+          delete next.alcohol;
+          changed = true;
+          return next;
+        });
+      }
+      if (changed)
+        Events.update(event.id, {
+          menuItems: event.menuItems,
+          ...(Array.isArray(event.finalizedMenuItems)
+            ? { finalizedMenuItems: event.finalizedMenuItems }
+            : {}),
+        });
       return event;
     },
     categories() {
@@ -271,7 +308,6 @@
         price: Number(item.price || 0),
         includedWithVip: !!item.includedWithVip,
         regulatedBeverage: !!item.regulatedBeverage,
-        alcohol: !!item.alcohol,
         licensedBarOnly: !!item.licensedBarOnly,
       };
       if (existing) Object.assign(existing, payload);
@@ -283,7 +319,7 @@
     rows(event) {
       event = this.ensureEvent(event);
       if (!event.menuItems.length)
-        return `<p>No menu items assigned to this event yet. Choose only the wines and foods you want for this event from the library above.</p>`;
+        return `<p>No menu items assigned to this event yet. Choose only the food and beverage packages you want for this event from the library above.</p>`;
       const cats = this.categories(),
         disabled = event.menuFinalized ? "disabled" : "";
       return event.menuItems
@@ -299,7 +335,7 @@
           <div><label>Quantity Available</label><input ${disabled} type="number" min="0" step="1" placeholder="0" value="${Number(item.quantity || 0)}" oninput="EventMenu.updateItem('${event.id}','${item.id}','quantity',this.value)"></div>
         </div><datalist id="menu-categories-${event.id}">${cats.map((c) => `<option value="${UI.esc(c)}">`).join("")}</datalist>
         <label><input ${disabled} type="checkbox" ${item.active !== false ? "checked" : ""} onchange="EventMenu.updateItem('${event.id}','${item.id}','active',this.checked)"> Available on this event menu</label>
-        <label><input ${disabled} type="checkbox" ${item.includedWithVip ? "checked" : ""} onchange="EventMenu.updateItem('${event.id}','${item.id}','includedWithVip',this.checked)"> Eligible for a ticket-included food/drink benefit</label>
+        <label><input ${disabled} type="checkbox" ${item.includedWithVip ? "checked" : ""} onchange="EventMenu.updateItem('${event.id}','${item.id}','includedWithVip',this.checked)"> Eligible for a ticket-included food/beverage benefit</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><button type="button" onclick="EventMenu.saveTemplate('${event.id}','${item.id}')">Save to Menu Library</button>${event.menuFinalized ? "" : `<button type="button" onclick="EventMenu.removeItem('${event.id}','${item.id}')">Remove from Event</button>`}</div>
       </div>`,
         )
