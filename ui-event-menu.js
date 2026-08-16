@@ -7,21 +7,6 @@
   )
     return;
 
-  const WINE_NAMES = [
-    "Barefoot Cabernet Sauvignon",
-    "Barefoot Moscato",
-    "Josh Cellars Cabernet Sauvignon",
-    "Josh Cellars Chardonnay",
-    "Sutter Home White Zinfandel",
-    "Sutter Home Moscato",
-    "Kendall-Jackson Vintner's Reserve Chardonnay",
-    "La Marca Prosecco",
-    "Stella Rosa Black",
-    "Stella Rosa Rosso",
-    "Woodbridge Cabernet Sauvignon",
-    "Woodbridge Chardonnay",
-  ];
-
   const EventMenu = {
     templateKey: "event_menu_templates",
     templates() {
@@ -31,27 +16,42 @@
       Utils.save(this.templateKey, list);
     },
     systemPresets() {
-      const bottles = WINE_NAMES.map((name, i) => ({
-        id: `preset-bottle-${i}`,
-        name,
-        description: "Bottle selection. Availability may vary by event.",
-        category: "Bottles",
-        price: 20,
-        preset: true,
-        alcohol: true,
-      }));
-      const glasses = WINE_NAMES.map((name, i) => ({
-        id: `preset-glass-${i}`,
-        name,
-        description: "Wine by the glass. Availability may vary by event.",
-        category: "Glasses",
-        price: 9,
-        preset: true,
-        alcohol: true,
-      }));
       return [
-        ...bottles,
-        ...glasses,
+        {
+          id: "preset-featured-beverage-single",
+          name: "Featured Beverage Ticket — Serves 1",
+          description: "Includes one featured beverage.",
+          category: "Beverage Package",
+          price: 10,
+          preset: true,
+          regulatedBeverage: true,
+          alcohol: true,
+          licensedBarOnly: true,
+        },
+        {
+          id: "preset-featured-beverage-two",
+          name: "Featured Beverage Package — Serves 2",
+          description:
+            "Designed for two guests, with an average of 2–2½ beverages per person.",
+          category: "Beverage Package",
+          price: 25,
+          preset: true,
+          regulatedBeverage: true,
+          alcohol: true,
+          licensedBarOnly: true,
+        },
+        {
+          id: "preset-featured-beverage-pitcher",
+          name: "Featured Beverage Pitcher Package — Serves 4",
+          description:
+            "Designed for four guests, with an average of 2–2½ beverages per person.",
+          category: "Beverage Package",
+          price: 50,
+          preset: true,
+          regulatedBeverage: true,
+          alcohol: true,
+          licensedBarOnly: true,
+        },
         {
           id: "preset-entree",
           name: "Featured Entree",
@@ -119,8 +119,7 @@
     categories() {
       return [
         ...new Set([
-          "Bottles",
-          "Glasses",
+          "Beverage Package",
           "Entree",
           "Food",
           "Snack",
@@ -187,11 +186,9 @@
       const defaultPrice =
         category === "Entree"
           ? 25
-          : category === "Bottles"
-            ? 20
-            : category === "Glasses"
-              ? 9
-              : 0;
+          : category === "Beverage Package"
+            ? 10
+            : 0;
       event.menuItems.push({
         id: Utils.id(),
         name: "",
@@ -273,6 +270,9 @@
         category: item.category || "Food",
         price: Number(item.price || 0),
         includedWithVip: !!item.includedWithVip,
+        regulatedBeverage: !!item.regulatedBeverage,
+        alcohol: !!item.alcohol,
+        licensedBarOnly: !!item.licensedBarOnly,
       };
       if (existing) Object.assign(existing, payload);
       else list.push(payload);
@@ -294,7 +294,7 @@
         <label>Item Name</label><input ${disabled} placeholder="Menu item name" value="${UI.esc(item.name || "")}" oninput="EventMenu.updateItem('${event.id}','${item.id}','name',this.value)">
         <label>Description</label><textarea ${disabled} placeholder="Describe exactly what the guest receives" oninput="EventMenu.updateItem('${event.id}','${item.id}','description',this.value)">${UI.esc(item.description || "")}</textarea>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
-          <div><label>Category</label><input ${disabled} list="menu-categories-${event.id}" placeholder="Food, Entree, Bottles..." value="${UI.esc(item.category || "")}" oninput="EventMenu.updateItem('${event.id}','${item.id}','category',this.value)"></div>
+          <div><label>Category</label><input ${disabled} list="menu-categories-${event.id}" placeholder="Beverage Package, Food, Entree..." value="${UI.esc(item.category || "")}" oninput="EventMenu.updateItem('${event.id}','${item.id}','category',this.value)"></div>
           <div><label>Price</label><input ${disabled} type="number" min="0" step="0.01" placeholder="0.00" value="${Number(item.price || 0)}" oninput="EventMenu.updateItem('${event.id}','${item.id}','price',this.value)"></div>
           <div><label>Quantity Available</label><input ${disabled} type="number" min="0" step="1" placeholder="0" value="${Number(item.quantity || 0)}" oninput="EventMenu.updateItem('${event.id}','${item.id}','quantity',this.value)"></div>
         </div><datalist id="menu-categories-${event.id}">${cats.map((c) => `<option value="${UI.esc(c)}">`).join("")}</datalist>
@@ -324,16 +324,15 @@
           event.menuFinalized
             ? ""
             : `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;align-items:end;">
-          <div><label>Wine Bottles — starts at $20</label><select onchange="if(this.value){EventMenu.addFromTemplate('${event.id}',this.value);this.value=''}"><option value="">Choose a bottle...</option>${this.libraryOptions("Bottles")}</select></div>
-          <div><label>Wine by the Glass — starts at $9</label><select onchange="if(this.value){EventMenu.addFromTemplate('${event.id}',this.value);this.value=''}"><option value="">Choose a glass...</option>${this.libraryOptions("Glasses")}</select></div>
+          <div><label>Approved Beverage Packages</label><select onchange="if(this.value){EventMenu.addFromTemplate('${event.id}',this.value);this.value=''}"><option value="">Choose a beverage package...</option>${this.libraryOptions("Beverage Package")}</select></div>
           <div><label>Food / Entree Library</label><select onchange="if(this.value){EventMenu.addFromTemplate('${event.id}',this.value);this.value=''}"><option value="">Choose saved food...</option>${this.library()
-            .filter((t) => !["Bottles", "Glasses"].includes(t.category))
+            .filter((t) => t.category !== "Beverage Package")
             .map(
               (t) =>
                 `<option value="${UI.esc(t.id)}">${UI.esc(t.category)} — ${UI.esc(t.name)} — ${Utils.money(Number(t.price || 0))}</option>`,
             )
             .join("")}</select></div>
-        </div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"><button type="button" onclick="EventMenu.addBlank('${event.id}','Entree')">+ New Entree ($25 start)</button><button type="button" onclick="EventMenu.addBlank('${event.id}','Food')">+ New Food Item</button><button type="button" onclick="EventMenu.addBlank('${event.id}','Snack')">+ New Snack</button><button type="button" onclick="EventMenu.addBlank('${event.id}','Non-Alcoholic')">+ New Beverage</button></div>`
+        </div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"><button type="button" onclick="EventMenu.addBlank('${event.id}','Beverage Package')">+ New Beverage Package</button><button type="button" onclick="EventMenu.addBlank('${event.id}','Entree')">+ New Entree ($25 start)</button><button type="button" onclick="EventMenu.addBlank('${event.id}','Food')">+ New Food Item</button><button type="button" onclick="EventMenu.addBlank('${event.id}','Snack')">+ New Snack</button></div>`
         }
         <hr><p><strong>Customer ordering page:</strong></p><input readonly value="${UI.esc(link)}" onclick="this.select()">
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">${event.menuFinalized ? `<button type="button" onclick="window.open('${UI.esc(poster)}','_blank')">View / Print Menu QR</button><button type="button" onclick="EventMenu.reopen('${event.id}')">Reopen Menu for Editing</button>` : `<button type="button" onclick="EventMenu.finalize('${event.id}')">Finalize Menu & Generate QR</button>`}</div>
