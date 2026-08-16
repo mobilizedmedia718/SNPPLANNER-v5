@@ -78,7 +78,7 @@
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
                     <div>
                         <label>Category</label>
-                        <input ${disabled} id="${fieldId(event.id, item.id, "category")}" list="${categoryListId}" placeholder="Food, Entree, Bottles..." value="${UI.esc(item.category || "")}">
+                        <input ${disabled} id="${fieldId(event.id, item.id, "category")}" list="${categoryListId}" placeholder="Beverage Package, Food, Entree..." value="${UI.esc(item.category || "")}">
                     </div>
                     <div>
                         <label>Price</label>
@@ -171,11 +171,9 @@
     const defaultPrice =
       category === "Entree"
         ? 25
-        : category === "Bottles"
-          ? 20
-          : category === "Glasses"
-            ? 9
-            : 0;
+        : category === "Beverage Package"
+          ? 10
+          : 0;
     const item = {
       id: Utils.id(),
       name: "",
@@ -215,7 +213,7 @@
   EventMenu.rows = function (event) {
     event = this.ensureEvent(event);
     if (!event.menuItems.length)
-      return "<p>No menu items assigned to this event yet. Choose only the wines and foods you want for this event from the library above.</p>";
+      return "<p>No menu items assigned to this event yet. Choose approved beverage packages or saved food items from the library above.</p>";
     return event.menuItems
       .map((item) =>
         editingKey === key(event.id, item.id)
