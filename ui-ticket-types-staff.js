@@ -66,10 +66,14 @@
             const pctReserve = Math.ceil(capacity * Math.max(0, Number(event.staffReservePct || 0)) / 100);
             const actualStaff = Array.isArray(event.staffAssignments) ? event.staffAssignments.length : 0;
             const staffSeats = Math.max(pctReserve, actualStaff);
+            const venuePublicCapacity = Math.max(0, capacity - staffSeats);
+            const sharedPaintCapacity = Math.max(0, Number(event.sharedPaintCapacity || 0));
             return {
                 venueCapacity: capacity,
                 staffSeats,
-                publicCapacity: Math.max(0, capacity - staffSeats)
+                venuePublicCapacity,
+                publicCapacity: sharedPaintCapacity > 0 ? Math.min(venuePublicCapacity, sharedPaintCapacity) : venuePublicCapacity,
+                sharedPaintCapacity
             };
         },
 
@@ -183,13 +187,14 @@
         },
 
         capacityHtml(event, cap = this.availableCapacity(event), used = this.ticketCapacityUsed(event)) {
-            const over = used > cap.publicCapacity;
+            const over = cap.sharedPaintCapacity > 0 ? false : used > cap.publicCapacity;
             const painterQty = (event.ticketTypes || []).filter(t => t.active !== false && (t.kind === "paint" || (t.kind === "vip" && t.includesPainting))).reduce((s,t)=>s+Number(t.quantity||0),0);
             const observerQty = (event.ticketTypes || []).filter(t => t.active !== false && t.kind === "observer").reduce((s,t)=>s+Number(t.quantity||0),0);
             const ratioTotal = painterQty + observerQty;
             const actualPct = ratioTotal ? Math.round(painterQty / ratioTotal * 100) : 0;
-            return `<p><strong>Venue capacity:</strong> ${cap.venueCapacity} &nbsp; <strong>Reserved for staff:</strong> ${cap.staffSeats} &nbsp; <strong>Public ticket capacity:</strong> ${cap.publicCapacity}</p>
-                <p><strong>Ticket capacity assigned:</strong> ${used}/${cap.publicCapacity} ${over ? `<span style="color:#b91c1c;font-weight:700;">— OVER CAPACITY</span>` : ""}</p>
+            const sold = Math.max(0, Number(event.eventbriteTicketsSold || 0) + Number(event.stripeTicketsSold || 0));
+            return `<p><strong>Venue capacity:</strong> ${cap.venueCapacity} &nbsp; <strong>Reserved for staff:</strong> ${cap.staffSeats} &nbsp; <strong>Paint admission capacity:</strong> ${cap.publicCapacity}</p>
+                ${cap.sharedPaintCapacity > 0 ? `<p><strong>Shared paint-instruction pool:</strong> ${sold}/${cap.publicCapacity} sold &nbsp; <strong>Individual ticket ceilings:</strong> ${used}</p>` : `<p><strong>Ticket capacity assigned:</strong> ${used}/${cap.publicCapacity} ${over ? `<span style="color:#b91c1c;font-weight:700;">— OVER CAPACITY</span>` : ""}</p>`}
                 <p><strong>Paint admissions / other admissions:</strong> ${painterQty} / ${observerQty}${ratioTotal ? ` (${actualPct}% paint)` : ""}</p>`;
         },
 
@@ -250,6 +255,7 @@
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;">
                     <div><label>Staff Reserve (%)</label><input type="number" min="0" max="50" step="1" value="${Number(event.staffReservePct || 0)}" onchange="TicketPlanning.updateEventSetting('${event.id}','staffReservePct',this.value)"></div>
                     <div><label>Paint Admission Target (%)</label><input type="number" min="0" max="100" step="1" value="${Number(event.paintSeatPct ?? this.defaultPaintPct)}" onchange="TicketPlanning.updateEventSetting('${event.id}','paintSeatPct',this.value)"></div>
+                    <div><label>Shared Paint-Instruction Capacity</label><input type="number" min="0" step="1" value="${Number(event.sharedPaintCapacity || 0)}" placeholder="0 = venue public capacity" onchange="TicketPlanning.updateEventSetting('${event.id}','sharedPaintCapacity',this.value)"></div>
                 </div>
                 <div id="ticket-capacity-${event.id}">${this.capacityHtml(event, cap, used)}</div>
                 <button type="button" onclick="TicketPlanning.applySuggestedAllocation('${event.id}')">Allocate Paint Admission Capacity</button>

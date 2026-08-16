@@ -84,10 +84,23 @@
       function render() {
         const e = data.event,
           m = data.menu || [];
+        const channels = data.salesChannels || {};
+        const eventbriteOnly = channels.eventbrite && !channels.stripe;
+        const eventbriteButton = channels.eventbrite
+          ? `<button onclick="openEventbrite()" ${data.eventbriteUrl ? "" : "disabled"}>Continue to Eventbrite</button>`
+          : "";
         document.getElementById("app").innerHTML =
-          `<div class="card"><h1>${esc(e.name)}</h1>${e.date ? `<p><strong>Date:</strong> ${esc(e.date)}</p>` : ""}${e.time ? `<p><strong>Time:</strong> ${esc(SNPTime.formatTime(e.time))}</p>` : ""}<p>Preorder food and beverages before the event. Paid items receive a QR code for one-time redemption.</p></div><div class="card"><label>Email for receipt / pickup</label><input id="email" type="email" placeholder="you@example.com"><h2>Menu</h2>${m.length ? m.map((i) => `<div class="item"><div><strong>${esc(i.name)}</strong><br><span>$${Number(i.price).toFixed(2)}</span>${i.description ? `<br><small class="muted">${esc(i.description)}</small>` : ""}</div><div><label>Qty</label><input id="q-${esc(i.id)}" type="number" min="0" max="20" value="0"></div></div>`).join("") : "<p>No preorder items are available yet.</p>"}<p><button onclick="checkout()" ${m.length ? "" : "disabled"}>Pay with Stripe</button></p><div id="msg"></div></div>`;
+          `<div class="card"><h1>${esc(e.name)}</h1>${e.date ? `<p><strong>Date:</strong> ${esc(e.date)}</p>` : ""}${e.time ? `<p><strong>Time:</strong> ${esc(SNPTime.formatTime(e.time))}</p>` : ""}<p>Purchase admission and featured beverage packages online before the event.</p></div><div class="card"><h2>Available Packages</h2>${m.length ? m.map((i) => `<div class="item"><div><strong>${esc(i.name)}</strong><br><span>$${Number(i.price).toFixed(2)}</span>${i.description ? `<br><small class="muted">${esc(i.description)}</small>` : ""}</div>${eventbriteOnly ? "" : `<div><label>Qty</label><input id="q-${esc(i.id)}" type="number" min="0" max="20" value="0"></div>`}</div>`).join("") : "<p>No prepaid packages are available yet.</p>"}<p>${eventbriteButton}${channels.stripe ? `<button onclick="checkout()" ${m.length ? "" : "disabled"}>Pay with Stripe</button>` : ""}</p>${eventbriteOnly ? "<p><small>Checkout and ticket delivery are handled by Eventbrite.</small></p>" : ""}<div id="msg"></div></div>`;
+      }
+      function openEventbrite() {
+        if (!data?.eventbriteUrl)
+          return (document.getElementById("msg").innerHTML =
+            '<p class="error">The Eventbrite ticket page has not been connected yet.</p>');
+        location.href = data.eventbriteUrl;
       }
       async function checkout() {
+        if (!data?.salesChannels?.stripe)
+          return openEventbrite();
         const items = (data.menu || [])
           .map((i) => ({
             id: i.id,
