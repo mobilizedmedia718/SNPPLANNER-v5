@@ -311,6 +311,19 @@
           onboarding(e.message);
         }
       }
+      async function ensureDirectoryLink() {
+        const r = await fetch(`${U}/functions/v1/employee-directory-api`, {
+          method: "POST",
+          headers: h(S.access_token),
+          body: JSON.stringify({ action: "connect_verified_signup" }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || d.ok === false)
+          throw new Error(
+            d.error || "Unable to connect this account to the employee directory.",
+          );
+        return d.employee;
+      }
       async function login() {
         const email = e.value.trim().toLowerCase(),
           password = p.value;
@@ -570,6 +583,7 @@
           if (authRedirectType === "recovery") return passwordResetForm();
           await refreshCurrentUser();
           if (!profileComplete() || invite()) return onboarding();
+          await ensureDirectoryLink();
           const d = await api();
           E = d.events || [];
           render();
@@ -629,7 +643,7 @@
         app.innerHTML =
           msg +
           inviteCard() +
-          `<div class="card"><div class="grid"><div><h2 style="margin:0 0 5px">Employee Event Workspace</h2><p class="muted" style="margin:0">Signed in as ${esc(S?.user?.email || "staff")}. Only assigned event duties and approved customer tools appear here.</p></div><div class="toolbar" style="justify-content:flex-end"><button class="secondary" onclick="load()">Refresh</button><button class="danger-btn" onclick="logout()">Sign Out</button></div></div></div>${E.length ? E.map(card).join("") : `<div class="card empty">No active event assignments were found for this login.</div>`}`;
+          `<div class="card"><div class="grid"><div><h2 style="margin:0 0 5px">Employee Event Workspace</h2><p class="muted" style="margin:0">Signed in as ${esc(S?.user?.email || "staff")}. Only assigned event duties and approved customer tools appear here.</p></div><div class="toolbar" style="justify-content:flex-end"><button class="secondary" onclick="load()">Refresh</button><button class="danger-btn" onclick="logout()">Sign Out</button></div></div></div>${E.length ? E.map(card).join("") : `<div class="card empty"><h3>No Event Assignments Yet</h3><p>Your verified account is connected to the organizer's employee directory, but no active event has been assigned to you yet.</p><div class="toolbar" style="justify-content:center"><button class="secondary" onclick="load()">Refresh Assignments</button><button class="danger-btn" onclick="logout()">Return to Sign In</button></div></div>`}`;
       }
       function saleItem(item, kind = "ticket") {
         const group = Math.max(1, Number(item.groupSize || 1));
