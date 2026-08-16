@@ -265,13 +265,28 @@ const Eventbrite = {
             .filter(row => String(row.category || "admission") === "admission")
             .reduce((sum, row) => sum + Number(row.quantity || 0), 0);
         const eventbriteRevenue = link.sales.reduce((sum, row) => sum + Number(row.revenue || 0), 0);
-        const eventbriteAdmissionRevenue = link.sales
-            .filter(row => String(row.category || "admission") === "admission")
-            .reduce((sum, row) => sum + Number(row.revenue || 0), 0);
-        const eventbriteAddonRevenue = Math.max(0, eventbriteRevenue - eventbriteAdmissionRevenue);
-
         const ticketTypes = Array.isArray(event.ticketTypes) ? event.ticketTypes.map(item => ({ ...item })) : [];
         const menuItems = Array.isArray(event.menuItems) ? event.menuItems.map(item => ({ ...item })) : [];
+        const ticketTypeByClass = new Map(ticketTypes.map(item => [String(item.eventbriteTicketClassId || ""), item]));
+        let eventbriteAdmissionRevenue = 0;
+        let eventbriteAddonRevenue = 0;
+        for (const row of link.sales) {
+            const revenue = Math.max(0, Number(row.revenue || 0));
+            if (String(row.category || "admission") === "add_on") {
+                eventbriteAddonRevenue += revenue;
+                continue;
+            }
+            const allocation = ticketTypeByClass.get(String(row.ticketClassId || ""))?.revenueAllocation;
+            const admissionValue = Math.max(0, Number(allocation?.admission || 0));
+            const addonValue = Math.max(0, Number(allocation?.beverage_addon || allocation?.addon || 0));
+            const allocationTotal = admissionValue + addonValue;
+            if (allocationTotal > 0) {
+                eventbriteAdmissionRevenue += revenue * admissionValue / allocationTotal;
+                eventbriteAddonRevenue += revenue * addonValue / allocationTotal;
+            } else {
+                eventbriteAdmissionRevenue += revenue;
+            }
+        }
         const salesByClass = new Map(link.sales.map(row => [String(row.ticketClassId || ""), row]));
         for (const item of [...ticketTypes, ...menuItems]) {
             const row = salesByClass.get(String(item.eventbriteTicketClassId || ""));
