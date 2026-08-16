@@ -134,7 +134,7 @@
         alert(e.message);
       }
     },
-    async addToEvent(eventId, employeeId) {
+    async addToEvent(eventId, employeeId, stayOnEmployeePage = false) {
       try {
         if (!this.employees.length) await this.refresh();
         const emp = this.employees.find(
@@ -179,13 +179,78 @@
         };
         event.staffAssignments.push(row);
         Events.update(eventId, { staffAssignments: event.staffAssignments });
-        UI.renderEvents();
-        setTimeout(() => {
-          if (window.StaffAccessAdmin) StaffAccessAdmin.save(eventId, row.id);
-        }, 100);
+        if (stayOnEmployeePage) {
+          if (window.StaffAccessAdmin)
+            await StaffAccessAdmin.save(eventId, row.id);
+          UI.renderEmployees();
+        } else {
+          UI.renderEvents();
+          setTimeout(() => {
+            if (window.StaffAccessAdmin) StaffAccessAdmin.save(eventId, row.id);
+          }, 100);
+        }
       } catch (e) {
         alert(e.message);
       }
+    },
+    assignedEvents(employee) {
+      return Events.all().filter((event) =>
+        (event.staffAssignments || []).some(
+          (assignment) =>
+            String(assignment.employeeProfileId || "") ===
+              String(employee.id) ||
+            String(assignment.staffEmail || "").toLowerCase() ===
+              String(employee.email || "").toLowerCase(),
+        ),
+      );
+    },
+    eventOptions(employee) {
+      const assignedIds = new Set(
+        this.assignedEvents(employee).map((event) => String(event.id)),
+      );
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const isPast = (event) => {
+        const status = String(event.status || "").toLowerCase();
+        if (["completed", "closed", "cancelled", "canceled", "archived"].includes(status))
+          return true;
+        if (!event.date) return false;
+        const date = new Date(event.date + "T00:00:00");
+        return !Number.isNaN(date.getTime()) && date < today;
+      };
+      const option = (event) => {
+          const assigned = assignedIds.has(String(event.id));
+          const details = [
+            event.name || "Unnamed Event",
+            event.date || "",
+            event.status || "",
+          ]
+            .filter(Boolean)
+            .join(" — ");
+          return `<option value="${UI.esc(event.id)}" ${assigned ? "disabled" : ""}>${UI.esc(details)}${assigned ? " — Already Assigned" : ""}</option>`;
+      };
+      const current = Events.all().filter((event) => !isPast(event));
+      const past = Events.all().filter(isPast);
+      return [
+        current.length
+          ? `<optgroup label="Current & Upcoming Events">${current.map(option).join("")}</optgroup>`
+          : "",
+        past.length
+          ? `<optgroup label="Past Events">${past.map(option).join("")}</optgroup>`
+          : "",
+      ].join("");
+    },
+    toggleAssignment(employeeId) {
+      const panel = document.getElementById(`employee-assignment-${employeeId}`);
+      if (!panel) return;
+      panel.hidden = !panel.hidden;
+      if (!panel.hidden)
+        document.getElementById(`employee-event-${employeeId}`)?.focus();
+    },
+    async assignSelected(employeeId) {
+      const select = document.getElementById(`employee-event-${employeeId}`);
+      if (!select?.value) return alert("Choose an event first.");
+      await this.addToEvent(select.value, employeeId, true);
     },
     async loadForEvent(eventId) {
       await this.refresh();
@@ -221,7 +286,14 @@
       <div class="card"><h3>Add Employee or Staff Member</h3><p>Create the employee record here. You do not create their password. After saving, use <strong>Send Staff Invite</strong>; the employee must complete all required onboarding fields and verify their email.</p><label>First Name</label><input id="employeeFirstName" autocomplete="given-name"><label>Last Name</label><input id="employeeLastName" autocomplete="family-name"><label>Street Address</label><input id="employeeAddress" autocomplete="street-address"><label>Email Address</label><input id="employeeEmail" type="email"><label>Cellphone Number</label><input id="employeePhone" type="tel"><label>Default Role</label><input id="employeeRole" value="Event Staff"><label>Notes</label><textarea id="employeeNotes"></textarea><button type="button" onclick="EmployeeDirectory.saveManual()">Save Employee</button></div>
       <div class="card"><h3>Manual / Backup Signup Link</h3><p>The normal method is the automatic email button on the employee record below. This section creates a copyable link only when you want to send it yourself.</p><label>Employee Email</label><input id="inviteEmployeeEmail" type="email" placeholder="employee@example.com"><label>Default Role</label><input id="inviteEmployeeRole" value="Event Staff"><button type="button" onclick="EmployeeDirectory.createInvite()">Create Backup Signup Link</button><div id="employeeInviteResult"></div></div>
       <div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><h3>Employee / Staff List</h3><button onclick="EmployeeDirectory.refresh(true)">Refresh</button></div>
-        ${rows.length ? rows.map((x) => `<div style="border:1px solid #ddd;border-radius:10px;padding:12px;margin:10px 0"><strong>${UI.esc(x.full_name || "Unnamed Staff Member")}</strong><p><strong>Default Role:</strong> ${UI.esc(x.default_role || "Event Staff")}<br><strong>Verified Email Address:</strong> ${UI.esc(x.email || "")}<br><strong>Cellphone Number:</strong> ${UI.esc(x.phone || "Not supplied")}<br><strong>Street Address:</strong> ${UI.esc(x.street_address || "Not supplied")}</p><p><strong>Portal Status:</strong> ${UI.esc(EmployeeDirectory.status(x))}${x.invite_sent_at ? `<br><small>Last invite: ${UI.esc(Utils.formatDateTime(x.invite_sent_at))}</small>` : ""}</p><p><small><strong>Employee Portal:</strong> ${UI.esc(EmployeeDirectory.portalUrl)}</small></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" onclick="EmployeeDirectory.sendInvite('${x.id}')">${String(x.invite_status || "") === "sent" ? "Resend Staff Invite" : "Send Staff Invite"}</button><button type="button" onclick="EmployeeDirectory.copyInvite('${x.id}')">Copy Backup Link</button><button type="button" onclick="window.open(EmployeeDirectory.portalUrl,'_blank')">Open Portal</button></div></div>`).join("") : "<p>No employees saved yet.</p>"}
+        ${rows.length ? rows.map((x) => {
+          const assigned = EmployeeDirectory.assignedEvents(x);
+          const assignedList = assigned.length
+            ? assigned.map((event) => `<li><strong>${UI.esc(event.name || "Unnamed Event")}</strong>${event.date ? ` — ${UI.esc(event.date)}` : ""}${event.status ? ` — ${UI.esc(event.status)}` : ""}</li>`).join("")
+            : "<li>No events assigned yet.</li>";
+          const options = EmployeeDirectory.eventOptions(x);
+          return `<div style="border:1px solid #ddd;border-radius:10px;padding:12px;margin:10px 0"><strong>${UI.esc(x.full_name || "Unnamed Staff Member")}</strong><p><strong>Default Role:</strong> ${UI.esc(x.default_role || "Event Staff")}<br><strong>Verified Email Address:</strong> ${UI.esc(x.email || "")}<br><strong>Cellphone Number:</strong> ${UI.esc(x.phone || "Not supplied")}<br><strong>Street Address:</strong> ${UI.esc(x.street_address || "Not supplied")}</p><p><strong>Portal Status:</strong> ${UI.esc(EmployeeDirectory.status(x))}${x.invite_sent_at ? `<br><small>Last invite: ${UI.esc(Utils.formatDateTime(x.invite_sent_at))}</small>` : ""}</p><div class="card" style="background:#f7f9fc;margin:10px 0"><strong>Assigned Events</strong><ul style="margin:8px 0 0;padding-left:20px">${assignedList}</ul></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" onclick="EmployeeDirectory.toggleAssignment('${x.id}')">Assign to Event</button><button type="button" onclick="EmployeeDirectory.sendInvite('${x.id}')">${String(x.invite_status || "") === "sent" ? "Resend Staff Invite" : "Send Staff Invite"}</button><button type="button" onclick="EmployeeDirectory.copyInvite('${x.id}')">Copy Backup Link</button><button type="button" onclick="window.open(EmployeeDirectory.portalUrl,'_blank')">Open Portal</button></div><div id="employee-assignment-${x.id}" class="card" style="background:#eef4ff;border-color:#b9cdf5;margin-top:10px" hidden><h4 style="margin-top:0">Assign ${UI.esc(x.full_name || "Employee")} to an Event</h4><label>Choose Event</label><select id="employee-event-${x.id}"><option value="">Select an event</option>${options}</select>${Events.all().length ? '<button type="button" style="margin-top:10px" onclick="EmployeeDirectory.assignSelected(\'' + UI.esc(x.id) + '\')">Save Event Assignment</button>' : '<p>No events are available. Create an event first.</p>'}<button type="button" class="secondary" style="margin:10px 0 0 8px" onclick="EmployeeDirectory.toggleAssignment('${x.id}')">Cancel</button></div><p><small><strong>Employee Portal:</strong> ${UI.esc(EmployeeDirectory.portalUrl)}</small></p></div>`;
+        }).join("") : "<p>No employees saved yet.</p>"}
       </div>`;
   };
 
