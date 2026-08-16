@@ -97,12 +97,50 @@ const Eventbrite = {
             lastName: profile.last_name || item.last_name || "",
             name: profile.name || [profile.first_name, profile.last_name].filter(Boolean).join(" ") || item.name || "",
             email: profile.email || item.email || "",
+            ticketClassId: String(item.ticket_class_id || ""),
             ticketClassName: item.ticket_class_name || "",
             checkedIn: Boolean(item.checked_in) || String(item.status || "").toLowerCase() === "checked in",
             status: item.status || "",
+            cancelled: Boolean(item.cancelled) || ["cancelled", "canceled"].includes(String(item.status || "").toLowerCase()),
+            refunded: Boolean(item.refunded) || String(item.status || "").toLowerCase() === "refunded",
             barcode: String(barcodes[0]?.barcode || item.barcode || ""),
             barcodeStatus: barcodes[0]?.status || ""
         };
+    },
+
+    syncGuestListFromAttendees(plannerEventId, attendees = []) {
+        const event = Events.get(plannerEventId);
+        if (!event) return [];
+        const current = Array.isArray(event.guestList) ? event.guestList : [];
+        const priorByAttendee = new Map(current
+            .filter(guest => String(guest.source || "").toLowerCase() === "eventbrite" && guest.eventbriteAttendeeId)
+            .map(guest => [String(guest.eventbriteAttendeeId), guest]));
+        const otherGuests = current.filter(guest => String(guest.source || "").toLowerCase() !== "eventbrite");
+        const eventbriteGuests = attendees.map(attendee => {
+            const prior = priorByAttendee.get(String(attendee.id || "")) || {};
+            return {
+                ...prior,
+                id: prior.id || `eventbrite:${attendee.id}`,
+                source: "Eventbrite",
+                eventbriteAttendeeId: attendee.id,
+                eventbriteOrderId: attendee.orderId,
+                firstName: attendee.firstName,
+                lastName: attendee.lastName,
+                name: attendee.name || [attendee.firstName, attendee.lastName].filter(Boolean).join(" "),
+                email: attendee.email,
+                ticketClassId: attendee.ticketClassId,
+                ticketClassName: attendee.ticketClassName,
+                barcode: attendee.barcode,
+                status: attendee.checkedIn ? "Checked In" : (attendee.status || "Confirmed"),
+                checkedIn: Boolean(attendee.checkedIn),
+                cancelled: Boolean(attendee.cancelled),
+                refunded: Boolean(attendee.refunded),
+                ticketQuantity: 1
+            };
+        });
+        const guestList = [...otherGuests, ...eventbriteGuests];
+        Events.update(plannerEventId, { guestList });
+        return guestList;
     },
 
     upsertCustomerFromAttendee(attendee) {
@@ -119,7 +157,13 @@ const Eventbrite = {
             eventbriteAttendeeId: attendee.id,
             eventbriteOrderId: attendee.orderId,
             lastVisit: attendee.checkedIn ? new Date().toISOString() : (customer?.lastVisit || ""),
-            tags: [...new Set([...(customer?.tags || []), "Eventbrite", ...(attendee.checkedIn ? ["Checked In"] : [])])]
+            tags: [...new Set([
+                ...(customer?.tags || []),
+                "Eventbrite",
+                ...(attendee.checkedIn ? ["Checked In"] : []),
+                ...(attendee.refunded ? ["Refunded"] : []),
+                ...(attendee.cancelled ? ["Cancelled"] : [])
+            ])]
         };
 
         if (!customer) customer = CRM.create(updates);
@@ -141,6 +185,8 @@ const Eventbrite = {
         link.checkedIn = link.attendees.filter(a => a.checkedIn);
         link.lastSync = new Date().toISOString();
         this.save();
+        this.syncGuestListFromAttendees(plannerEventId, link.attendees);
+        link.attendees.forEach(attendee => this.upsertCustomerFromAttendee(attendee));
         return link.attendees;
     },
 
@@ -326,6 +372,12 @@ const Eventbrite = {
             ticketsSold: Number(link.manualTicketsSold || 0) + eventbriteTicketsSold,
             actualRevenue: Number(link.manualRevenue || 0) + eventbriteRevenue
         });
+
+        try {
+            await this.loadAttendees(plannerEventId);
+        } catch (error) {
+            console.warn("Eventbrite attendee synchronization:", error);
+        }
 
         return { eventbriteTicketsSold, eventbritePaintTicketsSold, eventbriteExhibitTicketsSold, eventbriteRevenue, eventbriteAdmissionRevenue, eventbriteAddonRevenue, sales: link.sales };
     }
