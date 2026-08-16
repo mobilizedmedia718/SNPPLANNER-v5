@@ -1,67 +1,235 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SNP Planner Ticket</title>
-<style>
-body{font-family:Arial,sans-serif;background:#f4f6f8;margin:0;padding:22px;color:#111}.wrap{max-width:760px;margin:auto}.card{background:#fff;border-radius:14px;padding:22px;margin:14px 0;box-shadow:0 2px 12px rgba(0,0,0,.08)}h1,h2{margin-top:0}.ticket{border:2px solid #111;border-radius:14px;padding:18px;margin:16px 0;text-align:center}.qrimg{width:260px;height:260px;max-width:100%;margin:18px auto;display:block}.status{font-weight:700}.muted{opacity:.7;font-size:.92em}.success{background:#e9f8ee;border:1px solid #b8e4c5;padding:12px;border-radius:10px}.wait{background:#fff5d9;border:1px solid #eed27c;padding:12px;border-radius:10px}.error{background:#fdecec;border:1px solid #efb1b1;padding:12px;border-radius:10px}.benefits{margin:14px auto;text-align:left;max-width:420px;border-top:1px solid #ddd;padding-top:12px}.benefits p{margin:7px 0}.btn{border:0;border-radius:9px;padding:11px 16px;background:#111;color:#fff;font-weight:700;cursor:pointer}.btn:disabled{opacity:.55;cursor:default}.email-status{margin-top:12px;padding:12px;border-radius:10px;background:#f4f6f8}.email-status strong{text-transform:capitalize}
-</style>
-</head>
-<body>
-<div class="wrap" id="app"><div class="card"><h2>Loading ticket…</h2><div class="wait">Please wait while we confirm your payment and load your QR ticket.</div></div></div>
-<script>
-const ENDPOINT='https://mmstqostdqouxaiyrxtv.supabase.co/functions/v1/ticket-confirmation';
-const EMAIL_STATUS_ENDPOINT='https://mmstqostdqouxaiyrxtv.supabase.co/functions/v1/check-ticket-email-delivery';
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-let currentSessionId='';
-function statusLabel(s){return String(s||'unknown').replaceAll('_',' ')}
-function deliveryExplanation(status){
-  status=String(status||'').toLowerCase();
-  if(status==='accepted')return 'Brevo accepted the email, but delivery to the recipient has NOT been confirmed yet.';
-  if(status==='delivered')return 'Brevo reports that the recipient mail server accepted the email.';
-  if(status==='opened')return 'The email was delivered and Brevo reports it was opened.';
-  if(status==='clicked')return 'The email was delivered and Brevo reports a link was clicked.';
-  if(status==='deferred')return 'Delivery is delayed. Brevo will keep trying.';
-  if(status==='soft_bounce')return 'Temporary delivery failure. Brevo may retry.';
-  if(status==='hard_bounce')return 'Permanent delivery failure. The recipient server rejected the email.';
-  if(status==='blocked')return 'Brevo reports the message was blocked before delivery.';
-  if(status==='invalid')return 'Brevo reports the recipient address is invalid.';
-  if(status==='spam')return 'The recipient provider reported the message as spam.';
-  return 'Brevo has not confirmed final delivery yet.';
-}
-async function checkEmailDelivery(){
-  const box=document.getElementById('emailDeliveryBox'),btn=document.getElementById('checkEmailBtn');
-  if(!box||!currentSessionId)return;
-  if(btn)btn.disabled=true;
-  box.innerHTML='<div class="wait">Checking Brevo delivery status…</div>';
-  try{
-    const r=await fetch(`${EMAIL_STATUS_ENDPOINT}?session_id=${encodeURIComponent(currentSessionId)}`,{cache:'no-store'});
-    const d=await r.json();
-    if(!r.ok||!d.ok)throw new Error(d.error||'Unable to check email delivery.');
-    const good=['delivered','opened','clicked'].includes(String(d.status||''));
-    const bad=['deferred','soft_bounce','hard_bounce','blocked','invalid','spam'].includes(String(d.status||''));
-    const cls=good?'success':bad?'error':'wait';
-    const explanation=deliveryExplanation(d.status);
-    box.innerHTML=`<div class="${cls}"><strong>Email status: ${esc(statusLabel(d.status))}</strong>${d.email?`<div class="muted">${esc(d.email)}</div>`:''}<p>${esc(explanation)}</p>${d.reason?`<p><strong>Brevo reason:</strong> ${esc(d.reason)}</p>`:''}${d.eventDate?`<div class="muted">Brevo event: ${esc(d.eventDate)}</div>`:''}</div>`;
-  }catch(e){box.innerHTML=`<div class="error">${esc(e.message||'Unable to check email delivery.')}</div>`}
-  finally{if(btn)btn.disabled=false;}
-}
-async function loadTicket(){
-  const sessionId=new URLSearchParams(location.search).get('session_id')||'';
-  currentSessionId=sessionId;
-  const app=document.getElementById('app');
-  if(!sessionId){app.innerHTML='<div class="card"><h2>Ticket unavailable</h2><div class="error">Missing Stripe checkout session.</div></div>';return;}
-  try{
-    const r=await fetch(`${ENDPOINT}?format=json&session_id=${encodeURIComponent(sessionId)}`,{cache:'no-store'});
-    const d=await r.json();
-    if(!r.ok||!d.ok){throw new Error(d.error||'Unable to load ticket.');}
-    if(d.pending){app.innerHTML='<div class="card"><h2>Preparing your ticket</h2><div class="wait">Your payment is confirmed. We are generating your QR ticket now.</div></div>';setTimeout(loadTicket,1800);return;}
-    app.innerHTML=`<div class="card"><h1>Payment Confirmed</h1><div class="success">Your ticket${d.tickets.length>1?'s are':' is'} confirmed. Show the QR code at check-in or when redeeming included items.</div><h2 style="margin-top:18px">${esc(d.event.name||'Event')}</h2>${d.event.date?`<p><strong>Date:</strong> ${esc(d.event.date)}</p>`:''}${d.event.time?`<p><strong>Time:</strong> ${esc(d.event.time)}</p>`:''}${d.guestName?`<p><strong>Guest:</strong> ${esc(d.guestName)}</p>`:''}${d.email?`<p><strong>Email:</strong> ${esc(d.email)}</p>`:''}<p><strong>Tickets:</strong> ${d.tickets.length}</p><div class="email-status"><h3 style="margin:0 0 8px">Ticket Email Delivery</h3><button id="checkEmailBtn" class="btn" onclick="checkEmailDelivery()">Check Email Delivery</button><div id="emailDeliveryBox" style="margin-top:10px"><div class="muted">This checks whether Brevo only accepted the message or actually confirmed delivery, delay, block, or bounce.</div></div></div></div>`+d.tickets.map((t,i)=>`<div class="ticket"><h2>${esc(t.ticketTypeName||('Ticket '+(i+1)))}</h2><img class="qrimg" src="${t.qrDataUrl}" alt="Ticket QR code"><div class="status">${esc(t.status||'Confirmed')}</div>${(t.entitlements||[]).length?`<div class="benefits"><strong>Included with this ticket</strong>${t.entitlements.map(x=>`<p>${esc(x.label)} — ${Math.max(0,Number(x.quantity||0)-Number(x.redeemed||0))} remaining</p>`).join('')}<small class="muted">Use this same QR code to redeem included items. Each benefit is reduced when redeemed and cannot be used more than its included quantity.</small></div>`:''}<p class="muted">Ticket ID: ${esc(t.id)}</p></div>`).join('')+`<div class="card"><p class="muted">Each QR code admits one ticket. Admission cannot be used twice. Included food and beverage benefits are tracked separately on the same QR.</p></div>`;
-    setTimeout(checkEmailDelivery,500);
-  }catch(e){app.innerHTML=`<div class="card"><h2>Ticket unavailable</h2><div class="error">${esc(e.message||'Unable to load this ticket.')}</div><p><button onclick="location.reload()">Try Again</button></p></div>`;}
-}
-loadTicket();
-</script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SNP Planner Ticket</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f6f8;
+        margin: 0;
+        padding: 22px;
+        color: #111;
+      }
+      .wrap {
+        max-width: 760px;
+        margin: auto;
+      }
+      .card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 22px;
+        margin: 14px 0;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      }
+      h1,
+      h2 {
+        margin-top: 0;
+      }
+      .ticket {
+        border: 2px solid #111;
+        border-radius: 14px;
+        padding: 18px;
+        margin: 16px 0;
+        text-align: center;
+      }
+      .qrimg {
+        width: 260px;
+        height: 260px;
+        max-width: 100%;
+        margin: 18px auto;
+        display: block;
+      }
+      .status {
+        font-weight: 700;
+      }
+      .muted {
+        opacity: 0.7;
+        font-size: 0.92em;
+      }
+      .success {
+        background: #e9f8ee;
+        border: 1px solid #b8e4c5;
+        padding: 12px;
+        border-radius: 10px;
+      }
+      .wait {
+        background: #fff5d9;
+        border: 1px solid #eed27c;
+        padding: 12px;
+        border-radius: 10px;
+      }
+      .error {
+        background: #fdecec;
+        border: 1px solid #efb1b1;
+        padding: 12px;
+        border-radius: 10px;
+      }
+      .benefits {
+        margin: 14px auto;
+        text-align: left;
+        max-width: 420px;
+        border-top: 1px solid #ddd;
+        padding-top: 12px;
+      }
+      .benefits p {
+        margin: 7px 0;
+      }
+      .btn {
+        border: 0;
+        border-radius: 9px;
+        padding: 11px 16px;
+        background: #111;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+      .email-status {
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 10px;
+        background: #f4f6f8;
+      }
+      .email-status strong {
+        text-transform: capitalize;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap" id="app">
+      <div class="card">
+        <h2>Loading ticket…</h2>
+        <div class="wait">
+          Please wait while we confirm your payment and load your QR ticket.
+        </div>
+      </div>
+    </div>
+    <script src="time-format.js?v=1"></script>
+    <script>
+      const ENDPOINT =
+        "https://mmstqostdqouxaiyrxtv.supabase.co/functions/v1/ticket-confirmation";
+      const EMAIL_STATUS_ENDPOINT =
+        "https://mmstqostdqouxaiyrxtv.supabase.co/functions/v1/check-ticket-email-delivery";
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#039;",
+            })[c],
+        );
+      let currentSessionId = "";
+      function statusLabel(s) {
+        return String(s || "unknown").replaceAll("_", " ");
+      }
+      function deliveryExplanation(status) {
+        status = String(status || "").toLowerCase();
+        if (status === "accepted")
+          return "Brevo accepted the email, but delivery to the recipient has NOT been confirmed yet.";
+        if (status === "delivered")
+          return "Brevo reports that the recipient mail server accepted the email.";
+        if (status === "opened")
+          return "The email was delivered and Brevo reports it was opened.";
+        if (status === "clicked")
+          return "The email was delivered and Brevo reports a link was clicked.";
+        if (status === "deferred")
+          return "Delivery is delayed. Brevo will keep trying.";
+        if (status === "soft_bounce")
+          return "Temporary delivery failure. Brevo may retry.";
+        if (status === "hard_bounce")
+          return "Permanent delivery failure. The recipient server rejected the email.";
+        if (status === "blocked")
+          return "Brevo reports the message was blocked before delivery.";
+        if (status === "invalid")
+          return "Brevo reports the recipient address is invalid.";
+        if (status === "spam")
+          return "The recipient provider reported the message as spam.";
+        return "Brevo has not confirmed final delivery yet.";
+      }
+      async function checkEmailDelivery() {
+        const box = document.getElementById("emailDeliveryBox"),
+          btn = document.getElementById("checkEmailBtn");
+        if (!box || !currentSessionId) return;
+        if (btn) btn.disabled = true;
+        box.innerHTML =
+          '<div class="wait">Checking Brevo delivery status…</div>';
+        try {
+          const r = await fetch(
+            `${EMAIL_STATUS_ENDPOINT}?session_id=${encodeURIComponent(currentSessionId)}`,
+            { cache: "no-store" },
+          );
+          const d = await r.json();
+          if (!r.ok || !d.ok)
+            throw new Error(d.error || "Unable to check email delivery.");
+          const good = ["delivered", "opened", "clicked"].includes(
+            String(d.status || ""),
+          );
+          const bad = [
+            "deferred",
+            "soft_bounce",
+            "hard_bounce",
+            "blocked",
+            "invalid",
+            "spam",
+          ].includes(String(d.status || ""));
+          const cls = good ? "success" : bad ? "error" : "wait";
+          const explanation = deliveryExplanation(d.status);
+          box.innerHTML = `<div class="${cls}"><strong>Email status: ${esc(statusLabel(d.status))}</strong>${d.email ? `<div class="muted">${esc(d.email)}</div>` : ""}<p>${esc(explanation)}</p>${d.reason ? `<p><strong>Brevo reason:</strong> ${esc(d.reason)}</p>` : ""}${d.eventDate ? `<div class="muted">Brevo event: ${esc(SNPTime.formatDateTime(d.eventDate))}</div>` : ""}</div>`;
+        } catch (e) {
+          box.innerHTML = `<div class="error">${esc(e.message || "Unable to check email delivery.")}</div>`;
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      }
+      async function loadTicket() {
+        const sessionId =
+          new URLSearchParams(location.search).get("session_id") || "";
+        currentSessionId = sessionId;
+        const app = document.getElementById("app");
+        if (!sessionId) {
+          app.innerHTML =
+            '<div class="card"><h2>Ticket unavailable</h2><div class="error">Missing Stripe checkout session.</div></div>';
+          return;
+        }
+        try {
+          const r = await fetch(
+            `${ENDPOINT}?format=json&session_id=${encodeURIComponent(sessionId)}`,
+            { cache: "no-store" },
+          );
+          const d = await r.json();
+          if (!r.ok || !d.ok) {
+            throw new Error(d.error || "Unable to load ticket.");
+          }
+          if (d.pending) {
+            app.innerHTML =
+              '<div class="card"><h2>Preparing your ticket</h2><div class="wait">Your payment is confirmed. We are generating your QR ticket now.</div></div>';
+            setTimeout(loadTicket, 1800);
+            return;
+          }
+          app.innerHTML =
+            `<div class="card"><h1>Payment Confirmed</h1><div class="success">Your ticket${d.tickets.length > 1 ? "s are" : " is"} confirmed. Show the QR code at check-in or when redeeming included items.</div><h2 style="margin-top:18px">${esc(d.event.name || "Event")}</h2>${d.event.date ? `<p><strong>Date:</strong> ${esc(d.event.date)}</p>` : ""}${d.event.time ? `<p><strong>Time:</strong> ${esc(SNPTime.formatTime(d.event.time))}</p>` : ""}${d.guestName ? `<p><strong>Guest:</strong> ${esc(d.guestName)}</p>` : ""}${d.email ? `<p><strong>Email:</strong> ${esc(d.email)}</p>` : ""}<p><strong>Tickets:</strong> ${d.tickets.length}</p><div class="email-status"><h3 style="margin:0 0 8px">Ticket Email Delivery</h3><button id="checkEmailBtn" class="btn" onclick="checkEmailDelivery()">Check Email Delivery</button><div id="emailDeliveryBox" style="margin-top:10px"><div class="muted">This checks whether Brevo only accepted the message or actually confirmed delivery, delay, block, or bounce.</div></div></div></div>` +
+            d.tickets
+              .map(
+                (t, i) =>
+                  `<div class="ticket"><h2>${esc(t.ticketTypeName || "Ticket " + (i + 1))}</h2><img class="qrimg" src="${t.qrDataUrl}" alt="Ticket QR code"><div class="status">${esc(t.status || "Confirmed")}</div>${(t.entitlements || []).length ? `<div class="benefits"><strong>Included with this ticket</strong>${t.entitlements.map((x) => `<p>${esc(x.label)} — ${Math.max(0, Number(x.quantity || 0) - Number(x.redeemed || 0))} remaining</p>`).join("")}<small class="muted">Use this same QR code to redeem included items. Each benefit is reduced when redeemed and cannot be used more than its included quantity.</small></div>` : ""}<p class="muted">Ticket ID: ${esc(t.id)}</p></div>`,
+              )
+              .join("") +
+            `<div class="card"><p class="muted">Each QR code admits one ticket. Admission cannot be used twice. Included food and beverage benefits are tracked separately on the same QR.</p></div>`;
+          setTimeout(checkEmailDelivery, 500);
+        } catch (e) {
+          app.innerHTML = `<div class="card"><h2>Ticket unavailable</h2><div class="error">${esc(e.message || "Unable to load this ticket.")}</div><p><button onclick="location.reload()">Try Again</button></p></div>`;
+        }
+      }
+      loadTicket();
+    </script>
+  </body>
 </html>
