@@ -26,6 +26,30 @@
                     kind:"paint",
                     includesPainting:true,
                     preset:true
+                },
+                {
+                    id:"preset-couples-paint-beverage-95",
+                    name:"Couples Paint & Beverage Package — Serves 2",
+                    description:"A complete experience for two guests, including two standard paint admissions with 9×12 canvases and one featured beverage package designed for two.",
+                    price:95,
+                    eventbriteUnitPrice:47.50,
+                    groupSize:2,
+                    seatMultiplier:2,
+                    minimumOrderQuantity:2,
+                    maximumOrderQuantity:2,
+                    kind:"paint",
+                    includesPainting:true,
+                    canvasSize:"9×12",
+                    inclusions:[{
+                        id:"couples-featured-beverage-for-two",
+                        label:"Featured Beverage Package — Serves 2",
+                        menuCategory:"Beverage Packages",
+                        choiceFromEventMenu:false,
+                        quantity:1,
+                        redeemable:true,
+                        scope:"order"
+                    }],
+                    preset:true
                 }
             ];
         },
@@ -80,7 +104,7 @@
         ticketCapacityUsed(event) {
             return (Array.isArray(event.ticketTypes) ? event.ticketTypes : [])
                 .filter(t => t.active !== false)
-                .reduce((s,t)=>s + Math.max(0, Number(t.quantity || 0)), 0);
+                .reduce((s,t)=>s + Math.max(0, Number(t.quantity || 0)) * Math.max(1, Number(t.seatMultiplier || 1)), 0);
         },
 
         templateOptions() {
@@ -92,7 +116,21 @@
             const t = (event.ticketTypes || []).find(x => x.id === ticketId); if (!t) return;
             const templates = this.savedTemplates();
             const same = templates.find(x => String(x.name || "").trim().toLowerCase() === String(t.name || "").trim().toLowerCase());
-            const payload = { id:same?.id || Utils.id(), name:t.name || "", description:t.description || "", price:Number(t.price || 0), kind:t.kind || "paint", includesPainting:t.includesPainting !== false };
+            const payload = {
+                id:same?.id || Utils.id(),
+                name:t.name || "",
+                description:t.description || "",
+                price:Number(t.price || 0),
+                kind:t.kind || "paint",
+                includesPainting:t.includesPainting !== false,
+                canvasSize:t.canvasSize || "",
+                groupSize:Math.max(1,Number(t.groupSize || 1)),
+                seatMultiplier:Math.max(1,Number(t.seatMultiplier || t.groupSize || 1)),
+                eventbriteUnitPrice:Number(t.eventbriteUnitPrice || 0),
+                minimumOrderQuantity:Math.max(1,Number(t.minimumOrderQuantity || 1)),
+                maximumOrderQuantity:Math.max(1,Number(t.maximumOrderQuantity || t.minimumOrderQuantity || 1)),
+                inclusions:JSON.parse(JSON.stringify(Array.isArray(t.inclusions) ? t.inclusions : []))
+            };
             if (same) Object.assign(same, payload); else templates.push(payload);
             this.saveTemplates(templates);
             alert("Ticket type saved as a reusable template.");
@@ -188,8 +226,8 @@
 
         capacityHtml(event, cap = this.availableCapacity(event), used = this.ticketCapacityUsed(event)) {
             const over = cap.sharedPaintCapacity > 0 ? false : used > cap.publicCapacity;
-            const painterQty = (event.ticketTypes || []).filter(t => t.active !== false && (t.kind === "paint" || (t.kind === "vip" && t.includesPainting))).reduce((s,t)=>s+Number(t.quantity||0),0);
-            const observerQty = (event.ticketTypes || []).filter(t => t.active !== false && t.kind === "observer").reduce((s,t)=>s+Number(t.quantity||0),0);
+            const painterQty = (event.ticketTypes || []).filter(t => t.active !== false && (t.kind === "paint" || (t.kind === "vip" && t.includesPainting))).reduce((s,t)=>s+Number(t.quantity||0)*Math.max(1,Number(t.seatMultiplier||1)),0);
+            const observerQty = (event.ticketTypes || []).filter(t => t.active !== false && t.kind === "observer").reduce((s,t)=>s+Number(t.quantity||0)*Math.max(1,Number(t.seatMultiplier||1)),0);
             const ratioTotal = painterQty + observerQty;
             const actualPct = ratioTotal ? Math.round(painterQty / ratioTotal * 100) : 0;
             const sold = Math.max(0, Number(event.eventbritePaintTicketsSold ?? event.eventbriteTicketsSold ?? 0) + Number(event.stripeTicketsSold || 0));
@@ -201,12 +239,12 @@
         ticketRows(event) {
             const rows = event.ticketTypes || [];
             if (!rows.length) return `<p>No ticket types yet.</p>`;
-            return rows.map(t => `<div style="border:1px solid #ddd;border-radius:10px;padding:12px;margin:10px 0;">
+            return rows.map(t => { const groupSize=Math.max(1,Number(t.groupSize||t.seatMultiplier||1)); return `<div style="border:1px solid #ddd;border-radius:10px;padding:12px;margin:10px 0;">
                 <label>Ticket Type Name</label><input value="${UI.esc(t.name || "")}" onchange="TicketPlanning.updateTicket('${event.id}','${t.id}','name',this.value)">
                 <label>Description</label><textarea onchange="TicketPlanning.updateTicket('${event.id}','${t.id}','description',this.value)">${UI.esc(t.description || "")}</textarea>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
-                    <div><label>Price</label><input type="number" min="0" step="0.01" value="${Number(t.price || 0)}" onchange="TicketPlanning.updateTicket('${event.id}','${t.id}','price',this.value)"></div>
-                    <div><label>Quantity Available</label><input type="number" min="0" step="1" value="${Number(t.quantity || 0)}" onchange="TicketPlanning.updateTicket('${event.id}','${t.id}','quantity',this.value)"></div>
+                    <div><label>${groupSize>1?'Package Price':'Price'}</label><input type="number" min="0" step="0.01" value="${Number(t.price || 0)}" onchange="TicketPlanning.updateTicket('${event.id}','${t.id}','price',this.value)"></div>
+                    <div><label>${groupSize>1?'Packages Available':'Quantity Available'}</label><input type="number" min="0" step="1" value="${Number(t.quantity || 0)}" onchange="TicketPlanning.updateTicket('${event.id}','${t.id}','quantity',this.value)"></div>
                     <div><label>Type</label><select onchange="TicketPlanning.updateTicket('${event.id}','${t.id}','kind',this.value)">
                         <option value="paint" ${t.kind === "paint" ? "selected" : ""}>Paint Admission</option>
                         <option value="observer" ${t.kind === "observer" ? "selected" : ""}>Observer / Gallery</option>
@@ -214,12 +252,13 @@
                         <option value="comp" ${t.kind === "comp" ? "selected" : ""}>Complimentary / Guest</option>
                     </select></div>
                 </div>
+                ${groupSize>1?`<p><small><strong>Package capacity:</strong> ${groupSize} guests per package; each purchase uses ${Math.max(1,Number(t.seatMultiplier||groupSize))} admission spaces.${Number(t.eventbriteUnitPrice||0)>0?` Eventbrite charges ${Utils.money(t.eventbriteUnitPrice)} per attendee and requires exactly ${groupSize} tickets, for ${Utils.money(t.price)} total.`:''}</small></p>`:''}
                 <label><input type="checkbox" ${t.active !== false ? "checked" : ""} onchange="TicketPlanning.updateTicket('${event.id}','${t.id}','active',this.checked)"> Active for sale</label>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
                     <button type="button" onclick="TicketPlanning.addTemplateFromTicket('${event.id}','${t.id}')">Save as Reusable Ticket Type</button>
                     <button type="button" onclick="TicketPlanning.removeTicket('${event.id}','${t.id}')">Remove</button>
                 </div>
-            </div>`).join("");
+            </div>`; }).join("");
         },
 
         staffRows(event) {

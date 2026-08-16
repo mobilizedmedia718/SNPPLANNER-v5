@@ -98,8 +98,8 @@
                       ticketClasses.length
                         ? `
                         <div class="scroll"><table>
-                            <tr><th>Ticket Type</th><th>Category</th><th>Available / Sold</th><th>Ticket Class ID</th></tr>
-                            ${ticketClasses.map((item) => `<tr><td>${UI.esc(item.name)}</td><td>${UI.esc(item.category || "admission")}</td><td>${Number(item.quantityTotal || 0)} / ${Number(item.quantitySold || 0)}</td><td>${UI.esc(item.id)}</td></tr>`).join("")}
+                            <tr><th>Ticket Type</th><th>Price / Purchase Rule</th><th>Category</th><th>Available / Sold</th><th>Ticket Class ID</th></tr>
+                            ${ticketClasses.map((item) => `<tr><td>${UI.esc(item.name)}</td><td>${Utils.money(item.price || 0)}${Number(item.minimumQuantity||1)>1?` each · exactly ${Number(item.minimumQuantity)} required · ${Utils.money(Number(item.price||0)*Number(item.minimumQuantity))} package total`:''}</td><td>${UI.esc(item.category || "admission")}</td><td>${Number(item.quantityTotal || 0)} / ${Number(item.quantitySold || 0)}</td><td>${UI.esc(item.id)}</td></tr>`).join("")}
                         </table></div>
                     `
                         : "<p>No ticket types imported yet.</p>"
