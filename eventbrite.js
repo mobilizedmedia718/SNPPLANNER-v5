@@ -41,6 +41,7 @@ const Eventbrite = {
         const link = this.data.events[eventId];
         if (!Array.isArray(link.attendees)) link.attendees = [];
         if (!Array.isArray(link.checkedIn)) link.checkedIn = [];
+        if (!String(link.publicUrl || "").trim()) link.publicUrl = "";
         return link;
     },
 
@@ -51,6 +52,11 @@ const Eventbrite = {
 
     setEventbriteEventId(eventId, value) {
         this.link(eventId).eventbriteEventId = String(value || "").trim();
+        this.save();
+    },
+
+    setPublicUrl(eventId, value) {
+        this.link(eventId).publicUrl = String(value || "").trim();
         this.save();
     },
 
@@ -186,7 +192,13 @@ const Eventbrite = {
     async loadTicketClasses(plannerEventId) {
         const data = await this.connectorRequest("/ticket-classes", plannerEventId);
         const link = this.link(plannerEventId);
-        link.ticketClasses = (data.ticket_classes || data.ticketClasses || []).map(item => ({ id: String(item.id), name: item.name || "" }));
+        link.ticketClasses = (data.ticket_classes || data.ticketClasses || []).map(item => ({
+            id: String(item.id),
+            name: item.name || "",
+            category: item.category || "admission",
+            quantityTotal: Number(item.quantity_total ?? item.capacity ?? 0),
+            quantitySold: Number(item.quantity_sold || 0)
+        }));
         link.lastSync = new Date().toISOString();
         this.save();
         return link.ticketClasses;
@@ -203,7 +215,8 @@ const Eventbrite = {
             ticketClassId: String(row.ticketClassId || row.ticket_class_id || ""),
             name: row.name || "",
             quantity: Number(row.quantity || 0),
-            revenue: Number(row.revenue || 0)
+            revenue: Number(row.revenue || 0),
+            category: row.category || "admission"
         }));
 
         const priorEventbriteTickets = Number(event.eventbriteTicketsSold || 0);
@@ -216,8 +229,14 @@ const Eventbrite = {
             link.manualRevenue = Math.max(0, Number(event.actualRevenue || 0) - priorEventbriteRevenue);
         }
 
-        const eventbriteTicketsSold = link.sales.reduce((sum, row) => sum + Number(row.quantity || 0), 0);
+        const eventbriteTicketsSold = link.sales
+            .filter(row => String(row.category || "admission") === "admission")
+            .reduce((sum, row) => sum + Number(row.quantity || 0), 0);
         const eventbriteRevenue = link.sales.reduce((sum, row) => sum + Number(row.revenue || 0), 0);
+        const eventbriteAdmissionRevenue = link.sales
+            .filter(row => String(row.category || "admission") === "admission")
+            .reduce((sum, row) => sum + Number(row.revenue || 0), 0);
+        const eventbriteAddonRevenue = Math.max(0, eventbriteRevenue - eventbriteAdmissionRevenue);
 
         link.lastSync = new Date().toISOString();
         this.save();
@@ -226,11 +245,13 @@ const Eventbrite = {
             eventbriteEventId: link.eventbriteEventId,
             eventbriteTicketsSold,
             eventbriteRevenue,
+            eventbriteAdmissionRevenue,
+            eventbriteAddonRevenue,
             ticketsSold: Number(link.manualTicketsSold || 0) + eventbriteTicketsSold,
             actualRevenue: Number(link.manualRevenue || 0) + eventbriteRevenue
         });
 
-        return { eventbriteTicketsSold, eventbriteRevenue, sales: link.sales };
+        return { eventbriteTicketsSold, eventbriteRevenue, eventbriteAdmissionRevenue, eventbriteAddonRevenue, sales: link.sales };
     }
 };
 
