@@ -40,8 +40,13 @@
     },
     async saveManual() {
       try {
-        const fullName =
-            document.getElementById("employeeName")?.value.trim() || "",
+        const firstName =
+            document.getElementById("employeeFirstName")?.value.trim() || "",
+          lastName =
+            document.getElementById("employeeLastName")?.value.trim() || "",
+          fullName = `${firstName} ${lastName}`.trim(),
+          streetAddress =
+            document.getElementById("employeeAddress")?.value.trim() || "",
           email = document.getElementById("employeeEmail")?.value.trim() || "",
           phone = document.getElementById("employeePhone")?.value.trim() || "",
           defaultRole =
@@ -53,7 +58,10 @@
           method: "POST",
           body: JSON.stringify({
             action: "upsert_employee",
+            firstName,
+            lastName,
             fullName,
+            streetAddress,
             email,
             phone,
             defaultRole,
@@ -153,6 +161,8 @@
           role: emp.default_role || "Event Staff",
           staffEmail: emp.email || "",
           phone: emp.phone || "",
+          streetAddress: emp.street_address || "",
+          phoneVerified: Boolean(emp.phone_verified_at),
           payType: "hourly",
           payRate: 0,
           scheduledHours: 0,
@@ -191,7 +201,7 @@
         .filter((x) => x.active !== false)
         .map(
           (x) =>
-            `<option value="${UI.esc(x.id)}">${UI.esc(x.full_name || x.email)} — ${UI.esc(x.default_role || "Event Staff")}</option>`,
+            `<option value="${UI.esc(x.id)}">${UI.esc(x.full_name || x.email)} — ${UI.esc(x.default_role || "Event Staff")} — ${x.phone_verified_at ? "Cell Verified" : "Cell Unverified"}</option>`,
         )
         .join("");
     },
@@ -209,10 +219,10 @@
     document.getElementById("workspace").innerHTML = `
       <h2>Employees / Event Staff</h2>
       <div class="card"><h3>Employee Portal</h3><p><strong>Portal Address</strong></p><input readonly value="${UI.esc(EmployeeDirectory.portalUrl)}" onclick="this.select()"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" onclick="window.open(EmployeeDirectory.portalUrl,'_blank')">Open Employee Portal</button><button type="button" onclick="navigator.clipboard.writeText(EmployeeDirectory.portalUrl);alert('Employee Portal address copied.')">Copy Portal Address</button></div></div>
-      <div class="card"><h3>Add Employee or Staff Member</h3><p>Create the employee record here. You do not create their password. After saving, use <strong>Send Staff Invite</strong> and the employee creates their own secure login.</p><label>Name</label><input id="employeeName"><label>Email</label><input id="employeeEmail" type="email"><label>Phone</label><input id="employeePhone" type="tel"><label>Default Role</label><input id="employeeRole" value="Event Staff"><label>Notes</label><textarea id="employeeNotes"></textarea><button type="button" onclick="EmployeeDirectory.saveManual()">Save Employee</button></div>
+      <div class="card"><h3>Add Employee or Staff Member</h3><p>Create the employee record here. You do not create their password. After saving, use <strong>Send Staff Invite</strong>; the employee must complete all required onboarding fields and verify their cellphone.</p><label>First Name</label><input id="employeeFirstName" autocomplete="given-name"><label>Last Name</label><input id="employeeLastName" autocomplete="family-name"><label>Street Address</label><input id="employeeAddress" autocomplete="street-address"><label>Email Address</label><input id="employeeEmail" type="email"><label>Cellphone Number</label><input id="employeePhone" type="tel"><label>Default Role</label><input id="employeeRole" value="Event Staff"><label>Notes</label><textarea id="employeeNotes"></textarea><button type="button" onclick="EmployeeDirectory.saveManual()">Save Employee</button></div>
       <div class="card"><h3>Manual / Backup Signup Link</h3><p>The normal method is the automatic email button on the employee record below. This section creates a copyable link only when you want to send it yourself.</p><label>Employee Email</label><input id="inviteEmployeeEmail" type="email" placeholder="employee@example.com"><label>Default Role</label><input id="inviteEmployeeRole" value="Event Staff"><button type="button" onclick="EmployeeDirectory.createInvite()">Create Backup Signup Link</button><div id="employeeInviteResult"></div></div>
       <div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><h3>Employee / Staff List</h3><button onclick="EmployeeDirectory.refresh(true)">Refresh</button></div>
-        ${rows.length ? rows.map((x) => `<div style="border:1px solid #ddd;border-radius:10px;padding:12px;margin:10px 0"><strong>${UI.esc(x.full_name || "Unnamed Staff Member")}</strong><p>${UI.esc(x.default_role || "Event Staff")}<br>${UI.esc(x.email || "")}${x.phone ? "<br>" + UI.esc(x.phone) : ""}</p><p><strong>Status:</strong> ${UI.esc(EmployeeDirectory.status(x))}${x.invite_sent_at ? `<br><small>Last invite: ${UI.esc(Utils.formatDateTime(x.invite_sent_at))}</small>` : ""}</p><p><small><strong>Employee Portal:</strong> ${UI.esc(EmployeeDirectory.portalUrl)}</small></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" onclick="EmployeeDirectory.sendInvite('${x.id}')">${String(x.invite_status || "") === "sent" ? "Resend Staff Invite" : "Send Staff Invite"}</button><button type="button" onclick="EmployeeDirectory.copyInvite('${x.id}')">Copy Backup Link</button><button type="button" onclick="window.open(EmployeeDirectory.portalUrl,'_blank')">Open Portal</button></div></div>`).join("") : "<p>No employees saved yet.</p>"}
+        ${rows.length ? rows.map((x) => `<div style="border:1px solid #ddd;border-radius:10px;padding:12px;margin:10px 0"><strong>${UI.esc(x.full_name || "Unnamed Staff Member")}</strong><p><strong>Default Role:</strong> ${UI.esc(x.default_role || "Event Staff")}<br><strong>Email Address:</strong> ${UI.esc(x.email || "")}<br><strong>Cellphone Number:</strong> ${UI.esc(x.phone || "Not supplied")}<br><strong>Cellphone Verification:</strong> ${x.phone_verified_at ? "Verified" : "Not verified"}<br><strong>Street Address:</strong> ${UI.esc(x.street_address || "Not supplied")}</p><p><strong>Portal Status:</strong> ${UI.esc(EmployeeDirectory.status(x))}${x.invite_sent_at ? `<br><small>Last invite: ${UI.esc(Utils.formatDateTime(x.invite_sent_at))}</small>` : ""}</p><p><small><strong>Employee Portal:</strong> ${UI.esc(EmployeeDirectory.portalUrl)}</small></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" onclick="EmployeeDirectory.sendInvite('${x.id}')">${String(x.invite_status || "") === "sent" ? "Resend Staff Invite" : "Send Staff Invite"}</button><button type="button" onclick="EmployeeDirectory.copyInvite('${x.id}')">Copy Backup Link</button><button type="button" onclick="window.open(EmployeeDirectory.portalUrl,'_blank')">Open Portal</button></div></div>`).join("") : "<p>No employees saved yet.</p>"}
       </div>`;
   };
 
