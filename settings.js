@@ -11,6 +11,11 @@ const Settings = {
     defaultTaxRate: 0,
     lowStockAlerts: true,
     reminderAlerts: true,
+    ticketSalesChannels: {
+      eventbrite: true,
+      stripe: false,
+      manual: false,
+    },
   },
 
   load() {
@@ -23,6 +28,11 @@ const Settings = {
       // One clock style across every planner, staff, and customer view.
       // Stored values remain HH:mm so sorting and form saves stay valid.
       timeFormat: "12",
+      ticketSalesChannels: {
+        eventbrite: saved.ticketSalesChannels?.eventbrite !== false,
+        stripe: saved.ticketSalesChannels?.stripe === true,
+        manual: saved.ticketSalesChannels?.manual === true,
+      },
     };
 
     this.apply();
@@ -41,6 +51,24 @@ const Settings = {
 
     this.save();
     this.apply();
+  },
+
+  salesChannelEnabled(channel) {
+    return this.data.ticketSalesChannels?.[channel] === true;
+  },
+
+  updateSalesChannel(channel, enabled) {
+    if (!["eventbrite", "stripe", "manual"].includes(channel)) return;
+    this.data.ticketSalesChannels = {
+      ...this.data.ticketSalesChannels,
+      [channel]: !!enabled,
+    };
+    this.save();
+    document.dispatchEvent(
+      new CustomEvent("snp-sales-channels-changed", {
+        detail: { ...this.data.ticketSalesChannels },
+      }),
+    );
   },
 
   apply() {
@@ -70,6 +98,11 @@ const Settings = {
       defaultTaxRate: 0,
       lowStockAlerts: true,
       reminderAlerts: true,
+      ticketSalesChannels: {
+        eventbrite: true,
+        stripe: false,
+        manual: false,
+      },
     };
 
     this.save();
