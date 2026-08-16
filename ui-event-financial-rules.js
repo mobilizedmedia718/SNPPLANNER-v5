@@ -31,13 +31,15 @@
       else if (b === 'beverageAddon') beverageAddon += amount;
       else other += amount;
     });
-    const eventbriteAdmission = Math.max(0, Number(event.eventbriteRevenue || 0));
+    const eventbriteAdmission = Math.max(0, Number(event.eventbriteAdmissionRevenue ?? event.eventbriteRevenue ?? 0));
+    const eventbriteAddon = Math.max(0, Number(event.eventbriteAddonRevenue || 0));
+    beverageAddon += eventbriteAddon;
     const admission = stripeAdmission + eventbriteAdmission;
     const financeIncome = rows.reduce((s,t)=>s + Number(t.amount || 0),0);
-    const knownGross = financeIncome + eventbriteAdmission;
+    const knownGross = financeIncome + eventbriteAdmission + eventbriteAddon;
     const eventGross = Math.max(knownGross, Number(event.actualRevenue || 0));
     const unclassified = Math.max(0, eventGross - knownGross);
-    return { admission, stripeAdmission, eventbriteAdmission, beverageAddon, other, unclassified, gross:eventGross };
+    return { admission, stripeAdmission, eventbriteAdmission, eventbriteAddon, beverageAddon, other, unclassified, gross:eventGross };
   };
 
   Finance.paymentBaseRevenue = function(eventId, terms){
@@ -94,7 +96,7 @@
       box.innerHTML = `<h3>Revenue & Percentage Payment Breakdown</h3>
         <p><strong>Gross Event Revenue:</strong> ${Utils.money(b.gross)}</p>
         <p><strong>Admission Ticket Revenue:</strong> ${Utils.money(b.admission)} <small>(Stripe ${Utils.money(b.stripeAdmission)} + Eventbrite ${Utils.money(b.eventbriteAdmission)})</small></p>
-        <p><strong>Beverage / Add-on Revenue:</strong> ${Utils.money(b.beverageAddon)}</p>
+        <p><strong>Beverage / Add-on Revenue:</strong> ${Utils.money(b.beverageAddon)} <small>(includes Eventbrite ${Utils.money(b.eventbriteAddon)})</small></p>
         <p><strong>Other Revenue:</strong> ${Utils.money(b.other)}</p>
         ${b.unclassified ? `<p><strong>Unclassified / Manual Revenue:</strong> ${Utils.money(b.unclassified)}</p>` : ''}
         ${obligations.length ? obligations.map(x=>`<hr><p><strong>${UI.esc(x.entityName)} — ${UI.esc(x.purpose || 'Payment')}:</strong></p>
