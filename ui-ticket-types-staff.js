@@ -192,7 +192,7 @@
             const observerQty = (event.ticketTypes || []).filter(t => t.active !== false && t.kind === "observer").reduce((s,t)=>s+Number(t.quantity||0),0);
             const ratioTotal = painterQty + observerQty;
             const actualPct = ratioTotal ? Math.round(painterQty / ratioTotal * 100) : 0;
-            const sold = Math.max(0, Number(event.eventbriteTicketsSold || 0) + Number(event.stripeTicketsSold || 0));
+            const sold = Math.max(0, Number(event.eventbritePaintTicketsSold ?? event.eventbriteTicketsSold ?? 0) + Number(event.stripeTicketsSold || 0));
             return `<p><strong>Venue capacity:</strong> ${cap.venueCapacity} &nbsp; <strong>Reserved for staff:</strong> ${cap.staffSeats} &nbsp; <strong>Paint admission capacity:</strong> ${cap.publicCapacity}</p>
                 ${cap.sharedPaintCapacity > 0 ? `<p><strong>Shared paint-instruction pool:</strong> ${sold}/${cap.publicCapacity} sold &nbsp; <strong>Individual ticket ceilings:</strong> ${used}</p>` : `<p><strong>Ticket capacity assigned:</strong> ${used}/${cap.publicCapacity} ${over ? `<span style="color:#b91c1c;font-weight:700;">— OVER CAPACITY</span>` : ""}</p>`}
                 <p><strong>Paint admissions / other admissions:</strong> ${painterQty} / ${observerQty}${ratioTotal ? ` (${actualPct}% paint)` : ""}</p>`;

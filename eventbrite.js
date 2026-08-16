@@ -197,8 +197,34 @@ const Eventbrite = {
             name: item.name || "",
             category: item.category || "admission",
             quantityTotal: Number(item.quantity_total ?? item.capacity ?? 0),
-            quantitySold: Number(item.quantity_sold || 0)
+            quantitySold: Number(item.quantity_sold || 0),
+            price: Number(item.cost?.major_value || 0),
+            hidden: Boolean(item.hidden || item.hidden_currently),
+            salesChannels: Array.isArray(item.sales_channels) ? item.sales_channels : []
         }));
+
+        const event = Events.get(plannerEventId);
+        if (event) {
+            const ticketTypes = Array.isArray(event.ticketTypes) ? event.ticketTypes.map(item => ({ ...item })) : [];
+            const menuItems = Array.isArray(event.menuItems) ? event.menuItems.map(item => ({ ...item })) : [];
+            let changed = false;
+            for (const ticketClass of link.ticketClasses) {
+                const normalizedName = String(ticketClass.name || "").trim().toLowerCase();
+                const targetCollection = ticketClass.category === "add_on" ? menuItems : ticketTypes;
+                const target = targetCollection.find(item =>
+                    String(item.eventbriteTicketClassId || "") === ticketClass.id ||
+                    (!item.eventbriteTicketClassId && String(item.name || "").trim().toLowerCase() === normalizedName)
+                );
+                if (!target) continue;
+                target.eventbriteTicketClassId = ticketClass.id;
+                target.eventbriteQuantityTotal = ticketClass.quantityTotal;
+                target.eventbriteQuantitySold = ticketClass.quantitySold;
+                target.eventbritePrice = ticketClass.price;
+                target.eventbriteCategory = ticketClass.category;
+                changed = true;
+            }
+            if (changed) Events.update(plannerEventId, { ticketTypes, menuItems });
+        }
         link.lastSync = new Date().toISOString();
         this.save();
         return link.ticketClasses;
@@ -238,6 +264,29 @@ const Eventbrite = {
             .reduce((sum, row) => sum + Number(row.revenue || 0), 0);
         const eventbriteAddonRevenue = Math.max(0, eventbriteRevenue - eventbriteAdmissionRevenue);
 
+        const ticketTypes = Array.isArray(event.ticketTypes) ? event.ticketTypes.map(item => ({ ...item })) : [];
+        const menuItems = Array.isArray(event.menuItems) ? event.menuItems.map(item => ({ ...item })) : [];
+        const salesByClass = new Map(link.sales.map(row => [String(row.ticketClassId || ""), row]));
+        for (const item of [...ticketTypes, ...menuItems]) {
+            const row = salesByClass.get(String(item.eventbriteTicketClassId || ""));
+            item.eventbriteQuantitySold = Number(row?.quantity || 0);
+            item.eventbriteRevenue = Number(row?.revenue || 0);
+        }
+        const paintClassIds = new Set(ticketTypes
+            .filter(item => item.includesPainting === true || item.kind === "paint")
+            .map(item => String(item.eventbriteTicketClassId || ""))
+            .filter(Boolean));
+        const exhibitClassIds = new Set(ticketTypes
+            .filter(item => item.kind === "exhibit" || item.accessLevel === "gallery_only")
+            .map(item => String(item.eventbriteTicketClassId || ""))
+            .filter(Boolean));
+        const eventbritePaintTicketsSold = link.sales
+            .filter(row => paintClassIds.has(String(row.ticketClassId || "")))
+            .reduce((sum, row) => sum + Number(row.quantity || 0), 0);
+        const eventbriteExhibitTicketsSold = link.sales
+            .filter(row => exhibitClassIds.has(String(row.ticketClassId || "")))
+            .reduce((sum, row) => sum + Number(row.quantity || 0), 0);
+
         link.lastSync = new Date().toISOString();
         this.save();
 
@@ -247,11 +296,15 @@ const Eventbrite = {
             eventbriteRevenue,
             eventbriteAdmissionRevenue,
             eventbriteAddonRevenue,
+            eventbritePaintTicketsSold,
+            eventbriteExhibitTicketsSold,
+            ticketTypes,
+            menuItems,
             ticketsSold: Number(link.manualTicketsSold || 0) + eventbriteTicketsSold,
             actualRevenue: Number(link.manualRevenue || 0) + eventbriteRevenue
         });
 
-        return { eventbriteTicketsSold, eventbriteRevenue, eventbriteAdmissionRevenue, eventbriteAddonRevenue, sales: link.sales };
+        return { eventbriteTicketsSold, eventbritePaintTicketsSold, eventbriteExhibitTicketsSold, eventbriteRevenue, eventbriteAdmissionRevenue, eventbriteAddonRevenue, sales: link.sales };
     }
 };
 

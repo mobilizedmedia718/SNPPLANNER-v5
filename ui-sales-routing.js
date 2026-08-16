@@ -65,7 +65,7 @@
       return `<h2>${UI.esc(heading)} — ${UI.esc(event?.name || "Event")}</h2>
         <div class="card"><h3>${this.enabled("eventbrite") ? "Eventbrite Checkout" : "Ticket Sales Paused"}</h3>
         <p>${this.enabled("eventbrite") ? "New ticket and prepaid beverage-package purchases are routed through Eventbrite. Stripe checkout is currently disabled." : "No online checkout source is enabled. Turn on Eventbrite or Stripe under Settings → Ticket Sales Routing."}</p>
-        ${this.enabled("eventbrite") ? `<button type="button" onclick="SalesRouting.openEventbrite('${UI.esc(eventId)}')" ${url ? "" : "disabled"}>Open Eventbrite Ticket Page</button>` : ""}
+        ${this.enabled("eventbrite") ? `<button type="button" onclick="SalesRouting.openEventbrite('${UI.esc(eventId)}')" ${url ? "" : "disabled"}>Open Eventbrite Checkout</button>` : ""}
         ${this.enabled("eventbrite") ? (url ? `<p><input readonly value="${UI.esc(url)}" onclick="this.select()"></p>` : "<p>Add the public Eventbrite URL under Eventbrite settings.</p>") : ""}
         <button type="button" onclick="CheckInUI.open('${UI.esc(eventId)}')">Check In / Scan Ticket</button></div>`;
     },
@@ -149,7 +149,7 @@
     const event = Events.get(eventId);
     const types = typeof TicketSalesUI !== "undefined" ? TicketSalesUI.activeTicketTypes(event) : [];
     card.innerHTML = `<h3>Ticket Sales</h3>
-      ${SalesRouting.enabled("eventbrite") ? `<button type="button" onclick="SalesRouting.openEventbrite('${UI.esc(eventId)}')">Open Eventbrite Ticket Page</button>` : ""}
+      ${SalesRouting.enabled("eventbrite") ? `<button type="button" onclick="SalesRouting.openEventbrite('${UI.esc(eventId)}')">Open Eventbrite Checkout</button>` : ""}
       ${SalesRouting.enabled("stripe") ? `<button type="button" onclick="TicketSalesUI.open('${UI.esc(eventId)}')">Sell Ticket with Stripe</button>` : ""}
       <button type="button" onclick="CheckInUI.open('${UI.esc(eventId)}')">Check In / Scan Ticket</button>
       <p><strong>Enabled sales sources:</strong> ${UI.esc(SalesRouting.statusHtml())}</p>
