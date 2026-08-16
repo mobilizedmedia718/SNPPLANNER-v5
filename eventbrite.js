@@ -200,7 +200,10 @@ const Eventbrite = {
             quantitySold: Number(item.quantity_sold || 0),
             price: Number(item.cost?.major_value || 0),
             hidden: Boolean(item.hidden || item.hidden_currently),
-            salesChannels: Array.isArray(item.sales_channels) ? item.sales_channels : []
+            salesChannels: Array.isArray(item.sales_channels) ? item.sales_channels : [],
+            minimumQuantity: Math.max(1, Number(item.minimum_quantity || 1)),
+            maximumQuantity: Math.max(1, Number(item.maximum_quantity_per_order || item.maximum_quantity || 1)),
+            inventoryTierId: String(item.inventory_tier_id || "")
         }));
 
         const event = Events.get(plannerEventId);
@@ -221,6 +224,9 @@ const Eventbrite = {
                 target.eventbriteQuantitySold = ticketClass.quantitySold;
                 target.eventbritePrice = ticketClass.price;
                 target.eventbriteCategory = ticketClass.category;
+                target.eventbriteMinimumQuantity = ticketClass.minimumQuantity;
+                target.eventbriteMaximumQuantity = ticketClass.maximumQuantity;
+                target.eventbriteInventoryTierId = ticketClass.inventoryTierId || target.eventbriteInventoryTierId || "";
                 changed = true;
             }
             if (changed) Events.update(plannerEventId, { ticketTypes, menuItems });
@@ -271,6 +277,8 @@ const Eventbrite = {
             const row = salesByClass.get(String(item.eventbriteTicketClassId || ""));
             item.eventbriteQuantitySold = Number(row?.quantity || 0);
             item.eventbriteRevenue = Number(row?.revenue || 0);
+            const groupSize = Math.max(1, Number(item.groupSize || item.seatMultiplier || 1));
+            item.eventbritePackagesSold = Number(row?.quantity || 0) / groupSize;
         }
         const paintClassIds = new Set(ticketTypes
             .filter(item => item.includesPainting === true || item.kind === "paint")
