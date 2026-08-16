@@ -175,7 +175,6 @@
       const invite = () =>
         new URLSearchParams(location.search).get("invite") || "";
       const pendingEmailKey = "snp_staff_pending_email";
-      const pendingPhoneKey = "snp_staff_pending_phone";
       function redirectUrl() {
         const url = new URL(location.href);
         url.hash = "";
@@ -229,8 +228,7 @@
             v.address &&
             v.phone &&
             S?.user?.email &&
-            S?.user?.email_confirmed_at &&
-            S?.user?.phone_confirmed_at,
+            S?.user?.email_confirmed_at,
         );
       }
       async function refreshCurrentUser() {
@@ -244,8 +242,7 @@
       }
       function onboarding(msg = "") {
         const v = onboardingValues();
-        const phoneVerified = Boolean(S?.user?.phone_confirmed_at);
-        app.innerHTML = `<div class="card"><h2>Required Employee Onboarding</h2><p class="muted">Complete every required field and verify your cellphone before entering the Employee Portal.</p>${msg ? `<p class="notice">${esc(msg)}</p>` : ""}<div class="grid"><div><label class="required">First Name</label><input id="onboardFirstName" value="${esc(v.firstName)}" autocomplete="given-name" required></div><div><label class="required">Last Name</label><input id="onboardLastName" value="${esc(v.lastName)}" autocomplete="family-name" required></div></div><label class="required">Street Address</label><input id="onboardAddress" value="${esc(v.address)}" autocomplete="street-address" required><label class="required">Email</label><input value="${esc(S?.user?.email || "")}" readonly><label class="required">Cellphone</label><input id="onboardPhone" type="tel" value="${esc(v.phone)}" autocomplete="tel" inputmode="tel" ${phoneVerified ? "readonly" : ""} required><p class="${phoneVerified ? "ok" : "muted"}">${phoneVerified ? "✓ Cellphone verified" : "Enter a mobile number that can receive a 6-digit SMS code."}</p>${phoneVerified ? "" : '<button type="button" class="secondary" onclick="sendPhoneVerification()">Send Verification Code</button><label class="required">6-Digit Verification Code</label><input id="phoneOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6"><button type="button" onclick="verifyCellphone()">Verify Cellphone</button>'}<button type="button" class="success" style="width:100%;margin-top:14px" onclick="completeOnboarding()" ${phoneVerified ? "" : "disabled"}>Save Profile & Continue</button><p class="muted">You cannot continue until the required information and cellphone verification are complete.</p></div>`;
+        app.innerHTML = `<div class="card"><h2>Required Employee Onboarding</h2><p class="muted">Complete every required field before entering the Employee Portal. Your email must be verified; your cellphone number is required but does not require verification.</p>${msg ? `<p class="notice">${esc(msg)}</p>` : ""}<div class="grid"><div><label class="required">First Name</label><input id="onboardFirstName" value="${esc(v.firstName)}" autocomplete="given-name" required></div><div><label class="required">Last Name</label><input id="onboardLastName" value="${esc(v.lastName)}" autocomplete="family-name" required></div></div><label class="required">Street Address</label><input id="onboardAddress" value="${esc(v.address)}" autocomplete="street-address" required><label class="required">Verified Email</label><input value="${esc(S?.user?.email || "")}" readonly><label class="required">Cellphone Number</label><input id="onboardPhone" type="tel" value="${esc(v.phone)}" autocomplete="tel" inputmode="tel" required><button type="button" class="success" style="width:100%;margin-top:14px" onclick="completeOnboarding()">Save Profile & Continue</button><p class="muted">You cannot continue until every required field is complete.</p></div>`;
       }
       function readOnboarding() {
         const firstName = document.getElementById("onboardFirstName")?.value.trim() || "";
@@ -258,14 +255,16 @@
         if (!phone) throw new Error("Enter a valid cellphone number, including area code.");
         return { firstName, lastName, streetAddress, phone };
       }
-      async function sendPhoneVerification() {
+      async function completeOnboarding() {
         try {
           const v = readOnboarding();
-          const r = await fetch(`${U}/auth/v1/user`, {
+          await refreshCurrentUser();
+          if (!S?.user?.email_confirmed_at)
+            throw new Error("Verify your email before continuing.");
+          const profileResponse = await fetch(`${U}/auth/v1/user`, {
             method: "PUT",
             headers: h(S.access_token),
             body: JSON.stringify({
-              phone: v.phone,
               data: {
                 ...metadata(),
                 first_name: v.firstName,
@@ -277,51 +276,16 @@
               },
             }),
           });
-          const d = await r.json().catch(() => ({}));
-          if (!r.ok)
+          const profileUser = await profileResponse.json().catch(() => ({}));
+          if (!profileResponse.ok)
             throw new Error(
-              d.msg || d.message || d.error || "Unable to send the verification code.",
+              profileUser.msg ||
+                profileUser.message ||
+                profileUser.error ||
+                "Unable to save the employee profile.",
             );
-          S.user = d;
+          S.user = profileUser;
           localStorage.setItem(SK, JSON.stringify(S));
-          sessionStorage.setItem(pendingPhoneKey, v.phone);
-          onboarding("A 6-digit verification code was sent by SMS. Enter it below.");
-        } catch (e) {
-          onboarding(e.message);
-        }
-      }
-      async function verifyCellphone() {
-        try {
-          const v = readOnboarding();
-          const token = document.getElementById("phoneOtp")?.value.trim() || "";
-          if (!/^\d{6}$/.test(token))
-            throw new Error("Enter the 6-digit code sent to your cellphone.");
-          const r = await fetch(`${U}/auth/v1/verify`, {
-            method: "POST",
-            headers: h(),
-            body: JSON.stringify({ type: "phone_change", phone: v.phone, token }),
-          });
-          const d = await r.json().catch(() => ({}));
-          if (!r.ok)
-            throw new Error(
-              d.msg || d.message || d.error || "The cellphone verification code was not accepted.",
-            );
-          if (d.access_token) {
-            S = d;
-          }
-          await refreshCurrentUser();
-          sessionStorage.removeItem(pendingPhoneKey);
-          onboarding("Cellphone verified. Select Save Profile & Continue.");
-        } catch (e) {
-          onboarding(e.message);
-        }
-      }
-      async function completeOnboarding() {
-        try {
-          const v = readOnboarding();
-          await refreshCurrentUser();
-          if (!S?.user?.phone_confirmed_at)
-            throw new Error("Verify your cellphone before continuing.");
           if (invite()) {
             const r = await fetch(`${U}/functions/v1/employee-directory-api`, {
               method: "POST",
