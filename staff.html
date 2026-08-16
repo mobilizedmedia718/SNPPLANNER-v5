@@ -6,27 +6,61 @@
     <title>SNP Planner Staff Portal</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         margin: 0;
-        background: #f5f6f8;
-        color: #161616;
+        background: #f3f5f8;
+        color: #172033;
       }
       header {
-        background: #111;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #111827;
         color: #fff;
-        padding: 18px;
+        padding: 16px 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,.18);
       }
       main {
-        max-width: 820px;
+        max-width: 1080px;
         margin: auto;
-        padding: 18px;
+        padding: 20px;
       }
       .card {
         background: #fff;
-        border-radius: 12px;
-        padding: 16px;
-        margin: 12px 0;
+        border: 1px solid #e3e7ee;
+        border-radius: 14px;
+        padding: 18px;
+        margin: 14px 0;
+        box-shadow: 0 4px 16px rgba(24,39,75,.05);
       }
+      .event-card { overflow: hidden; padding: 0; }
+      .event-head { background: linear-gradient(135deg,#111827,#26344f); color:#fff; padding:20px; }
+      .event-head h2 { margin:0 0 6px; }
+      .event-body { padding:18px; }
+      .section { border-top:1px solid #e6e9ef; margin-top:18px; padding-top:18px; }
+      .section h3 { margin:0 0 6px; }
+      .stat { background:#f7f8fb; border:1px solid #e4e8ef; border-radius:12px; padding:14px; }
+      .stat strong { display:block; font-size:.82rem; color:#5e6879; margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em; }
+      .stat .value { font-size:1.25rem; font-weight:750; color:#172033; }
+      .item-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin:12px 0; }
+      .sale-item { border:1px solid #dfe4ec; border-radius:12px; padding:13px; background:#fbfcfe; }
+      .sale-item strong { display:block; margin-bottom:4px; }
+      .price { color:#146c43; font-weight:800; font-size:1.08rem; }
+      .badge { display:inline-block; border-radius:999px; padding:4px 9px; font-size:.78rem; font-weight:700; background:#e8edf6; color:#33405b; margin:2px 4px 2px 0; }
+      .badge.ok { background:#e7f6ed; color:#146c43; }
+      .nested { background:#f7f9fc; border:1px solid #e0e5ed; border-radius:12px; padding:13px; margin-top:10px; }
+      .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+      .toolbar > button { flex:0 1 auto; }
+      .section-note { margin:4px 0 12px; color:#626d7e; }
+      .empty { padding:16px; border:1px dashed #cdd3dd; border-radius:10px; color:#667085; text-align:center; }
+      .guest-row { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid #edf0f4; }
+      .guest-row:last-child { border-bottom:0; }
+      .primary { background:#175cd3; border-color:#175cd3; }
+      .secondary { background:#fff; color:#172033; border-color:#aeb7c6; }
+      .success { background:#177447; border-color:#177447; }
+      .danger-btn { background:#a92525; border-color:#a92525; }
+      button:disabled { opacity:.55; cursor:not-allowed; }
+      button:focus-visible,input:focus-visible,select:focus-visible { outline:3px solid rgba(23,92,211,.25); outline-offset:2px; }
       .grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -58,8 +92,9 @@
       }
       button {
         cursor: pointer;
-        background: #111;
+        background: #172033;
         color: #fff;
+        font-weight: 650;
       }
       .muted {
         color: #666;
@@ -83,10 +118,12 @@
       details {
         margin-top: 10px;
       }
+      summary { cursor:pointer; font-weight:750; }
+      @media (max-width:640px){main{padding:12px}.event-body,.event-head{padding:15px}.row>*{min-width:100%}.toolbar>button{width:100%}}
     </style>
   </head>
   <body>
-    <header><strong>SNP Planner — Event Staff Portal</strong></header>
+    <header><strong>SNP Planner</strong> <span style="opacity:.72">— Employee Event Portal</span></header>
     <main id="app"></main>
     <script src="time-format.js?v=1"></script>
     <script>
@@ -119,7 +156,7 @@
               "&": "&amp;",
               "<": "&lt;",
               ">": "&gt;",
-              '"': "&quot",
+              '"': "&quot;",
               "'": "&#39;",
             })[m],
         );
@@ -297,14 +334,38 @@
         app.innerHTML =
           msg +
           inviteCard() +
-          `<div class="card"><div class="grid"><div><h2>Assigned Events</h2><p class="muted">Event operations only. Company/admin data is not available here.</p></div><div style="text-align:right"><button onclick="logout()">Sign Out</button></div></div></div>${E.length ? E.map(card).join("") : `<div class="card"><p>No active event assignments were found for this login.</p></div>`}`;
+          `<div class="card"><div class="grid"><div><h2 style="margin:0 0 5px">Employee Event Workspace</h2><p class="muted" style="margin:0">Signed in as ${esc(S?.user?.email || "staff")}. Only assigned event duties and approved customer tools appear here.</p></div><div class="toolbar" style="justify-content:flex-end"><button class="secondary" onclick="load()">Refresh</button><button class="danger-btn" onclick="logout()">Sign Out</button></div></div></div>${E.length ? E.map(card).join("") : `<div class="card empty">No active event assignments were found for this login.</div>`}`;
+      }
+      function saleItem(item, kind = "ticket") {
+        const group = Math.max(1, Number(item.groupSize || 1));
+        const regular = Number(item.regularValue || 0);
+        return `<div class="sale-item"><span class="badge">${kind === "ticket" ? "Admission" : "Featured Beverage"}</span>${group > 1 ? `<span class="badge">Serves ${group}</span>` : ""}<strong>${esc(item.name || "Item")}</strong><span class="price">${money(item.price)}</span>${regular > Number(item.price || 0) ? `<div class="ok">Save ${money(regular - Number(item.price || 0))}</div>` : ""}${item.description ? `<p class="muted">${esc(item.description)}</p>` : ""}</div>`;
+      }
+      function permissionBadges(p) {
+        return [
+          [p.can_accept_payments, "Ticket/package sales"],
+          [p.can_check_in && p.can_scan_qr, "Admission check-in"],
+          [p.can_redeem_items && p.can_scan_qr, "Item redemption"],
+          [p.can_view_guest_list, "Guest list"],
+        ].filter((x) => x[0]).map((x) => `<span class="badge ok">${x[1]}</span>`).join("") || '<span class="badge">No operational permissions</span>';
       }
       function card(x) {
         x = { ...x, time: SNPTime.formatTime(x.time) };
         const p = x.permissions || {},
           sh = x.shift || {},
           sales = x.staffSales || {};
-        return `<div class="card"><h3>${esc(x.name)}</h3><p>${esc(x.date)} ${esc(x.time)}${x.venueName ? " • " + esc(x.venueName) : ""}</p><div class="grid"><div><strong>Shift</strong><p>${sh.active ? `Clocked in: ${new Date(sh.clockIn).toLocaleTimeString()}` : sh.clockOut ? `Last shift ended: ${new Date(sh.clockOut).toLocaleTimeString()}` : "Not clocked in"}</p><button onclick="clock('${x.id}','${sh.active ? "clock_out" : "clock_in"}')">${sh.active ? "Clock Out" : "Clock In"}</button></div><div><strong>Your Event Sales</strong><p>${sales.count || 0} paid transactions<br>${money(sales.total)}</p></div><div><strong>Attendance</strong><p>${x.ticketsSold}${x.capacity ? " / " + x.capacity : ""} tickets sold</p></div></div>${p.can_check_in && p.can_scan_qr ? `<h4>Admission Scanner</h4><div class="row"><input id="qr-${x.id}" placeholder="Scan or type ticket / barcode"><button onclick="camera('${x.id}','qr')">Use Camera</button></div><video id="video-${x.id}" playsinline muted></video><div class="row"><button onclick="checkin('${x.id}','checkin_snp_ticket')">Check In SNP Ticket</button><button onclick="checkin('${x.id}','checkin_eventbrite')">Check In Eventbrite Barcode</button></div>` : ""}${p.can_accept_payments ? `<h4>Sell Admission Ticket</h4><select id="ticket-${x.id}">${(x.ticketTypes || []).map((t) => `<option value="${esc(t.id)}" data-name="${esc(t.name)}" data-price="${Number(t.price || 0)}">${esc(t.name)} — ${money(t.price)}</option>`).join("")}</select><div class="row"><input id="qty-${x.id}" type="number" min="1" value="1"><input id="email-${x.id}" type="email" placeholder="Customer email"></div><button onclick="payTicket('${x.id}')">Start Secure Payment</button>` : ""}${p.can_event_sales && p.can_accept_payments && x.menuItems?.length ? `<h4>Event Sales</h4><select id="menu-${x.id}">${x.menuItems.map((i) => `<option value="${esc(i.id)}" data-name="${esc(i.name)}" data-price="${Number(i.price || 0)}" data-category="${esc(i.category || "")}" data-inventory="${esc(i.inventoryId || "")}">${esc(i.name)} — ${money(i.price)}</option>`).join("")}</select><div class="row"><input id="mqty-${x.id}" type="number" min="1" value="1"><input id="memail-${x.id}" type="email" placeholder="Customer email"></div><button onclick="payItem('${x.id}')">Start Secure Payment</button>` : ""}${p.can_redeem_items && p.can_scan_qr ? `<h4>Redeem Prepaid Food / Beverage / Add-ons</h4><div class="row"><input id="pre-${x.id}" placeholder="Scan or type SNP-PREPAID QR"><button onclick="camera('${x.id}','pre')">Use Camera</button><button onclick="inspectPrepaid('${x.id}')">Find Prepaid Items</button></div><div id="preout-${x.id}"></div>` : ""}${p.can_view_guest_list ? `<details><summary>Guest List (${(x.guestList || []).length})</summary>${(x.guestList || []).map((g) => `<p>${esc(g.status || "Guest")} ${g.checkedIn ? "✓ Checked in" : ""} <span class="muted">(${esc(g.source || "")})</span></p>`).join("") || "<p>No guests yet.</p>"}</details>` : ""}</div>`;
+        const checkoutEnabled = p.can_accept_payments && x.salesChannels?.eventbrite && x.eventbriteCheckoutUrl;
+        const ticketItems = (x.ticketTypes || []).map((t) => saleItem(t, "ticket")).join("");
+        const menuItems = p.can_event_sales ? (x.menuItems || []).map((i) => saleItem(i, "menu")).join("") : "";
+        const guestRows = (x.guestList || []).map((g) => `<div class="guest-row"><div><strong>${esc(g.name || g.email || g.status || "Guest")}</strong>${g.email ? `<br><span class="muted">${esc(g.email)}</span>` : ""}</div><div>${g.checkedIn ? '<span class="badge ok">Checked in</span>' : `<span class="badge">${esc(g.status || "Expected")}</span>`}</div></div>`).join("");
+        return `<article class="card event-card"><div class="event-head"><span class="badge ok">${esc(x.status || "Assigned")}</span><h2>${esc(x.name)}</h2><div>${esc(x.date)} at ${esc(x.time)}${x.venueName ? " • " + esc(x.venueName) : ""}</div></div><div class="event-body">
+          <div class="grid"><div class="stat"><strong>Shift Status</strong><div class="value">${sh.active ? "Clocked In" : "Clocked Out"}</div><p class="muted">${sh.active ? `Since ${new Date(sh.clockIn).toLocaleTimeString()}` : sh.clockOut ? `Last out ${new Date(sh.clockOut).toLocaleTimeString()}` : "No shift started"}</p><button class="${sh.active ? "danger-btn" : "success"}" onclick="clock('${x.id}','${sh.active ? "clock_out" : "clock_in"}')">${sh.active ? "Clock Out" : "Clock In"}</button></div><div class="stat"><strong>Paint Admissions</strong><div class="value">${Number(x.paintTicketsSold || 0)} / ${Number(x.paintCapacity || 0)}</div><p class="muted">Shared paint capacity</p></div><div class="stat"><strong>Exhibit Admissions</strong><div class="value">${Number(x.exhibitTicketsSold || 0)} / ${Number(x.exhibitCapacity || 0)}</div><p class="muted">Art exhibit capacity</p></div><div class="stat"><strong>Portal Sales History</strong><div class="value">${money(sales.total || 0)}</div><p class="muted">${sales.count || 0} previously attributed transaction${Number(sales.count || 0) === 1 ? "" : "s"}</p></div></div>
+          <div class="section"><h3>Your Assigned Tools</h3><div>${permissionBadges(p)}</div></div>
+          ${p.can_accept_payments ? `<div class="section"><h3>Sell Tickets & Packages</h3><p class="section-note">Help the customer choose below, then open the secure Eventbrite checkout. Eventbrite collects payment and sends the customer’s tickets.</p><h4>Admission options</h4><div class="item-grid">${ticketItems || '<div class="empty">No admission tickets are active.</div>'}</div>${p.can_event_sales ? `<h4>Featured beverage options</h4><div class="item-grid">${menuItems || '<div class="empty">No beverage packages are active.</div>'}</div>` : ""}${checkoutEnabled ? `<div class="toolbar"><button class="primary" onclick="openEventbriteCheckout('${esc(x.eventbriteCheckoutUrl)}')">Open Eventbrite Checkout</button><button class="secondary" onclick="copyEventbriteCheckout('${esc(x.eventbriteCheckoutUrl)}')">Copy Checkout Link</button></div>` : '<div class="empty">Eventbrite checkout is not available for this event. Contact the event organizer.</div>'}</div>` : ""}
+          ${p.can_check_in && p.can_scan_qr ? `<div class="section"><h3>Admission Check-In</h3><p class="section-note">Scan the guest’s ticket, then select the matching check-in button.</p><div class="row"><input id="qr-${x.id}" placeholder="Scan or enter ticket barcode"><button class="secondary" onclick="camera('${x.id}','qr')">Use Camera</button></div><video id="video-${x.id}" playsinline muted></video><div class="toolbar"><button onclick="checkin('${x.id}','checkin_eventbrite')">Check In Eventbrite Ticket</button><button class="secondary" onclick="checkin('${x.id}','checkin_snp_ticket')">Check In SNP Ticket</button></div></div>` : ""}
+          ${p.can_redeem_items && p.can_scan_qr ? `<div class="section"><h3>Redeem Included & Prepaid Items</h3><p class="section-note">Use the Eventbrite ticket barcode for included package benefits. Use an SNP prepaid QR for older prepaid orders.</p><div class="nested"><strong>Eventbrite ticket or package benefit</strong><div class="row" style="margin-top:8px"><input id="ebbenefit-${x.id}" placeholder="Scan Eventbrite ticket barcode"><button class="secondary" onclick="camera('${x.id}','ebbenefit')">Use Camera</button><button onclick="inspectEventbriteBenefit('${x.id}')">Find Included Items</button></div><div id="ebbenefitout-${x.id}"></div></div><div class="nested"><strong>SNP prepaid order</strong><div class="row" style="margin-top:8px"><input id="pre-${x.id}" placeholder="Scan SNP-PREPAID QR"><button class="secondary" onclick="camera('${x.id}','pre')">Use Camera</button><button onclick="inspectPrepaid('${x.id}')">Find Prepaid Items</button></div><div id="preout-${x.id}"></div></div></div>` : ""}
+          ${p.can_view_guest_list ? `<div class="section"><details><summary>Guest List (${(x.guestList || []).length})</summary><div style="margin-top:10px">${guestRows || '<div class="empty">No guests are listed yet.</div>'}</div></details></div>` : ""}
+        </div></article>`;
       }
       async function clock(id, action) {
         try {
@@ -332,68 +393,28 @@
           alert(e.message);
         }
       }
-      async function checkout(payload) {
-        const r = await fetch(`${U}/functions/v1/create-stripe-checkout`, {
-            method: "POST",
-            headers: h(S.access_token),
-            body: JSON.stringify({ ...payload, staffCheckout: true }),
-          }),
-          d = await r.json();
-        if (!r.ok || !d.checkoutUrl)
-          throw new Error(d.error || "Unable to start payment.");
-        location.href = d.checkoutUrl;
-      }
-      async function payTicket(id) {
+      function safeEventbriteUrl(value) {
         try {
-          const o = document.getElementById(`ticket-${id}`).selectedOptions[0],
-            qty = Math.max(
-              1,
-              Number(document.getElementById(`qty-${id}`).value || 1),
-            ),
-            email = document.getElementById(`email-${id}`).value.trim();
-          await checkout({
-            items: [
-              {
-                name: o.dataset.name,
-                price: Number(o.dataset.price),
-                quantity: qty,
-                saleType: "ticket",
-                ticketTypeId: o.value,
-              },
-            ],
-            eventId: id,
-            customerEmail: email,
-            purchaseType: "ticket",
-          });
-        } catch (e) {
-          alert(e.message);
+          const u = new URL(String(value || ""));
+          if (u.protocol !== "https:" || !(u.hostname === "eventbrite.com" || u.hostname.endsWith(".eventbrite.com"))) throw new Error();
+          return u.href;
+        } catch (_) {
+          return "";
         }
       }
-      async function payItem(id) {
+      function openEventbriteCheckout(value) {
+        const url = safeEventbriteUrl(value);
+        if (!url) return alert("The Eventbrite checkout address is unavailable.");
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+      async function copyEventbriteCheckout(value) {
+        const url = safeEventbriteUrl(value);
+        if (!url) return alert("The Eventbrite checkout address is unavailable.");
         try {
-          const o = document.getElementById(`menu-${id}`).selectedOptions[0],
-            qty = Math.max(
-              1,
-              Number(document.getElementById(`mqty-${id}`).value || 1),
-            ),
-            email = document.getElementById(`memail-${id}`).value.trim();
-          await checkout({
-            items: [
-              {
-                name: o.dataset.name,
-                price: Number(o.dataset.price),
-                quantity: qty,
-                saleType: "sale",
-                category: o.dataset.category,
-                inventoryId: o.dataset.inventory,
-              },
-            ],
-            eventId: id,
-            customerEmail: email,
-            purchaseType: "sale",
-          });
-        } catch (e) {
-          alert(e.message);
+          await navigator.clipboard.writeText(url);
+          alert("Eventbrite checkout link copied.");
+        } catch (_) {
+          prompt("Copy this Eventbrite checkout link:", url);
         }
       }
       async function inspectPrepaid(id) {
@@ -411,6 +432,34 @@
             p = d.pass;
           document.getElementById(`preout-${id}`).innerHTML =
             `<div class="card"><strong>Prepaid order</strong>${p.items.map((i) => `<p>${esc(i.label)} — ${i.remaining} remaining <button ${i.remaining <= 0 ? "disabled" : ""} onclick="redeem('${id}','${p.id}','${i.id}')">Redeem 1</button></p>`).join("")}</div>`;
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+      async function inspectEventbriteBenefit(id) {
+        try {
+          stopCamera();
+          const barcode = document.getElementById(`ebbenefit-${id}`).value.trim();
+          if (!barcode) return alert("Scan or enter the Eventbrite ticket barcode.");
+          const d = await api({
+            method: "POST",
+            body: JSON.stringify({ action: "inspect_eventbrite_entitlements", eventId: id, barcode }),
+          });
+          const p = d.pass;
+          document.getElementById(`ebbenefitout-${id}`).innerHTML =
+            `<div class="nested"><strong>${esc(p.ticketClassName || "Eventbrite purchase")}</strong>${p.customerName ? `<p class="muted">Customer: ${esc(p.customerName)}</p>` : ""}${p.items.length ? p.items.map((i) => `<div class="guest-row"><div><strong>${esc(i.label)}</strong><br><span class="muted">${i.remaining} of ${i.quantity} remaining</span></div><button ${i.remaining <= 0 ? "disabled" : ""} onclick="redeemEventbriteBenefit('${id}','${p.attendeeId}','${i.id}')">${i.remaining <= 0 ? "Redeemed" : "Redeem 1"}</button></div>`).join("") : '<div class="empty">This Eventbrite ticket has no included or prepaid items to redeem.</div>'}</div>`;
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+      async function redeemEventbriteBenefit(eventId, attendeeId, entitlementId) {
+        try {
+          const d = await api({
+            method: "POST",
+            body: JSON.stringify({ action: "redeem_eventbrite_entitlement", eventId, attendeeId, entitlementId }),
+          });
+          alert(d.message);
+          inspectEventbriteBenefit(eventId);
         } catch (e) {
           alert(e.message);
         }
@@ -455,7 +504,7 @@
                 const codes = await d.detect(v);
                 if (codes?.length) {
                   document.getElementById(
-                    target === "pre" ? `pre-${id}` : `qr-${id}`,
+                    target === "pre" ? `pre-${id}` : target === "ebbenefit" ? `ebbenefit-${id}` : `qr-${id}`,
                   ).value = codes[0].rawValue;
                   stopCamera();
                   return;
