@@ -96,7 +96,7 @@
                 </label>
                 <label>
                     <input ${disabled} id="${fieldId(event.id, item.id, "includedWithVip")}" type="checkbox" ${item.includedWithVip ? "checked" : ""}>
-                    Eligible for a ticket-included food/drink benefit
+                    Eligible for a ticket-included food/beverage benefit
                 </label>
 
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
