@@ -1,24 +1,496 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SNP Planner Staff Portal</title><style>body{font-family:Arial,sans-serif;margin:0;background:#f5f6f8;color:#161616}header{background:#111;color:#fff;padding:18px}main{max-width:820px;margin:auto;padding:18px}.card{background:#fff;border-radius:12px;padding:16px;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1;min-width:150px}input,select,button,textarea{font:inherit;padding:11px;border-radius:8px;border:1px solid #bbb;box-sizing:border-box}input,select,textarea{width:100%}button{cursor:pointer;background:#111;color:#fff}.muted{color:#666;font-size:.92rem}.ok{color:#146c2e;font-weight:700}.danger{color:#a40000;font-weight:700}video{width:100%;max-height:300px;background:#111;border-radius:8px;display:none}details{margin-top:10px}</style></head><body><header><strong>SNP Planner — Event Staff Portal</strong></header><main id="app"></main><script>
-const U='https://mmstqostdqouxaiyrxtv.supabase.co',K='sb_publishable_6bxNaNPgezRwqyTrLtnUpA_zmXNoIsC',SK='snp_staff_session';let S=null,E=[],stream=null,scanTimer=null;const h=t=>({apikey:K,'Content-Type':'application/json',...(t?{Authorization:`Bearer ${t}`}:{})});const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m]));const money=n=>'$'+Number(n||0).toFixed(2);const invite=()=>new URLSearchParams(location.search).get('invite')||'';
-function auth(msg=''){app.innerHTML=`${invite()?'<div class="card"><h3>Employee / Staff Invitation</h3><p>Create your staff account or sign in with the email this invitation was sent to. After signing in, complete your employee profile.</p></div>':''}<div class="card"><h2>Staff Sign In</h2><p class="muted">Only assigned event duties are available here.</p>${msg?`<p class="danger">${esc(msg)}</p>`:''}<label>Email</label><input id="e" type="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"><label>Password</label><input id="p" type="password" minlength="8" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"><label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="showp" type="checkbox" style="width:auto" onchange="togglePassword()"> Show password</label><div class="grid" style="margin-top:10px"><button onclick="login()">Sign In</button><button onclick="signup()">Create Staff Account</button></div><div class="grid" style="margin-top:10px"><button type="button" onclick="forgotPassword()">Forgot Password</button></div><p class="muted">Use at least 8 characters. Sign in on each device separately.</p></div>`}
-function togglePassword(){const x=document.getElementById('p');if(x)x.type=document.getElementById('showp')?.checked?'text':'password'}
-async function login(){const email=e.value.trim().toLowerCase(),password=p.value;if(!email||!password)return auth('Enter your email and password.');try{const r=await fetch(`${U}/auth/v1/token?grant_type=password`,{method:'POST',headers:h(),body:JSON.stringify({email,password})});const d=await r.json().catch(()=>({}));if(!r.ok){const detail=d.msg||d.message||d.error_description||d.error||`Authentication failed (HTTP ${r.status}).`;return auth(`${detail} [${r.status}]`)}S=d;localStorage.setItem(SK,JSON.stringify(d));load()}catch(err){auth(`Unable to reach the sign-in service: ${err?.message||'network error'}`)}}
-async function forgotPassword(){const email=document.getElementById('e')?.value.trim().toLowerCase();if(!email)return auth('Enter the staff email first, then choose Forgot Password.');try{const redirect=`${location.origin}${location.pathname}`;const r=await fetch(`${U}/auth/v1/recover?redirect_to=${encodeURIComponent(redirect)}`,{method:'POST',headers:h(),body:JSON.stringify({email})});const d=await r.json().catch(()=>({}));if(!r.ok)return auth(d.msg||d.message||d.error_description||d.error||`Unable to send reset email (${r.status}).`);auth('Password reset email requested. Check that email account, then return here to sign in.')}catch(err){auth(`Unable to request password reset: ${err?.message||'network error'}`)}}
-async function signup(){const email=e.value.trim().toLowerCase(),password=p.value;if(!email)return auth('Enter your assigned staff email.');if(password.length<8)return auth('Use a password with at least 8 characters.');const r=await fetch(`${U}/auth/v1/signup`,{method:'POST',headers:h(),body:JSON.stringify({email,password})}),d=await r.json().catch(()=>({}));if(!r.ok)return auth(d.msg||d.message||d.error_description||d.error||`Account creation failed (${r.status}).`);if(d.access_token){S=d;localStorage.setItem(SK,JSON.stringify(d));load()}else auth('Account created. Confirm your email if required, then return and sign in.')}
-async function api(opts={}){const r=await fetch(`${U}/functions/v1/staff-event-api`,{...opts,headers:{...h(S?.access_token),...(opts.headers||{})}}),d=await r.json();if(!r.ok||d.ok===false)throw new Error(d.error||'Request failed');return d}
-async function load(){try{if(!S)S=JSON.parse(localStorage.getItem(SK)||'null');if(!S?.access_token)return auth();const d=await api();E=d.events||[];render()}catch(err){localStorage.removeItem(SK);S=null;auth(err.message)}}
-function inviteCard(){if(!invite())return'';return `<div class="card"><h3>Complete Employee / Staff Profile</h3><p>This information will automatically be added to the organizer's reusable employee/staff list for future events.</p><label>Full Name</label><input id="inviteFullName" autocomplete="name"><label>Login Email</label><input value="${esc(S?.user?.email||'')}" readonly><label>Phone</label><input id="invitePhone" type="tel" autocomplete="tel"><button onclick="claimInvite()">Complete Employee Profile</button></div>`}
-async function claimInvite(){try{const fullName=document.getElementById('inviteFullName').value.trim(),phone=document.getElementById('invitePhone').value.trim();if(!fullName)return alert('Enter your full name.');const r=await fetch(`${U}/functions/v1/employee-directory-api`,{method:'POST',headers:h(S.access_token),body:JSON.stringify({action:'claim_invite',token:invite(),fullName,phone})}),d=await r.json();if(!r.ok||d.ok===false)throw new Error(d.error||'Unable to complete employee profile.');alert('Employee profile connected. You are now in the company employee/staff directory.');const q=new URLSearchParams(location.search);q.delete('invite');history.replaceState({},'',location.pathname+(q.toString()?`?${q}`:''));load()}catch(e){alert(e.message)}}
-function render(){const q=new URLSearchParams(location.search);const msg=q.get('payment')==='success'?'<div class="card ok">Payment completed. Refreshing event totals.</div>':q.get('payment')==='cancelled'?'<div class="card">Payment was cancelled. No sale was recorded.</div>':'';app.innerHTML=msg+inviteCard()+`<div class="card"><div class="grid"><div><h2>Assigned Events</h2><p class="muted">Event operations only. Company/admin data is not available here.</p></div><div style="text-align:right"><button onclick="logout()">Sign Out</button></div></div></div>${E.length?E.map(card).join(''):`<div class="card"><p>No active event assignments were found for this login.</p></div>`}`}
-function card(x){const p=x.permissions||{},sh=x.shift||{},sales=x.staffSales||{};return `<div class="card"><h3>${esc(x.name)}</h3><p>${esc(x.date)} ${esc(x.time)}${x.venueName?' • '+esc(x.venueName):''}</p><div class="grid"><div><strong>Shift</strong><p>${sh.active?`Clocked in: ${new Date(sh.clockIn).toLocaleTimeString()}`:sh.clockOut?`Last shift ended: ${new Date(sh.clockOut).toLocaleTimeString()}`:'Not clocked in'}</p><button onclick="clock('${x.id}','${sh.active?'clock_out':'clock_in'}')">${sh.active?'Clock Out':'Clock In'}</button></div><div><strong>Your Event Sales</strong><p>${sales.count||0} paid transactions<br>${money(sales.total)}</p></div><div><strong>Attendance</strong><p>${x.ticketsSold}${x.capacity?' / '+x.capacity:''} tickets sold</p></div></div>${p.can_check_in&&p.can_scan_qr?`<h4>Admission Scanner</h4><div class="row"><input id="qr-${x.id}" placeholder="Scan or type ticket / barcode"><button onclick="camera('${x.id}','qr')">Use Camera</button></div><video id="video-${x.id}" playsinline muted></video><div class="row"><button onclick="checkin('${x.id}','checkin_snp_ticket')">Check In SNP Ticket</button><button onclick="checkin('${x.id}','checkin_eventbrite')">Check In Eventbrite Barcode</button></div>`:''}${p.can_accept_payments?`<h4>Sell Admission Ticket</h4><select id="ticket-${x.id}">${(x.ticketTypes||[]).map(t=>`<option value="${esc(t.id)}" data-name="${esc(t.name)}" data-price="${Number(t.price||0)}">${esc(t.name)} — ${money(t.price)}</option>`).join('')}</select><div class="row"><input id="qty-${x.id}" type="number" min="1" value="1"><input id="email-${x.id}" type="email" placeholder="Customer email"></div><button onclick="payTicket('${x.id}')">Start Secure Payment</button>`:''}${p.can_event_sales&&p.can_accept_payments&&x.menuItems?.length?`<h4>Event Sales</h4><select id="menu-${x.id}">${x.menuItems.map(i=>`<option value="${esc(i.id)}" data-name="${esc(i.name)}" data-price="${Number(i.price||0)}" data-category="${esc(i.category||'')}" data-inventory="${esc(i.inventoryId||'')}">${esc(i.name)} — ${money(i.price)}</option>`).join('')}</select><div class="row"><input id="mqty-${x.id}" type="number" min="1" value="1"><input id="memail-${x.id}" type="email" placeholder="Customer email"></div><button onclick="payItem('${x.id}')">Start Secure Payment</button>`:''}${p.can_redeem_items&&p.can_scan_qr?`<h4>Redeem Prepaid Food / Beverage / Add-ons</h4><div class="row"><input id="pre-${x.id}" placeholder="Scan or type SNP-PREPAID QR"><button onclick="camera('${x.id}','pre')">Use Camera</button><button onclick="inspectPrepaid('${x.id}')">Find Prepaid Items</button></div><div id="preout-${x.id}"></div>`:''}${p.can_view_guest_list?`<details><summary>Guest List (${(x.guestList||[]).length})</summary>${(x.guestList||[]).map(g=>`<p>${esc(g.status||'Guest')} ${g.checkedIn?'✓ Checked in':''} <span class="muted">(${esc(g.source||'')})</span></p>`).join('')||'<p>No guests yet.</p>'}</details>`:''}</div>`}
-async function clock(id,action){try{const d=await api({method:'POST',body:JSON.stringify({action,eventId:id})});alert(d.message);load()}catch(e){alert(e.message)}}
-async function checkin(id,action){try{stopCamera();const v=document.getElementById(`qr-${id}`).value.trim();const d=await api({method:'POST',body:JSON.stringify({action,eventId:id,qr:v})});alert(d.message+(d.warning?`\n${d.warning}`:''));load()}catch(e){alert(e.message)}}
-async function checkout(payload){const r=await fetch(`${U}/functions/v1/create-stripe-checkout`,{method:'POST',headers:h(S.access_token),body:JSON.stringify({...payload,staffCheckout:true})}),d=await r.json();if(!r.ok||!d.checkoutUrl)throw new Error(d.error||'Unable to start payment.');location.href=d.checkoutUrl}
-async function payTicket(id){try{const o=document.getElementById(`ticket-${id}`).selectedOptions[0],qty=Math.max(1,Number(document.getElementById(`qty-${id}`).value||1)),email=document.getElementById(`email-${id}`).value.trim();await checkout({items:[{name:o.dataset.name,price:Number(o.dataset.price),quantity:qty,saleType:'ticket',ticketTypeId:o.value}],eventId:id,customerEmail:email,purchaseType:'ticket'})}catch(e){alert(e.message)}}
-async function payItem(id){try{const o=document.getElementById(`menu-${id}`).selectedOptions[0],qty=Math.max(1,Number(document.getElementById(`mqty-${id}`).value||1)),email=document.getElementById(`memail-${id}`).value.trim();await checkout({items:[{name:o.dataset.name,price:Number(o.dataset.price),quantity:qty,saleType:'sale',category:o.dataset.category,inventoryId:o.dataset.inventory}],eventId:id,customerEmail:email,purchaseType:'sale'})}catch(e){alert(e.message)}}
-async function inspectPrepaid(id){try{stopCamera();const qr=document.getElementById(`pre-${id}`).value.trim(),d=await api({method:'POST',body:JSON.stringify({action:'inspect_prepaid',eventId:id,qr})}),p=d.pass;document.getElementById(`preout-${id}`).innerHTML=`<div class="card"><strong>Prepaid order</strong>${p.items.map(i=>`<p>${esc(i.label)} — ${i.remaining} remaining <button ${i.remaining<=0?'disabled':''} onclick="redeem('${id}','${p.id}','${i.id}')">Redeem 1</button></p>`).join('')}</div>`}catch(e){alert(e.message)}}
-async function redeem(eventId,passId,entitlementId){try{const d=await api({method:'POST',body:JSON.stringify({action:'redeem_prepaid',eventId,passId,entitlementId})});alert(d.message);inspectPrepaid(eventId)}catch(e){alert(e.message)}}
-async function camera(id,target='qr'){stopCamera();if(!navigator.mediaDevices?.getUserMedia)return alert('Camera access is not available.');try{const v=document.getElementById(`video-${id}`);stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});v.srcObject=stream;v.style.display='block';await v.play();if('BarcodeDetector'in window){const d=new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13','upc_a']});const tick=async()=>{if(!stream)return;try{const codes=await d.detect(v);if(codes?.length){document.getElementById(target==='pre'?`pre-${id}`:`qr-${id}`).value=codes[0].rawValue;stopCamera();return}}catch(_){}scanTimer=setTimeout(tick,250)};tick()}else alert('Camera opened, but this browser does not support automatic barcode detection. Enter the code manually.')}catch(e){stopCamera();alert('Unable to open camera. Check camera permission.')}}
-function stopCamera(){if(scanTimer)clearTimeout(scanTimer);scanTimer=null;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;document.querySelectorAll('video').forEach(v=>{v.pause?.();v.srcObject=null;v.style.display='none'})}
-function logout(){stopCamera();localStorage.removeItem(SK);S=null;auth('Signed out.')}load();
-</script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SNP Planner Staff Portal</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #f5f6f8;
+        color: #161616;
+      }
+      header {
+        background: #111;
+        color: #fff;
+        padding: 18px;
+      }
+      main {
+        max-width: 820px;
+        margin: auto;
+        padding: 18px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 12px 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .row > * {
+        flex: 1;
+        min-width: 150px;
+      }
+      input,
+      select,
+      button,
+      textarea {
+        font: inherit;
+        padding: 11px;
+        border-radius: 8px;
+        border: 1px solid #bbb;
+        box-sizing: border-box;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+      }
+      button {
+        cursor: pointer;
+        background: #111;
+        color: #fff;
+      }
+      .muted {
+        color: #666;
+        font-size: 0.92rem;
+      }
+      .ok {
+        color: #146c2e;
+        font-weight: 700;
+      }
+      .danger {
+        color: #a40000;
+        font-weight: 700;
+      }
+      video {
+        width: 100%;
+        max-height: 300px;
+        background: #111;
+        border-radius: 8px;
+        display: none;
+      }
+      details {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <header><strong>SNP Planner — Event Staff Portal</strong></header>
+    <main id="app"></main>
+    <script src="time-format.js?v=1"></script>
+    <script>
+      const nativeLocaleTime = Date.prototype.toLocaleTimeString;
+      Date.prototype.toLocaleTimeString = function (locales, options = {}) {
+        return nativeLocaleTime.call(this, locales || "en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          ...options,
+          hour12: true,
+        });
+      };
+      const U = "https://mmstqostdqouxaiyrxtv.supabase.co",
+        K = "sb_publishable_6bxNaNPgezRwqyTrLtnUpA_zmXNoIsC",
+        SK = "snp_staff_session";
+      let S = null,
+        E = [],
+        stream = null,
+        scanTimer = null;
+      const h = (t) => ({
+        apikey: K,
+        "Content-Type": "application/json",
+        ...(t ? { Authorization: `Bearer ${t}` } : {}),
+      });
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (m) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot",
+              "'": "&#39;",
+            })[m],
+        );
+      const money = (n) => "$" + Number(n || 0).toFixed(2);
+      const invite = () =>
+        new URLSearchParams(location.search).get("invite") || "";
+      function auth(msg = "") {
+        app.innerHTML = `${invite() ? '<div class="card"><h3>Employee / Staff Invitation</h3><p>Create your staff account or sign in with the email this invitation was sent to. After signing in, complete your employee profile.</p></div>' : ""}<div class="card"><h2>Staff Sign In</h2><p class="muted">Only assigned event duties are available here.</p>${msg ? `<p class="danger">${esc(msg)}</p>` : ""}<label>Email</label><input id="e" type="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"><label>Password</label><input id="p" type="password" minlength="8" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"><label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="showp" type="checkbox" style="width:auto" onchange="togglePassword()"> Show password</label><div class="grid" style="margin-top:10px"><button onclick="login()">Sign In</button><button onclick="signup()">Create Staff Account</button></div><div class="grid" style="margin-top:10px"><button type="button" onclick="forgotPassword()">Forgot Password</button></div><p class="muted">Use at least 8 characters. Sign in on each device separately.</p></div>`;
+      }
+      function togglePassword() {
+        const x = document.getElementById("p");
+        if (x)
+          x.type = document.getElementById("showp")?.checked
+            ? "text"
+            : "password";
+      }
+      async function login() {
+        const email = e.value.trim().toLowerCase(),
+          password = p.value;
+        if (!email || !password) return auth("Enter your email and password.");
+        try {
+          const r = await fetch(`${U}/auth/v1/token?grant_type=password`, {
+            method: "POST",
+            headers: h(),
+            body: JSON.stringify({ email, password }),
+          });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            const detail =
+              d.msg ||
+              d.message ||
+              d.error_description ||
+              d.error ||
+              `Authentication failed (HTTP ${r.status}).`;
+            return auth(`${detail} [${r.status}]`);
+          }
+          S = d;
+          localStorage.setItem(SK, JSON.stringify(d));
+          load();
+        } catch (err) {
+          auth(
+            `Unable to reach the sign-in service: ${err?.message || "network error"}`,
+          );
+        }
+      }
+      async function forgotPassword() {
+        const email = document.getElementById("e")?.value.trim().toLowerCase();
+        if (!email)
+          return auth(
+            "Enter the staff email first, then choose Forgot Password.",
+          );
+        try {
+          const redirect = `${location.origin}${location.pathname}`;
+          const r = await fetch(
+            `${U}/auth/v1/recover?redirect_to=${encodeURIComponent(redirect)}`,
+            { method: "POST", headers: h(), body: JSON.stringify({ email }) },
+          );
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok)
+            return auth(
+              d.msg ||
+                d.message ||
+                d.error_description ||
+                d.error ||
+                `Unable to send reset email (${r.status}).`,
+            );
+          auth(
+            "Password reset email requested. Check that email account, then return here to sign in.",
+          );
+        } catch (err) {
+          auth(
+            `Unable to request password reset: ${err?.message || "network error"}`,
+          );
+        }
+      }
+      async function signup() {
+        const email = e.value.trim().toLowerCase(),
+          password = p.value;
+        if (!email) return auth("Enter your assigned staff email.");
+        if (password.length < 8)
+          return auth("Use a password with at least 8 characters.");
+        const r = await fetch(`${U}/auth/v1/signup`, {
+            method: "POST",
+            headers: h(),
+            body: JSON.stringify({ email, password }),
+          }),
+          d = await r.json().catch(() => ({}));
+        if (!r.ok)
+          return auth(
+            d.msg ||
+              d.message ||
+              d.error_description ||
+              d.error ||
+              `Account creation failed (${r.status}).`,
+          );
+        if (d.access_token) {
+          S = d;
+          localStorage.setItem(SK, JSON.stringify(d));
+          load();
+        } else
+          auth(
+            "Account created. Confirm your email if required, then return and sign in.",
+          );
+      }
+      async function api(opts = {}) {
+        const r = await fetch(`${U}/functions/v1/staff-event-api`, {
+            ...opts,
+            headers: { ...h(S?.access_token), ...(opts.headers || {}) },
+          }),
+          d = await r.json();
+        if (!r.ok || d.ok === false)
+          throw new Error(d.error || "Request failed");
+        return d;
+      }
+      async function load() {
+        try {
+          if (!S) S = JSON.parse(localStorage.getItem(SK) || "null");
+          if (!S?.access_token) return auth();
+          const d = await api();
+          E = d.events || [];
+          render();
+        } catch (err) {
+          localStorage.removeItem(SK);
+          S = null;
+          auth(err.message);
+        }
+      }
+      function inviteCard() {
+        if (!invite()) return "";
+        return `<div class="card"><h3>Complete Employee / Staff Profile</h3><p>This information will automatically be added to the organizer's reusable employee/staff list for future events.</p><label>Full Name</label><input id="inviteFullName" autocomplete="name"><label>Login Email</label><input value="${esc(S?.user?.email || "")}" readonly><label>Phone</label><input id="invitePhone" type="tel" autocomplete="tel"><button onclick="claimInvite()">Complete Employee Profile</button></div>`;
+      }
+      async function claimInvite() {
+        try {
+          const fullName = document
+              .getElementById("inviteFullName")
+              .value.trim(),
+            phone = document.getElementById("invitePhone").value.trim();
+          if (!fullName) return alert("Enter your full name.");
+          const r = await fetch(`${U}/functions/v1/employee-directory-api`, {
+              method: "POST",
+              headers: h(S.access_token),
+              body: JSON.stringify({
+                action: "claim_invite",
+                token: invite(),
+                fullName,
+                phone,
+              }),
+            }),
+            d = await r.json();
+          if (!r.ok || d.ok === false)
+            throw new Error(d.error || "Unable to complete employee profile.");
+          alert(
+            "Employee profile connected. You are now in the company employee/staff directory.",
+          );
+          const q = new URLSearchParams(location.search);
+          q.delete("invite");
+          history.replaceState(
+            {},
+            "",
+            location.pathname + (q.toString() ? `?${q}` : ""),
+          );
+          load();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+      function render() {
+        const q = new URLSearchParams(location.search);
+        const msg =
+          q.get("payment") === "success"
+            ? '<div class="card ok">Payment completed. Refreshing event totals.</div>'
+            : q.get("payment") === "cancelled"
+              ? '<div class="card">Payment was cancelled. No sale was recorded.</div>'
+              : "";
+        app.innerHTML =
+          msg +
+          inviteCard() +
+          `<div class="card"><div class="grid"><div><h2>Assigned Events</h2><p class="muted">Event operations only. Company/admin data is not available here.</p></div><div style="text-align:right"><button onclick="logout()">Sign Out</button></div></div></div>${E.length ? E.map(card).join("") : `<div class="card"><p>No active event assignments were found for this login.</p></div>`}`;
+      }
+      function card(x) {
+        x = { ...x, time: SNPTime.formatTime(x.time) };
+        const p = x.permissions || {},
+          sh = x.shift || {},
+          sales = x.staffSales || {};
+        return `<div class="card"><h3>${esc(x.name)}</h3><p>${esc(x.date)} ${esc(x.time)}${x.venueName ? " • " + esc(x.venueName) : ""}</p><div class="grid"><div><strong>Shift</strong><p>${sh.active ? `Clocked in: ${new Date(sh.clockIn).toLocaleTimeString()}` : sh.clockOut ? `Last shift ended: ${new Date(sh.clockOut).toLocaleTimeString()}` : "Not clocked in"}</p><button onclick="clock('${x.id}','${sh.active ? "clock_out" : "clock_in"}')">${sh.active ? "Clock Out" : "Clock In"}</button></div><div><strong>Your Event Sales</strong><p>${sales.count || 0} paid transactions<br>${money(sales.total)}</p></div><div><strong>Attendance</strong><p>${x.ticketsSold}${x.capacity ? " / " + x.capacity : ""} tickets sold</p></div></div>${p.can_check_in && p.can_scan_qr ? `<h4>Admission Scanner</h4><div class="row"><input id="qr-${x.id}" placeholder="Scan or type ticket / barcode"><button onclick="camera('${x.id}','qr')">Use Camera</button></div><video id="video-${x.id}" playsinline muted></video><div class="row"><button onclick="checkin('${x.id}','checkin_snp_ticket')">Check In SNP Ticket</button><button onclick="checkin('${x.id}','checkin_eventbrite')">Check In Eventbrite Barcode</button></div>` : ""}${p.can_accept_payments ? `<h4>Sell Admission Ticket</h4><select id="ticket-${x.id}">${(x.ticketTypes || []).map((t) => `<option value="${esc(t.id)}" data-name="${esc(t.name)}" data-price="${Number(t.price || 0)}">${esc(t.name)} — ${money(t.price)}</option>`).join("")}</select><div class="row"><input id="qty-${x.id}" type="number" min="1" value="1"><input id="email-${x.id}" type="email" placeholder="Customer email"></div><button onclick="payTicket('${x.id}')">Start Secure Payment</button>` : ""}${p.can_event_sales && p.can_accept_payments && x.menuItems?.length ? `<h4>Event Sales</h4><select id="menu-${x.id}">${x.menuItems.map((i) => `<option value="${esc(i.id)}" data-name="${esc(i.name)}" data-price="${Number(i.price || 0)}" data-category="${esc(i.category || "")}" data-inventory="${esc(i.inventoryId || "")}">${esc(i.name)} — ${money(i.price)}</option>`).join("")}</select><div class="row"><input id="mqty-${x.id}" type="number" min="1" value="1"><input id="memail-${x.id}" type="email" placeholder="Customer email"></div><button onclick="payItem('${x.id}')">Start Secure Payment</button>` : ""}${p.can_redeem_items && p.can_scan_qr ? `<h4>Redeem Prepaid Food / Beverage / Add-ons</h4><div class="row"><input id="pre-${x.id}" placeholder="Scan or type SNP-PREPAID QR"><button onclick="camera('${x.id}','pre')">Use Camera</button><button onclick="inspectPrepaid('${x.id}')">Find Prepaid Items</button></div><div id="preout-${x.id}"></div>` : ""}${p.can_view_guest_list ? `<details><summary>Guest List (${(x.guestList || []).length})</summary>${(x.guestList || []).map((g) => `<p>${esc(g.status || "Guest")} ${g.checkedIn ? "✓ Checked in" : ""} <span class="muted">(${esc(g.source || "")})</span></p>`).join("") || "<p>No guests yet.</p>"}</details>` : ""}</div>`;
+      }
+      async function clock(id, action) {
+        try {
+          const d = await api({
+            method: "POST",
+            body: JSON.stringify({ action, eventId: id }),
+          });
+          alert(d.message);
+          load();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+      async function checkin(id, action) {
+        try {
+          stopCamera();
+          const v = document.getElementById(`qr-${id}`).value.trim();
+          const d = await api({
+            method: "POST",
+            body: JSON.stringify({ action, eventId: id, qr: v }),
+          });
+          alert(d.message + (d.warning ? `\n${d.warning}` : ""));
+          load();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+      async function checkout(payload) {
+        const r = await fetch(`${U}/functions/v1/create-stripe-checkout`, {
+            method: "POST",
+            headers: h(S.access_token),
+            body: JSON.stringify({ ...payload, staffCheckout: true }),
+          }),
+          d = await r.json();
+        if (!r.ok || !d.checkoutUrl)
+          throw new Error(d.error || "Unable to start payment.");
+        location.href = d.checkoutUrl;
+      }
+      async function payTicket(id) {
+        try {
+          const o = document.getElementById(`ticket-${id}`).selectedOptions[0],
+            qty = Math.max(
+              1,
+              Number(document.getElementById(`qty-${id}`).value || 1),
+            ),
+            email = document.getElementById(`email-${id}`).value.trim();
+          await checkout({
+            items: [
+              {
+                name: o.dataset.name,
+                price: Number(o.dataset.price),
+                quantity: qty,
+                saleType: "ticket",
+                ticketTypeId: o.value,
+              },
+            ],
+            eventId: id,
+            customerEmail: email,
+            purchaseType: "ticket",
+          });
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+      async function payItem(id) {
+        try {
+          const o = document.getElementById(`menu-${id}`).selectedOptions[0],
+            qty = Math.max(
+              1,
+              Number(document.getElementById(`mqty-${id}`).value || 1),
+            ),
+            email = document.getElementById(`memail-${id}`).value.trim();
+          await checkout({
+            items: [
+              {
+                name: o.dataset.name,
+                price: Number(o.dataset.price),
+                quantity: qty,
+                saleType: "sale",
+                category: o.dataset.category,
+                inventoryId: o.dataset.inventory,
+              },
+            ],
+            eventId: id,
+            customerEmail: email,
+            purchaseType: "sale",
+          });
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+      async function inspectPrepaid(id) {
+        try {
+          stopCamera();
+          const qr = document.getElementById(`pre-${id}`).value.trim(),
+            d = await api({
+              method: "POST",
+              body: JSON.stringify({
+                action: "inspect_prepaid",
+                eventId: id,
+                qr,
+              }),
+            }),
+            p = d.pass;
+          document.getElementById(`preout-${id}`).innerHTML =
+            `<div class="card"><strong>Prepaid order</strong>${p.items.map((i) => `<p>${esc(i.label)} — ${i.remaining} remaining <button ${i.remaining <= 0 ? "disabled" : ""} onclick="redeem('${id}','${p.id}','${i.id}')">Redeem 1</button></p>`).join("")}</div>`;
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+      async function redeem(eventId, passId, entitlementId) {
+        try {
+          const d = await api({
+            method: "POST",
+            body: JSON.stringify({
+              action: "redeem_prepaid",
+              eventId,
+              passId,
+              entitlementId,
+            }),
+          });
+          alert(d.message);
+          inspectPrepaid(eventId);
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+      async function camera(id, target = "qr") {
+        stopCamera();
+        if (!navigator.mediaDevices?.getUserMedia)
+          return alert("Camera access is not available.");
+        try {
+          const v = document.getElementById(`video-${id}`);
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } },
+            audio: false,
+          });
+          v.srcObject = stream;
+          v.style.display = "block";
+          await v.play();
+          if ("BarcodeDetector" in window) {
+            const d = new BarcodeDetector({
+              formats: ["qr_code", "code_128", "code_39", "ean_13", "upc_a"],
+            });
+            const tick = async () => {
+              if (!stream) return;
+              try {
+                const codes = await d.detect(v);
+                if (codes?.length) {
+                  document.getElementById(
+                    target === "pre" ? `pre-${id}` : `qr-${id}`,
+                  ).value = codes[0].rawValue;
+                  stopCamera();
+                  return;
+                }
+              } catch (_) {}
+              scanTimer = setTimeout(tick, 250);
+            };
+            tick();
+          } else
+            alert(
+              "Camera opened, but this browser does not support automatic barcode detection. Enter the code manually.",
+            );
+        } catch (e) {
+          stopCamera();
+          alert("Unable to open camera. Check camera permission.");
+        }
+      }
+      function stopCamera() {
+        if (scanTimer) clearTimeout(scanTimer);
+        scanTimer = null;
+        if (stream) stream.getTracks().forEach((t) => t.stop());
+        stream = null;
+        document.querySelectorAll("video").forEach((v) => {
+          v.pause?.();
+          v.srcObject = null;
+          v.style.display = "none";
+        });
+      }
+      function logout() {
+        stopCamera();
+        localStorage.removeItem(SK);
+        S = null;
+        auth("Signed out.");
+      }
+      load();
+    </script>
+  </body>
+</html>

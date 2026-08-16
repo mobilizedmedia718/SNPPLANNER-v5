@@ -4,23 +4,35 @@
  */
 
 (function () {
+  function optionList(values) {
+    return values
+      .map((value) => `<option value="${UI.esc(value)}"></option>`)
+      .join("");
+  }
 
-    function optionList(values) {
-        return values.map(value => `<option value="${UI.esc(value)}"></option>`).join("");
-    }
+  function offeringEditor(
+    record,
+    moduleName,
+    rerenderName,
+    names,
+    descriptions,
+  ) {
+    const offerings = Array.isArray(record.offerings) ? record.offerings : [];
+    const namesId = `${moduleName.toLowerCase()}OfferingNames`;
+    const descriptionsId = `${moduleName.toLowerCase()}OfferingDescriptions`;
 
-    function offeringEditor(record, moduleName, rerenderName, names, descriptions) {
-        const offerings = Array.isArray(record.offerings) ? record.offerings : [];
-        const namesId = `${moduleName.toLowerCase()}OfferingNames`;
-        const descriptionsId = `${moduleName.toLowerCase()}OfferingDescriptions`;
-
-        return `
+    return `
             <h4>Products / Services Offered</h4>
 
             <datalist id="${namesId}">${optionList(names)}</datalist>
             <datalist id="${descriptionsId}">${optionList(descriptions)}</datalist>
 
-            ${offerings.length === 0 ? "<p>No products or services added yet.</p>" : offerings.map(item => `
+            ${
+              offerings.length === 0
+                ? "<p>No products or services added yet.</p>"
+                : offerings
+                    .map(
+                      (item) => `
                 <div class="card">
                     <label>Product / Service Name</label>
                     <input
@@ -45,9 +57,22 @@
 
                     <label>Unit</label>
                     <select onchange="${moduleName}.updateOffering('${record.id}','${item.id}',{unit:this.value})">
-                        ${["Each","Hour","Day","Package","Case","Box","Dozen","Flat Rate","Other"].map(unit =>
-                            `<option value="${unit}" ${item.unit === unit ? "selected" : ""}>${unit}</option>`
-                        ).join("")}
+                        ${[
+                          "Each",
+                          "Hour",
+                          "Day",
+                          "Package",
+                          "Case",
+                          "Box",
+                          "Dozen",
+                          "Flat Rate",
+                          "Other",
+                        ]
+                          .map(
+                            (unit) =>
+                              `<option value="${unit}" ${item.unit === unit ? "selected" : ""}>${unit}</option>`,
+                          )
+                          .join("")}
                     </select>
 
                     <label>Price</label>
@@ -68,20 +93,28 @@
                         Remove Product / Service
                     </button>
                 </div>
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
 
             <button onclick="${moduleName}.addOffering('${record.id}');UI.${rerenderName}('${record.id}');">
                 + Add Product / Service
             </button>
             <br><br>
         `;
-    }
+  }
 
-    function offeringDetail(record) {
-        const offerings = Array.isArray(record.offerings) ? record.offerings : [];
-        return `
+  function offeringDetail(record) {
+    const offerings = Array.isArray(record.offerings) ? record.offerings : [];
+    return `
             <h4>Products / Services Offered</h4>
-            ${offerings.length === 0 ? "<p>No products or services added.</p>" : offerings.map(item => `
+            ${
+              offerings.length === 0
+                ? "<p>No products or services added.</p>"
+                : offerings
+                    .map(
+                      (item) => `
                 <div class="card">
                     <p><strong>Product / Service:</strong> ${UI.esc(item.name || "—")}</p>
                     <p><strong>Description:</strong> ${UI.esc(item.description || "—")}</p>
@@ -90,74 +123,112 @@
                     <p><strong>Price:</strong> ${Utils.money(item.price || 0)}</p>
                     <p><strong>Notes:</strong> ${UI.esc(item.notes || "—")}</p>
                 </div>
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
         `;
-    }
+  }
 
-    /* ---------------- CRM LIST ---------------- */
+  /* ---------------- CRM LIST ---------------- */
 
-    UI.renderCRM = function () {
-        const customers = CRM.all();
-        document.getElementById("workspace").innerHTML = `
+  UI.renderCRM = function () {
+    const customers = CRM.all();
+    document.getElementById("workspace").innerHTML = `
             <h2>Customer CRM</h2>
             <button onclick="const c=CRM.create();UI.renderCustomerEdit(c.id);">+ Add Customer</button>
             <br><br>
-            ${customers.length === 0 ? "<p>No customers added yet.</p>" : customers.map(c => `
+            ${
+              customers.length === 0
+                ? "<p>No customers added yet.</p>"
+                : customers
+                    .map(
+                      (c) => `
                 <div class="card">
                     <h3>${this.esc(CRM.fullName(c) || c.company || "Unnamed Customer")}</h3>
                     ${c.company ? `<p>${this.esc(c.company)}</p>` : ""}
                     ${c.email ? `<p>${this.esc(c.email)}</p>` : ""}
                     ${c.phone ? `<p>${this.esc(c.phone)}</p>` : ""}
-                    ${c.city || c.state ? `<p>${this.esc([c.city,c.state].filter(Boolean).join(", "))}</p>` : ""}
+                    ${c.city || c.state ? `<p>${this.esc([c.city, c.state].filter(Boolean).join(", "))}</p>` : ""}
                     <button onclick="UI.renderCustomerDetail('${c.id}')">View Customer</button>
                 </div>
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
         `;
-    };
+  };
 
-    /* ---------------- EVENTS ---------------- */
+  /* ---------------- EVENTS ---------------- */
 
-    UI.renderEvents = function () {
-        const events = Events.all();
-        const venues = Venues.all();
-        document.getElementById("workspace").innerHTML = `
+  UI.renderEvents = function () {
+    const events = Events.all();
+    const venues = Venues.all();
+    document.getElementById("workspace").innerHTML = `
             <h2>Events</h2>
             <button onclick="const e=Events.create();UI.renderEventEdit(e.id);">+ New Event</button>
             <br><br>
-            ${events.length === 0 ? "<p>No events created yet.</p>" : events.map(event => {
-                const venue = venues.find(v => v.id === event.venueId);
-                return `
+            ${
+              events.length === 0
+                ? "<p>No events created yet.</p>"
+                : events
+                    .map((event) => {
+                      const venue = venues.find((v) => v.id === event.venueId);
+                      return `
                     <div class="card">
                         <h3>${this.esc(event.name || "Unnamed Event")}</h3>
-                        <p>${this.esc(event.date || "No date")}${event.time ? ` — ${this.esc(event.time)}` : ""}</p>
+                        <p>${this.esc(event.date || "No date")}${event.time ? ` — ${this.esc(Utils.formatTime(event.time))}` : ""}</p>
                         ${venue ? `<p>${this.esc(venue.name || "Unnamed Venue")}</p>` : ""}
                         <p>Status: ${this.statusBadge(event.status || "Draft")}</p>
                         <button onclick="UI.renderEventDetail('${event.id}')">View Event</button>
                     </div>
                 `;
-            }).join("")}
+                    })
+                    .join("")
+            }
         `;
-    };
+  };
 
-    UI.renderEventDetail = function (id) {
-        const event = Events.get(id);
-        if (!event) return this.renderEvents();
-        const venue = Venues.get(event.venueId);
-        const capacityPercent = Number(event.capacity || 0) > 0
-            ? Math.max(0, Math.min(100, Math.round(Number(event.ticketsSold || 0) / Number(event.capacity || 0) * 100)))
-            : 0;
-        const revenuePercent = Number(event.revenueGoal || 0) > 0
-            ? Math.max(0, Math.min(100, Math.round(Number(event.actualRevenue || 0) / Number(event.revenueGoal || 0) * 100)))
-            : 0;
+  UI.renderEventDetail = function (id) {
+    const event = Events.get(id);
+    if (!event) return this.renderEvents();
+    const venue = Venues.get(event.venueId);
+    const capacityPercent =
+      Number(event.capacity || 0) > 0
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              Math.round(
+                (Number(event.ticketsSold || 0) / Number(event.capacity || 0)) *
+                  100,
+              ),
+            ),
+          )
+        : 0;
+    const revenuePercent =
+      Number(event.revenueGoal || 0) > 0
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              Math.round(
+                (Number(event.actualRevenue || 0) /
+                  Number(event.revenueGoal || 0)) *
+                  100,
+              ),
+            ),
+          )
+        : 0;
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderEvents()">← Back to Events</button>
             <br><br>
             <div class="card">
                 <h2>${this.esc(event.name || "Unnamed Event")}</h2>
                 <p><strong>Date:</strong> ${this.esc(event.date || "—")}</p>
-                <p><strong>Start Time:</strong> ${this.esc(event.time || "—")}</p>
-                <p><strong>End Time:</strong> ${this.esc(event.endTime || "—")}</p>
+                <p><strong>Start Time:</strong> ${this.esc(Utils.formatTime(event.time) || "—")}</p>
+                <p><strong>End Time:</strong> ${this.esc(Utils.formatTime(event.endTime) || "—")}</p>
                 <p><strong>Venue:</strong> ${this.esc(venue ? venue.name : "—")}</p>
                 <p><strong>Theme:</strong> ${this.esc(event.theme || "—")}</p>
                 <p><strong>Instructor:</strong> ${this.esc(event.instructor || "—")}</p>
@@ -177,8 +248,20 @@
                 <div class="progress-bar"><div class="progress-fill" style="width:${revenuePercent}%"></div></div>
 
                 <h4>Event Financial Summary</h4>
-                <p><strong>Income:</strong> ${Utils.money(Finance.byEvent(event.id).filter(t => t.type === "Income" && t.status !== "Cancelled").reduce((sum,t) => sum + Number(t.amount || 0), 0))}</p>
-                <p><strong>Expenses:</strong> ${Utils.money(Finance.byEvent(event.id).filter(t => t.type === "Expense" && t.status !== "Cancelled").reduce((sum,t) => sum + Number(t.amount || 0), 0))}</p>
+                <p><strong>Income:</strong> ${Utils.money(
+                  Finance.byEvent(event.id)
+                    .filter(
+                      (t) => t.type === "Income" && t.status !== "Cancelled",
+                    )
+                    .reduce((sum, t) => sum + Number(t.amount || 0), 0),
+                )}</p>
+                <p><strong>Expenses:</strong> ${Utils.money(
+                  Finance.byEvent(event.id)
+                    .filter(
+                      (t) => t.type === "Expense" && t.status !== "Cancelled",
+                    )
+                    .reduce((sum, t) => sum + Number(t.amount || 0), 0),
+                )}</p>
                 <p><strong>Profit:</strong> ${Utils.money(Finance.eventProfit(event.id))}</p>
 
                 ${offeringDetail(event)}
@@ -189,13 +272,13 @@
                 <button onclick="if(confirm('Delete this event?')){Events.remove('${event.id}');UI.renderEvents();}">Delete Event</button>
             </div>
         `;
-    };
+  };
 
-    UI.renderEventEdit = function (id) {
-        const event = Events.get(id);
-        if (!event) return this.renderEvents();
-        const venues = Venues.active();
-        document.getElementById("workspace").innerHTML = `
+  UI.renderEventEdit = function (id) {
+    const event = Events.get(id);
+    if (!event) return this.renderEvents();
+    const venues = Venues.active();
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderEventDetail('${event.id}')">← Cancel</button>
             <br><br>
             <div class="card">
@@ -216,7 +299,7 @@
                 <label>Venue</label>
                 <select id="eventVenueId">
                     <option value="">Select Venue</option>
-                    ${venues.map(v => `<option value="${v.id}" ${event.venueId === v.id ? "selected" : ""}>${this.esc(v.name || "Unnamed Venue")}</option>`).join("")}
+                    ${venues.map((v) => `<option value="${v.id}" ${event.venueId === v.id ? "selected" : ""}>${this.esc(v.name || "Unnamed Venue")}</option>`).join("")}
                 </select>
 
                 <label>Theme</label>
@@ -243,7 +326,7 @@
 
                 <label>Status</label>
                 <select id="eventStatus">
-                    ${["Draft","Scheduled","Completed","Cancelled"].map(status => `<option value="${status}" ${event.status === status ? "selected" : ""}>${status}</option>`).join("")}
+                    ${["Draft", "Scheduled", "Completed", "Cancelled"].map((status) => `<option value="${status}" ${event.status === status ? "selected" : ""}>${status}</option>`).join("")}
                 </select>
 
                 ${offeringEditor(event, "Events", "renderEventEdit", Events.offeringNames(), Events.offeringDescriptions())}
@@ -273,32 +356,40 @@
                 ">Save Event</button>
             </div>
         `;
-    };
+  };
 
-    /* ---------------- VENUES ---------------- */
+  /* ---------------- VENUES ---------------- */
 
-    UI.renderVenues = function () {
-        const venues = Venues.all();
-        document.getElementById("workspace").innerHTML = `
+  UI.renderVenues = function () {
+    const venues = Venues.all();
+    document.getElementById("workspace").innerHTML = `
             <h2>Venues</h2>
             <button onclick="const v=Venues.create();UI.renderVenueEdit(v.id);">+ Add Venue</button>
             <br><br>
-            ${venues.length === 0 ? "<p>No venues added yet.</p>" : venues.map(v => `
+            ${
+              venues.length === 0
+                ? "<p>No venues added yet.</p>"
+                : venues
+                    .map(
+                      (v) => `
                 <div class="card">
                     <h3>${this.esc(v.name || "Unnamed Venue")}</h3>
-                    ${v.city || v.state ? `<p>${this.esc([v.city,v.state].filter(Boolean).join(", "))}</p>` : ""}
+                    ${v.city || v.state ? `<p>${this.esc([v.city, v.state].filter(Boolean).join(", "))}</p>` : ""}
                     ${v.phone ? `<p>${this.esc(v.phone)}</p>` : ""}
                     <p>${this.statusBadge(v.active !== false ? "Active" : "Inactive")}</p>
                     <button onclick="UI.renderVenueDetail('${v.id}')">View Venue</button>
                 </div>
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
         `;
-    };
+  };
 
-    UI.renderVenueDetail = function (id) {
-        const v = Venues.get(id);
-        if (!v) return this.renderVenues();
-        document.getElementById("workspace").innerHTML = `
+  UI.renderVenueDetail = function (id) {
+    const v = Venues.get(id);
+    if (!v) return this.renderVenues();
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderVenues()">← Back to Venues</button>
             <br><br>
             <div class="card">
@@ -321,8 +412,8 @@
                 <p><strong>Alcohol Allowed:</strong> ${v.alcoholAllowed ? "Yes" : "No"}</p>
                 <p><strong>Food Allowed:</strong> ${v.foodAllowed ? "Yes" : "No"}</p>
                 <p><strong>Outside Vendors Allowed:</strong> ${v.outsideVendorsAllowed ? "Yes" : "No"}</p>
-                <p><strong>Setup Time:</strong> ${this.esc(v.setupTime || "—")}</p>
-                <p><strong>Breakdown Time:</strong> ${this.esc(v.breakdownTime || "—")}</p>
+                <p><strong>Setup Time:</strong> ${this.esc(Utils.formatTime(v.setupTime) || "—")}</p>
+                <p><strong>Breakdown Time:</strong> ${this.esc(Utils.formatTime(v.breakdownTime) || "—")}</p>
                 <p><strong>Tax ID:</strong> ${this.esc(v.taxId || "—")}</p>
                 <p><strong>Status:</strong> ${this.statusBadge(v.active !== false ? "Active" : "Inactive")}</p>
                 ${offeringDetail(v)}
@@ -332,12 +423,12 @@
                 <button onclick="if(confirm('Delete this venue?')){Venues.remove('${v.id}');UI.renderVenues();}">Delete Venue</button>
             </div>
         `;
-    };
+  };
 
-    UI.renderVenueEdit = function (id) {
-        const v = Venues.get(id);
-        if (!v) return this.renderVenues();
-        document.getElementById("workspace").innerHTML = `
+  UI.renderVenueEdit = function (id) {
+    const v = Venues.get(id);
+    if (!v) return this.renderVenues();
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderVenueDetail('${v.id}')">← Cancel</button>
             <br><br>
             <div class="card">
@@ -363,7 +454,7 @@
                 <label><input id="venueDepositRefundable" type="checkbox" ${v.depositRefundable ? "checked" : ""}> Deposit Refundable</label>
                 <label>Parking</label><input id="venueParking" value="${this.esc(v.parking || "")}" placeholder="Parking details">
                 <label>Indoor / Outdoor</label>
-                <select id="venueIndoorOutdoor">${["Indoor","Outdoor","Both"].map(x => `<option value="${x}" ${v.indoorOutdoor === x ? "selected" : ""}>${x}</option>`).join("")}</select>
+                <select id="venueIndoorOutdoor">${["Indoor", "Outdoor", "Both"].map((x) => `<option value="${x}" ${v.indoorOutdoor === x ? "selected" : ""}>${x}</option>`).join("")}</select>
                 <label><input id="venueAlcoholAllowed" type="checkbox" ${v.alcoholAllowed ? "checked" : ""}> Alcohol Allowed</label>
                 <label><input id="venueFoodAllowed" type="checkbox" ${v.foodAllowed ? "checked" : ""}> Food Allowed</label>
                 <label><input id="venueOutsideVendorsAllowed" type="checkbox" ${v.outsideVendorsAllowed ? "checked" : ""}> Outside Vendors Allowed</label>
@@ -412,17 +503,22 @@
                 ">Save Venue</button>
             </div>
         `;
-    };
+  };
 
-    /* ---------------- VENDORS ---------------- */
+  /* ---------------- VENDORS ---------------- */
 
-    UI.renderVendors = function () {
-        const vendors = Vendors.all();
-        document.getElementById("workspace").innerHTML = `
+  UI.renderVendors = function () {
+    const vendors = Vendors.all();
+    document.getElementById("workspace").innerHTML = `
             <h2>Vendors</h2>
             <button onclick="const v=Vendors.create();UI.renderVendorEdit(v.id);">+ Add Vendor</button>
             <br><br>
-            ${vendors.length === 0 ? "<p>No vendors added yet.</p>" : vendors.map(v => `
+            ${
+              vendors.length === 0
+                ? "<p>No vendors added yet.</p>"
+                : vendors
+                    .map(
+                      (v) => `
                 <div class="card">
                     <h3>${this.esc(v.name || "Unnamed Vendor")}</h3>
                     ${v.category ? `<p>${this.esc(v.category)}</p>` : ""}
@@ -430,14 +526,17 @@
                     <p>${this.statusBadge(v.active !== false ? "Active" : "Inactive")}</p>
                     <button onclick="UI.renderVendorDetail('${v.id}')">View Vendor</button>
                 </div>
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
         `;
-    };
+  };
 
-    UI.renderVendorDetail = function (id) {
-        const v = Vendors.get(id);
-        if (!v) return this.renderVendors();
-        document.getElementById("workspace").innerHTML = `
+  UI.renderVendorDetail = function (id) {
+    const v = Vendors.get(id);
+    if (!v) return this.renderVendors();
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderVendors()">← Back to Vendors</button>
             <br><br>
             <div class="card">
@@ -453,9 +552,11 @@
                 <p><strong>Facebook:</strong> ${this.esc(v.facebook || "—")}</p>
                 <p><strong>Address:</strong> ${this.esc(Vendors.fullAddress(v) || "—")}</p>
                 <p><strong>Payment Type:</strong> ${this.esc(v.paymentType || "—")}</p>
-                ${v.paymentType === "Percentage"
+                ${
+                  v.paymentType === "Percentage"
                     ? `<p><strong>Percentage:</strong> ${Number(v.percentage || 0)}%</p><p><strong>Minimum Guarantee:</strong> ${Utils.money(v.minimumGuarantee || 0)}</p>`
-                    : `<p><strong>Flat Rate:</strong> ${Utils.money(v.flatRate || 0)}</p>`}
+                    : `<p><strong>Flat Rate:</strong> ${Utils.money(v.flatRate || 0)}</p>`
+                }
                 <p><strong>Payout Status:</strong> ${this.statusBadge(v.payoutStatus || "Unpaid")}</p>
                 <p><strong>Tax ID:</strong> ${this.esc(v.taxId || "—")}</p>
                 <p><strong>Status:</strong> ${this.statusBadge(v.active !== false ? "Active" : "Inactive")}</p>
@@ -466,12 +567,12 @@
                 <button onclick="if(confirm('Delete this vendor?')){Vendors.remove('${v.id}');UI.renderVendors();}">Delete Vendor</button>
             </div>
         `;
-    };
+  };
 
-    UI.renderVendorEdit = function (id) {
-        const v = Vendors.get(id);
-        if (!v) return this.renderVendors();
-        document.getElementById("workspace").innerHTML = `
+  UI.renderVendorEdit = function (id) {
+    const v = Vendors.get(id);
+    if (!v) return this.renderVendors();
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderVendorDetail('${v.id}')">← Cancel</button>
             <br><br>
             <div class="card">
@@ -499,15 +600,19 @@
                     <option value="Percentage" ${v.paymentType === "Percentage" ? "selected" : ""}>Percentage</option>
                 </select>
                 <div id="vendorPaymentFields">
-                    ${v.paymentType === "Percentage" ? `
+                    ${
+                      v.paymentType === "Percentage"
+                        ? `
                         <label>Percentage (%)</label><input id="vendorPercentage" type="number" min="0" step="0.01" value="${Number(v.percentage || 0)}">
                         <label>Minimum Guarantee</label><input id="vendorMinimumGuarantee" type="number" min="0" step="0.01" value="${Number(v.minimumGuarantee || 0)}">
-                    ` : `
+                    `
+                        : `
                         <label>Flat Rate</label><input id="vendorFlatRate" type="number" min="0" step="0.01" value="${Number(v.flatRate || 0)}">
-                    `}
+                    `
+                    }
                 </div>
                 <label>Payout Status</label>
-                <select id="vendorPayoutStatus">${["Unpaid","Pending","Paid"].map(x => `<option value="${x}" ${v.payoutStatus === x ? "selected" : ""}>${x}</option>`).join("")}</select>
+                <select id="vendorPayoutStatus">${["Unpaid", "Pending", "Paid"].map((x) => `<option value="${x}" ${v.payoutStatus === x ? "selected" : ""}>${x}</option>`).join("")}</select>
                 <label>Tax ID</label><input id="vendorTaxId" value="${this.esc(v.taxId || "")}" placeholder="Tax ID">
                 <label><input id="vendorActive" type="checkbox" ${v.active !== false ? "checked" : ""}> Active Vendor</label>
 
@@ -518,57 +623,71 @@
                 <button onclick="UI.saveVendorEdit('${v.id}')">Save Vendor</button>
             </div>
         `;
-    };
+  };
 
-    UI.renderVendorEditPaymentFields = function (id, type) {
-        const v = Vendors.get(id);
-        if (!v) return;
-        const box = document.getElementById("vendorPaymentFields");
-        if (!box) return;
-        box.innerHTML = type === "Percentage" ? `
+  UI.renderVendorEditPaymentFields = function (id, type) {
+    const v = Vendors.get(id);
+    if (!v) return;
+    const box = document.getElementById("vendorPaymentFields");
+    if (!box) return;
+    box.innerHTML =
+      type === "Percentage"
+        ? `
             <label>Percentage (%)</label><input id="vendorPercentage" type="number" min="0" step="0.01" value="${Number(v.percentage || 0)}">
             <label>Minimum Guarantee</label><input id="vendorMinimumGuarantee" type="number" min="0" step="0.01" value="${Number(v.minimumGuarantee || 0)}">
-        ` : `
+        `
+        : `
             <label>Flat Rate</label><input id="vendorFlatRate" type="number" min="0" step="0.01" value="${Number(v.flatRate || 0)}">
         `;
-    };
+  };
 
-    UI.saveVendorEdit = function (id) {
-        const type = document.getElementById("vendorPaymentType").value;
-        Vendors.update(id, {
-            name:document.getElementById("vendorName").value,
-            category:document.getElementById("vendorCategory").value,
-            contact:document.getElementById("vendorContact").value,
-            jobTitle:document.getElementById("vendorJobTitle").value,
-            phone:document.getElementById("vendorPhone").value,
-            alternatePhone:document.getElementById("vendorAlternatePhone").value,
-            email:document.getElementById("vendorEmail").value,
-            website:document.getElementById("vendorWebsite").value,
-            instagram:document.getElementById("vendorInstagram").value,
-            facebook:document.getElementById("vendorFacebook").value,
-            address:document.getElementById("vendorAddress").value,
-            address2:document.getElementById("vendorAddress2").value,
-            city:document.getElementById("vendorCity").value,
-            state:document.getElementById("vendorState").value,
-            zip:document.getElementById("vendorZip").value,
-            country:document.getElementById("vendorCountry").value,
-            paymentType:type,
-            flatRate:type === "Flat Rate" ? Number(document.getElementById("vendorFlatRate")?.value || 0) : Number(Vendors.get(id).flatRate || 0),
-            percentage:type === "Percentage" ? Number(document.getElementById("vendorPercentage")?.value || 0) : Number(Vendors.get(id).percentage || 0),
-            minimumGuarantee:type === "Percentage" ? Number(document.getElementById("vendorMinimumGuarantee")?.value || 0) : Number(Vendors.get(id).minimumGuarantee || 0),
-            payoutStatus:document.getElementById("vendorPayoutStatus").value,
-            taxId:document.getElementById("vendorTaxId").value,
-            active:document.getElementById("vendorActive").checked,
-            notes:document.getElementById("vendorNotes").value
-        });
-        UI.renderVendorDetail(id);
-    };
+  UI.saveVendorEdit = function (id) {
+    const type = document.getElementById("vendorPaymentType").value;
+    Vendors.update(id, {
+      name: document.getElementById("vendorName").value,
+      category: document.getElementById("vendorCategory").value,
+      contact: document.getElementById("vendorContact").value,
+      jobTitle: document.getElementById("vendorJobTitle").value,
+      phone: document.getElementById("vendorPhone").value,
+      alternatePhone: document.getElementById("vendorAlternatePhone").value,
+      email: document.getElementById("vendorEmail").value,
+      website: document.getElementById("vendorWebsite").value,
+      instagram: document.getElementById("vendorInstagram").value,
+      facebook: document.getElementById("vendorFacebook").value,
+      address: document.getElementById("vendorAddress").value,
+      address2: document.getElementById("vendorAddress2").value,
+      city: document.getElementById("vendorCity").value,
+      state: document.getElementById("vendorState").value,
+      zip: document.getElementById("vendorZip").value,
+      country: document.getElementById("vendorCountry").value,
+      paymentType: type,
+      flatRate:
+        type === "Flat Rate"
+          ? Number(document.getElementById("vendorFlatRate")?.value || 0)
+          : Number(Vendors.get(id).flatRate || 0),
+      percentage:
+        type === "Percentage"
+          ? Number(document.getElementById("vendorPercentage")?.value || 0)
+          : Number(Vendors.get(id).percentage || 0),
+      minimumGuarantee:
+        type === "Percentage"
+          ? Number(
+              document.getElementById("vendorMinimumGuarantee")?.value || 0,
+            )
+          : Number(Vendors.get(id).minimumGuarantee || 0),
+      payoutStatus: document.getElementById("vendorPayoutStatus").value,
+      taxId: document.getElementById("vendorTaxId").value,
+      active: document.getElementById("vendorActive").checked,
+      notes: document.getElementById("vendorNotes").value,
+    });
+    UI.renderVendorDetail(id);
+  };
 
-    /* ---------------- INVENTORY ---------------- */
+  /* ---------------- INVENTORY ---------------- */
 
-    UI.renderInventory = function () {
-        const items = Inventory.all();
-        document.getElementById("workspace").innerHTML = `
+  UI.renderInventory = function () {
+    const items = Inventory.all();
+    document.getElementById("workspace").innerHTML = `
             <h2>Inventory</h2>
             <button onclick="const i=Inventory.create();UI.renderInventoryEdit(i.id);">+ Add Inventory Item</button>
             <br><br>
@@ -581,7 +700,12 @@
                 <div class="card"><h3>Potential Profit</h3><h2>${Utils.money(Inventory.potentialProfit())}</h2></div>
             </div>
             <br>
-            ${items.length === 0 ? "<p>No inventory items added yet.</p>" : items.map(item => `
+            ${
+              items.length === 0
+                ? "<p>No inventory items added yet.</p>"
+                : items
+                    .map(
+                      (item) => `
                 <div class="card">
                     <h3>${this.esc(item.name || "Unnamed Item")}</h3>
                     ${item.category ? `<p>${this.esc(item.category)}</p>` : ""}
@@ -590,15 +714,18 @@
                     ${Number(item.quantity || 0) <= Number(item.minimum || 0) ? `<p>${this.statusBadge("Low Stock")}</p>` : ""}
                     <button onclick="UI.renderInventoryDetail('${item.id}')">View Item</button>
                 </div>
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
         `;
-    };
+  };
 
-    UI.renderInventoryDetail = function (id) {
-        const item = Inventory.get(id);
-        if (!item) return this.renderInventory();
-        const vendor = Vendors.get(item.vendorId);
-        document.getElementById("workspace").innerHTML = `
+  UI.renderInventoryDetail = function (id) {
+    const item = Inventory.get(id);
+    if (!item) return this.renderInventory();
+    const vendor = Vendors.get(item.vendorId);
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderInventory()">← Back to Inventory</button>
             <br><br>
             <div class="card">
@@ -631,13 +758,13 @@
                 <button onclick="if(confirm('Delete this inventory item?')){Inventory.remove('${item.id}');UI.renderInventory();}">Delete Item</button>
             </div>
         `;
-    };
+  };
 
-    UI.renderInventoryEdit = function (id) {
-        const item = Inventory.get(id);
-        if (!item) return this.renderInventory();
-        const vendors = Vendors.active();
-        document.getElementById("workspace").innerHTML = `
+  UI.renderInventoryEdit = function (id) {
+    const item = Inventory.get(id);
+    if (!item) return this.renderInventory();
+    const vendors = Vendors.active();
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderInventoryDetail('${item.id}')">← Cancel</button>
             <br><br>
             <div class="card">
@@ -649,16 +776,16 @@
                 <label>Vendor</label>
                 <select id="inventoryVendorId">
                     <option value="">No Vendor</option>
-                    ${vendors.map(v => `<option value="${v.id}" ${item.vendorId === v.id ? "selected" : ""}>${this.esc(v.name || "Unnamed Vendor")}</option>`).join("")}
+                    ${vendors.map((v) => `<option value="${v.id}" ${item.vendorId === v.id ? "selected" : ""}>${this.esc(v.name || "Unnamed Vendor")}</option>`).join("")}
                 </select>
 
                 <h4>Purchase Information</h4>
                 <label>Purchase Unit</label>
-                <select id="inventoryPurchaseUnit">${["Piece","Pack","Box","Case","Bundle","Dozen","Roll","Set","Other"].map(x => `<option value="${x}" ${item.purchaseUnit === x ? "selected" : ""}>${x}</option>`).join("")}</select>
+                <select id="inventoryPurchaseUnit">${["Piece", "Pack", "Box", "Case", "Bundle", "Dozen", "Roll", "Set", "Other"].map((x) => `<option value="${x}" ${item.purchaseUnit === x ? "selected" : ""}>${x}</option>`).join("")}</select>
                 <label>Number of Purchase Units Purchased</label><input id="inventoryPurchaseQuantity" type="number" min="0" value="${Number(item.purchaseQuantity || 0)}">
                 <label>Individual Units Per Purchase Unit</label><input id="inventoryUnitsPerPurchase" type="number" min="1" value="${Number(item.unitsPerPurchase || 1)}">
                 <label>Cost Entry Type</label>
-                <select id="inventoryPurchaseCostType">${["Total Purchase","Per Purchase Unit","Per Individual Unit"].map(x => `<option value="${x}" ${item.purchaseCostType === x ? "selected" : ""}>${x}</option>`).join("")}</select>
+                <select id="inventoryPurchaseCostType">${["Total Purchase", "Per Purchase Unit", "Per Individual Unit"].map((x) => `<option value="${x}" ${item.purchaseCostType === x ? "selected" : ""}>${x}</option>`).join("")}</select>
                 <label>Purchase Cost</label><input id="inventoryPurchaseCost" type="number" min="0" step="0.01" value="${Number(item.purchaseCost || 0)}">
                 <label>Purchase Date</label><input id="inventoryPurchaseDate" type="date" value="${this.esc(item.purchaseDate || "")}">
                 <label>Invoice Number</label><input id="inventoryInvoiceNumber" value="${this.esc(item.invoiceNumber || "")}" placeholder="Invoice number">
@@ -670,7 +797,7 @@
                 <label>Selling Price Per Individual Unit</label><input id="inventorySellPrice" type="number" min="0" step="0.01" value="${Number(item.sellPrice || 0)}">
                 <label>Storage Location</label><input id="inventoryStorageLocation" value="${this.esc(item.storageLocation || "")}" placeholder="Storage location">
                 <label>Status</label>
-                <select id="inventoryStatus">${["Active","Inactive"].map(x => `<option value="${x}" ${item.status === x ? "selected" : ""}>${x}</option>`).join("")}</select>
+                <select id="inventoryStatus">${["Active", "Inactive"].map((x) => `<option value="${x}" ${item.status === x ? "selected" : ""}>${x}</option>`).join("")}</select>
                 <label>Notes</label><textarea id="inventoryNotes" placeholder="Item notes">${this.esc(item.notes || "")}</textarea>
                 <br><br>
                 <button onclick="
@@ -698,6 +825,5 @@
                 ">Save Item</button>
             </div>
         `;
-    };
-
+  };
 })();

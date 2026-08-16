@@ -1,67 +1,64 @@
-    const UI = {
-
-    esc(value) {
-        return String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
-    },
-    statusBadge(status) {
-
+const UI = {
+  esc(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  },
+  statusBadge(status) {
     const value = String(status || "");
 
     let type = "info";
 
     if (
-        [
-            "Completed",
-            "Paid",
-            "Available",
-            "Active",
-            "Excellent",
-            "Good",
-            "Low"
-        ].includes(value)
+      [
+        "Completed",
+        "Paid",
+        "Available",
+        "Active",
+        "Excellent",
+        "Good",
+        "Low",
+      ].includes(value)
     ) {
-        type = "success";
+      type = "success";
     }
 
     if (
-        [
-            "Pending",
-            "Scheduled",
-            "Fair",
-            "Maintenance",
-            "Normal",
-            "High",
-            "Assigned",
-            "Retired"
-        ].includes(value)
+      [
+        "Pending",
+        "Scheduled",
+        "Fair",
+        "Maintenance",
+        "Normal",
+        "High",
+        "Assigned",
+        "Retired",
+      ].includes(value)
     ) {
-        type = "warning";
+      type = "warning";
     }
 
     if (
-        [
-            "Cancelled",
-            "Overdue",
-            "Needs Repair",
-            "Inactive",
-            "Unpaid",
-            "Urgent",
-            "Low Stock"
-        ].includes(value)
+      [
+        "Cancelled",
+        "Overdue",
+        "Needs Repair",
+        "Inactive",
+        "Unpaid",
+        "Urgent",
+        "Low Stock",
+      ].includes(value)
     ) {
-        type = "danger";
+      type = "danger";
     }
 
     return `<span class="badge badge-${type}">${this.esc(value)}</span>`;
-},
+  },
 
-    renderLayout() {
-
-        document.getElementById("app").innerHTML = `
+  renderLayout() {
+    document.getElementById("app").innerHTML = `
 
             <header class="topbar">
 
@@ -92,12 +89,11 @@
             </div>
         `;
 
-        this.renderSidebar();
-    },
+    this.renderSidebar();
+  },
 
-    renderSidebar() {
-
-        document.getElementById("sidebar").innerHTML = `
+  renderSidebar() {
+    document.getElementById("sidebar").innerHTML = `
 
             <button onclick="UI.renderDashboard()">Dashboard</button>
             <button onclick="UI.renderBusiness()">Business</button>
@@ -112,70 +108,98 @@
             <button onclick="UI.renderReports()">Reports</button>
             <button onclick="UI.renderSettings()">Settings</button>
         `;
-    },
+  },
 
-    handleSearch(term) {
+  handleSearch(term) {
+    if (!term.trim()) {
+      this.renderDashboard();
+      return;
+    }
 
-        if (!term.trim()) {
-            this.renderDashboard();
-            return;
-        }
+    const results = Utils.searchAll(term);
 
-        const results = Utils.searchAll(term);
-
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
             <h2>Search Results</h2>
 
             <div class="card">
                 <h3>Customers (${results.customers.length})</h3>
-                ${results.customers.map(c =>
-                    `<p>${this.esc(c.firstName)} ${this.esc(c.lastName)} — ${this.esc(c.email)}</p>`
-                ).join("") || "<p>No customers found.</p>"}
+                ${
+                  results.customers
+                    .map(
+                      (c) =>
+                        `<p>${this.esc(c.firstName)} ${this.esc(c.lastName)} — ${this.esc(c.email)}</p>`,
+                    )
+                    .join("") || "<p>No customers found.</p>"
+                }
             </div>
 
             <div class="card">
                 <h3>Events (${results.events.length})</h3>
-                ${results.events.map(e =>
-                    `<p>${this.esc(e.name)} — ${this.esc(e.status)}</p>`
-                ).join("") || "<p>No events found.</p>"}
+                ${
+                  results.events
+                    .map(
+                      (e) =>
+                        `<p>${this.esc(e.name)} — ${this.esc(e.status)}</p>`,
+                    )
+                    .join("") || "<p>No events found.</p>"
+                }
             </div>
 
             <div class="card">
                 <h3>Vendors (${results.vendors.length})</h3>
-                ${results.vendors.map(v =>
-                    `<p>${this.esc(v.name)} — ${this.esc(v.category)}</p>`
-                ).join("") || "<p>No vendors found.</p>"}
+                ${
+                  results.vendors
+                    .map(
+                      (v) =>
+                        `<p>${this.esc(v.name)} — ${this.esc(v.category)}</p>`,
+                    )
+                    .join("") || "<p>No vendors found.</p>"
+                }
             </div>
 
             <div class="card">
                 <h3>Venues (${results.venues.length})</h3>
-                ${results.venues.map(v =>
-                    `<p>${this.esc(v.name)} — ${this.esc(v.city)}, ${this.esc(v.state)}</p>`
-                ).join("") || "<p>No venues found.</p>"}
+                ${
+                  results.venues
+                    .map(
+                      (v) =>
+                        `<p>${this.esc(v.name)} — ${this.esc(v.city)}, ${this.esc(v.state)}</p>`,
+                    )
+                    .join("") || "<p>No venues found.</p>"
+                }
             </div>
 
             <div class="card">
                 <h3>Inventory (${results.inventory.length})</h3>
-                ${results.inventory.map(i =>
-                    `<p>${this.esc(i.name)} — ${this.esc(i.category)}</p>`
-                ).join("") || "<p>No inventory found.</p>"}
+                ${
+                  results.inventory
+                    .map(
+                      (i) =>
+                        `<p>${this.esc(i.name)} — ${this.esc(i.category)}</p>`,
+                    )
+                    .join("") || "<p>No inventory found.</p>"
+                }
             </div>
 
             <div class="card">
                 <h3>Assets (${results.assets.length})</h3>
-                ${results.assets.map(a =>
-                    `<p>${this.esc(a.name)} — ${this.esc(a.category)}</p>`
-                ).join("") || "<p>No assets found.</p>"}
+                ${
+                  results.assets
+                    .map(
+                      (a) =>
+                        `<p>${this.esc(a.name)} — ${this.esc(a.category)}</p>`,
+                    )
+                    .join("") || "<p>No assets found.</p>"
+                }
             </div>
         `;
-    },
+  },
 
-    renderDashboard() {
+  renderDashboard() {
+    const report = Reports.summary();
 
-        const report = Reports.summary();
-
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
             <h2>Executive Dashboard</h2>
 
@@ -205,27 +229,27 @@
     <p>
         Inventory:
         ${
-            report.lowStockItems > 0
-                ? this.statusBadge("Low Stock")
-                : this.statusBadge("Good")
+          report.lowStockItems > 0
+            ? this.statusBadge("Low Stock")
+            : this.statusBadge("Good")
         }
     </p>
 
     <p>
         Reminders:
         ${
-            report.overdueReminders > 0
-                ? this.statusBadge("Overdue")
-                : this.statusBadge("Good")
+          report.overdueReminders > 0
+            ? this.statusBadge("Overdue")
+            : this.statusBadge("Good")
         }
     </p>
 
     <p>
         Profit:
         ${
-            report.totalProfit >= 0
-                ? this.statusBadge("Good")
-                : this.statusBadge("Needs Repair")
+          report.totalProfit >= 0
+            ? this.statusBadge("Good")
+            : this.statusBadge("Needs Repair")
         }
     </p>
 
@@ -245,10 +269,9 @@
 
             </div>
         `;
-    },
+  },
 
   renderBusiness() {
-
     const b = Business.data;
 
     document.getElementById("workspace").innerHTML = `
@@ -350,11 +373,9 @@
 
         </div>
     `;
-},  
-                
+  },
 
-renderEvents() {
-
+  renderEvents() {
     const events = Events.all();
     const venues = Venues.active();
 
@@ -368,9 +389,12 @@ renderEvents() {
 
         <br><br>
 
-        ${events.length === 0 ? "<p>No events created yet.</p>" :
-
-        events.map(event => `
+        ${
+          events.length === 0
+            ? "<p>No events created yet.</p>"
+            : events
+                .map(
+                  (event) => `
 
             <div class="card">
 
@@ -402,13 +426,17 @@ renderEvents() {
 
                     <option value="">Select Venue</option>
 
-                    ${venues.map(v => `
+                    ${venues
+                      .map(
+                        (v) => `
                         <option
                             value="${v.id}"
                             ${event.venueId === v.id ? "selected" : ""}>
                             ${this.esc(v.name || "Unnamed Venue")}
                         </option>
-                    `).join("")}
+                    `,
+                      )
+                      .join("")}
 
                 </select>
 
@@ -420,9 +448,13 @@ renderEvents() {
     onchange="Events.update('${event.id}',{theme:this.value})">
 
 <datalist id="eventThemes">
-    ${Events.themes().map(theme => `
+    ${Events.themes()
+      .map(
+        (theme) => `
         <option value="${this.esc(theme)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
 
                 <label>Instructor</label>
@@ -444,45 +476,46 @@ renderEvents() {
 <p>
     Capacity Used:
     ${
-        Number(event.capacity || 0) > 0
-            ? Math.min(
+      Number(event.capacity || 0) > 0
+        ? Math.min(
+            100,
+            Math.round(
+              (Number(event.ticketsSold || 0) / Number(event.capacity || 0)) *
                 100,
-                Math.round(
-                    Number(event.ticketsSold || 0) /
-                    Number(event.capacity || 0) * 100
-                )
-            )
-            : 0
+            ),
+          )
+        : 0
     }%
 </p>
 <div class="progress-bar">
     <div
         class="progress-fill"
         style="width:${
-            Number(event.capacity || 0) > 0
-                ? Math.max(
-                    0,
-                    Math.min(
-                        100,
-                        Math.round(
-                            Number(event.ticketsSold || 0) /
-                            Number(event.capacity || 0) * 100
-                        )
-                    )
-                )
-                : 0
+          Number(event.capacity || 0) > 0
+            ? Math.max(
+                0,
+                Math.min(
+                  100,
+                  Math.round(
+                    (Number(event.ticketsSold || 0) /
+                      Number(event.capacity || 0)) *
+                      100,
+                  ),
+                ),
+              )
+            : 0
         }%">
     </div>
     <p>
     Capacity Status:
     ${
-        Number(event.capacity || 0) <= 0
-            ? this.statusBadge("Pending")
-            : Number(event.ticketsSold || 0) >= Number(event.capacity || 0)
-                ? this.statusBadge("Completed")
-                : Number(event.ticketsSold || 0) >= Number(event.capacity || 0) * 0.8
-                    ? this.statusBadge("High")
-                    : this.statusBadge("Good")
+      Number(event.capacity || 0) <= 0
+        ? this.statusBadge("Pending")
+        : Number(event.ticketsSold || 0) >= Number(event.capacity || 0)
+          ? this.statusBadge("Completed")
+          : Number(event.ticketsSold || 0) >= Number(event.capacity || 0) * 0.8
+            ? this.statusBadge("High")
+            : this.statusBadge("Good")
     }
 </p>
 </div>
@@ -509,10 +542,10 @@ renderEvents() {
 
                 <label>Status</label>
                 <select onchange="Events.update('${event.id}',{status:this.value});UI.renderEvents();">
-                    <option value="Draft" ${event.status==="Draft"?"selected":""}>Draft</option>
-                    <option value="Scheduled" ${event.status==="Scheduled"?"selected":""}>Scheduled</option>
-                    <option value="Completed" ${event.status==="Completed"?"selected":""}>Completed</option>
-                    <option value="Cancelled" ${event.status==="Cancelled"?"selected":""}>Cancelled</option>
+                    <option value="Draft" ${event.status === "Draft" ? "selected" : ""}>Draft</option>
+                    <option value="Scheduled" ${event.status === "Scheduled" ? "selected" : ""}>Scheduled</option>
+                    <option value="Completed" ${event.status === "Completed" ? "selected" : ""}>Completed</option>
+                    <option value="Cancelled" ${event.status === "Cancelled" ? "selected" : ""}>Cancelled</option>
                 </select>
 
                 <p>
@@ -526,18 +559,25 @@ renderEvents() {
                     <p>
                         Income:
                         ${Utils.money(
-                            Finance.byEvent(event.id)
-                                .filter(t => t.type === "Income" && t.status !== "Cancelled")
-                                .reduce((sum, t) => sum + Number(t.amount || 0), 0)
+                          Finance.byEvent(event.id)
+                            .filter(
+                              (t) =>
+                                t.type === "Income" && t.status !== "Cancelled",
+                            )
+                            .reduce((sum, t) => sum + Number(t.amount || 0), 0),
                         )}
                     </p>
 
                     <p>
                         Expenses:
                         ${Utils.money(
-                            Finance.byEvent(event.id)
-                                .filter(t => t.type === "Expense" && t.status !== "Cancelled")
-                                .reduce((sum, t) => sum + Number(t.amount || 0), 0)
+                          Finance.byEvent(event.id)
+                            .filter(
+                              (t) =>
+                                t.type === "Expense" &&
+                                t.status !== "Cancelled",
+                            )
+                            .reduce((sum, t) => sum + Number(t.amount || 0), 0),
                         )}
                     </p>
 
@@ -549,9 +589,9 @@ renderEvents() {
                     <p>
                         Profit Status:
                         ${
-                            Finance.eventProfit(event.id) >= 0
-                                ? this.statusBadge("Good")
-                                : this.statusBadge("Needs Repair")
+                          Finance.eventProfit(event.id) >= 0
+                            ? this.statusBadge("Good")
+                            : this.statusBadge("Needs Repair")
                         }
                     </p>
 
@@ -574,27 +614,27 @@ renderEvents() {
                    <p>
     Progress:
     ${Math.max(
-        0,
-        Math.min(
-            100,
-            Number(event.revenueGoal || 0) > 0
-                ? Math.round(
-                    Number(event.actualRevenue || 0) /
-                    Number(event.revenueGoal || 0) *
-                    100
-                )
-                : 0
-        )
+      0,
+      Math.min(
+        100,
+        Number(event.revenueGoal || 0) > 0
+          ? Math.round(
+              (Number(event.actualRevenue || 0) /
+                Number(event.revenueGoal || 0)) *
+                100,
+            )
+          : 0,
+      ),
     )}%
 </p>
 <p>
     Goal Status:
     ${
-        Number(event.revenueGoal || 0) <= 0
-            ? this.statusBadge("Pending")
-            : Number(event.actualRevenue || 0) >= Number(event.revenueGoal || 0)
-                ? this.statusBadge("Good")
-                : this.statusBadge("Scheduled")
+      Number(event.revenueGoal || 0) <= 0
+        ? this.statusBadge("Pending")
+        : Number(event.actualRevenue || 0) >= Number(event.revenueGoal || 0)
+          ? this.statusBadge("Good")
+          : this.statusBadge("Scheduled")
     }
 </p>
 
@@ -602,18 +642,18 @@ renderEvents() {
                         <div
                             class="progress-fill"
                             style="width:${Math.max(
-    0,
-    Math.min(
-        100,
-        Number(event.revenueGoal || 0) > 0
-            ? Math.round(
-                Number(event.actualRevenue || 0) /
-                Number(event.revenueGoal || 0) *
-                100
-            )
-            : 0
-    )
-)}%">
+                              0,
+                              Math.min(
+                                100,
+                                Number(event.revenueGoal || 0) > 0
+                                  ? Math.round(
+                                      (Number(event.actualRevenue || 0) /
+                                        Number(event.revenueGoal || 0)) *
+                                        100,
+                                    )
+                                  : 0,
+                              ),
+                            )}%">
                         </div>
                     </div>
 
@@ -621,9 +661,11 @@ renderEvents() {
 <h4>Products / Services Offered</h4>
 
 ${
-    !Array.isArray(event.offerings) || event.offerings.length === 0
-        ? "<p>No products or services added yet.</p>"
-        : event.offerings.map(item => `
+  !Array.isArray(event.offerings) || event.offerings.length === 0
+    ? "<p>No products or services added yet.</p>"
+    : event.offerings
+        .map(
+          (item) => `
 
             <div class="card">
 
@@ -639,9 +681,13 @@ ${
     )">
 
 <datalist id="eventOfferingNames">
-    ${Events.offeringNames().map(name => `
+    ${Events.offeringNames()
+      .map(
+        (name) => `
         <option value="${this.esc(name)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
 
                 <label>Description</label>
@@ -656,9 +702,13 @@ ${
     )">
 
 <datalist id="eventOfferingDescriptions">
-    ${Events.offeringDescriptions().map(description => `
+    ${Events.offeringDescriptions()
+      .map(
+        (description) => `
         <option value="${this.esc(description)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
 
                 <label>Quantity</label>
@@ -678,15 +728,15 @@ ${
                     '${item.id}',
                     {unit:this.value}
                 )">
-                    <option value="Each" ${item.unit==="Each"?"selected":""}>Each</option>
-                    <option value="Hour" ${item.unit==="Hour"?"selected":""}>Hour</option>
-                    <option value="Day" ${item.unit==="Day"?"selected":""}>Day</option>
-                    <option value="Package" ${item.unit==="Package"?"selected":""}>Package</option>
-                    <option value="Case" ${item.unit==="Case"?"selected":""}>Case</option>
-                    <option value="Box" ${item.unit==="Box"?"selected":""}>Box</option>
-                    <option value="Dozen" ${item.unit==="Dozen"?"selected":""}>Dozen</option>
-                    <option value="Flat Rate" ${item.unit==="Flat Rate"?"selected":""}>Flat Rate</option>
-                    <option value="Other" ${item.unit==="Other"?"selected":""}>Other</option>
+                    <option value="Each" ${item.unit === "Each" ? "selected" : ""}>Each</option>
+                    <option value="Hour" ${item.unit === "Hour" ? "selected" : ""}>Hour</option>
+                    <option value="Day" ${item.unit === "Day" ? "selected" : ""}>Day</option>
+                    <option value="Package" ${item.unit === "Package" ? "selected" : ""}>Package</option>
+                    <option value="Case" ${item.unit === "Case" ? "selected" : ""}>Case</option>
+                    <option value="Box" ${item.unit === "Box" ? "selected" : ""}>Box</option>
+                    <option value="Dozen" ${item.unit === "Dozen" ? "selected" : ""}>Dozen</option>
+                    <option value="Flat Rate" ${item.unit === "Flat Rate" ? "selected" : ""}>Flat Rate</option>
+                    <option value="Other" ${item.unit === "Other" ? "selected" : ""}>Other</option>
                 </select>
 
                 <label>Price</label>
@@ -724,7 +774,9 @@ ${
 
             </div>
 
-        `).join("")
+        `,
+        )
+        .join("")
 }
 
 <button onclick="
@@ -752,12 +804,14 @@ ${
 
             </div>
 
-        `).join("")}
+        `,
+                )
+                .join("")
+        }
     `;
-},
+  },
 
-    renderVenues() {
-
+  renderVenues() {
     const venues = Venues.all();
 
     document.getElementById("workspace").innerHTML = `
@@ -770,9 +824,12 @@ ${
 
         <br><br>
 
-        ${venues.length === 0 ? "<p>No venues added yet.</p>" :
-
-        venues.map(v => `
+        ${
+          venues.length === 0
+            ? "<p>No venues added yet.</p>"
+            : venues
+                .map(
+                  (v) => `
 
             <div class="card">
 
@@ -887,9 +944,9 @@ ${
 
                 <label>Indoor / Outdoor</label>
                 <select onchange="Venues.update('${v.id}',{indoorOutdoor:this.value})">
-                    <option value="Indoor" ${v.indoorOutdoor==="Indoor"?"selected":""}>Indoor</option>
-                    <option value="Outdoor" ${v.indoorOutdoor==="Outdoor"?"selected":""}>Outdoor</option>
-                    <option value="Both" ${v.indoorOutdoor==="Both"?"selected":""}>Both</option>
+                    <option value="Indoor" ${v.indoorOutdoor === "Indoor" ? "selected" : ""}>Indoor</option>
+                    <option value="Outdoor" ${v.indoorOutdoor === "Outdoor" ? "selected" : ""}>Outdoor</option>
+                    <option value="Both" ${v.indoorOutdoor === "Both" ? "selected" : ""}>Both</option>
                 </select>
 
                 <label>
@@ -943,9 +1000,11 @@ ${
                 <h4>Products / Services Offered</h4>
 
 ${
-    !Array.isArray(v.offerings) || v.offerings.length === 0
-        ? "<p>No products or services added yet.</p>"
-        : v.offerings.map(item => `
+  !Array.isArray(v.offerings) || v.offerings.length === 0
+    ? "<p>No products or services added yet.</p>"
+    : v.offerings
+        .map(
+          (item) => `
 
             <div class="card">
 
@@ -961,9 +1020,13 @@ ${
     )">
 
 <datalist id="venueOfferingNames">
-    ${Venues.offeringNames().map(name => `
+    ${Venues.offeringNames()
+      .map(
+        (name) => `
         <option value="${this.esc(name)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
 
                 <label>Description</label>
@@ -993,15 +1056,15 @@ ${
                     '${item.id}',
                     {unit:this.value}
                 )">
-                    <option value="Each" ${item.unit==="Each"?"selected":""}>Each</option>
-                    <option value="Hour" ${item.unit==="Hour"?"selected":""}>Hour</option>
-                    <option value="Day" ${item.unit==="Day"?"selected":""}>Day</option>
-                    <option value="Package" ${item.unit==="Package"?"selected":""}>Package</option>
-                    <option value="Case" ${item.unit==="Case"?"selected":""}>Case</option>
-                    <option value="Box" ${item.unit==="Box"?"selected":""}>Box</option>
-                    <option value="Dozen" ${item.unit==="Dozen"?"selected":""}>Dozen</option>
-                    <option value="Flat Rate" ${item.unit==="Flat Rate"?"selected":""}>Flat Rate</option>
-                    <option value="Other" ${item.unit==="Other"?"selected":""}>Other</option>
+                    <option value="Each" ${item.unit === "Each" ? "selected" : ""}>Each</option>
+                    <option value="Hour" ${item.unit === "Hour" ? "selected" : ""}>Hour</option>
+                    <option value="Day" ${item.unit === "Day" ? "selected" : ""}>Day</option>
+                    <option value="Package" ${item.unit === "Package" ? "selected" : ""}>Package</option>
+                    <option value="Case" ${item.unit === "Case" ? "selected" : ""}>Case</option>
+                    <option value="Box" ${item.unit === "Box" ? "selected" : ""}>Box</option>
+                    <option value="Dozen" ${item.unit === "Dozen" ? "selected" : ""}>Dozen</option>
+                    <option value="Flat Rate" ${item.unit === "Flat Rate" ? "selected" : ""}>Flat Rate</option>
+                    <option value="Other" ${item.unit === "Other" ? "selected" : ""}>Other</option>
                 </select>
 
                 <label>Price</label>
@@ -1039,7 +1102,9 @@ ${
 
             </div>
 
-        `).join("")
+        `,
+        )
+        .join("")
 }
 
 <button onclick="
@@ -1068,12 +1133,14 @@ ${
 
             </div>
 
-        `).join("")}
+        `,
+                )
+                .join("")
+        }
     `;
-},
+  },
 
-    renderVendors() {
-
+  renderVendors() {
     const vendors = Vendors.all();
 
     document.getElementById("workspace").innerHTML = `
@@ -1086,9 +1153,12 @@ ${
 
         <br><br>
 
-        ${vendors.length === 0 ? "<p>No vendors added yet.</p>" :
-
-        vendors.map(v => `
+        ${
+          vendors.length === 0
+            ? "<p>No vendors added yet.</p>"
+            : vendors
+                .map(
+                  (v) => `
 
             <div class="card">
 
@@ -1105,15 +1175,23 @@ ${
     onchange="Vendors.update('${v.id}',{category:this.value})">
 
 <datalist id="vendorCategories">
-    ${Vendors.categories().map(category => `
+    ${Vendors.categories()
+      .map(
+        (category) => `
         <option value="${this.esc(category)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
 
 <datalist id="vendorCategories">
-    ${Vendors.categories().map(category => `
+    ${Vendors.categories()
+      .map(
+        (category) => `
         <option value="${this.esc(category)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
 
                 <label>Contact Person</label>
@@ -1189,11 +1267,13 @@ ${
 
                 <label>Payment Type</label>
                 <select onchange="Vendors.update('${v.id}',{paymentType:this.value});UI.renderVendors();">
-                    <option value="Flat Rate" ${v.paymentType==="Flat Rate"?"selected":""}>Flat Rate</option>
-                    <option value="Percentage" ${v.paymentType==="Percentage"?"selected":""}>Percentage</option>
+                    <option value="Flat Rate" ${v.paymentType === "Flat Rate" ? "selected" : ""}>Flat Rate</option>
+                    <option value="Percentage" ${v.paymentType === "Percentage" ? "selected" : ""}>Percentage</option>
                 </select>
 
-                ${v.paymentType === "Percentage" ? `
+                ${
+                  v.paymentType === "Percentage"
+                    ? `
 
                     <label>Percentage (%)</label>
                     <input
@@ -1209,7 +1289,8 @@ ${
                         value="${Number(v.minimumGuarantee || 0)}"
                         onchange="Vendors.update('${v.id}',{minimumGuarantee:Number(this.value)})">
 
-                ` : `
+                `
+                    : `
 
                     <label>Flat Rate</label>
                     <input
@@ -1217,13 +1298,14 @@ ${
                         step="0.01"
                         value="${Number(v.flatRate || 0)}"
                         onchange="Vendors.update('${v.id}',{flatRate:Number(this.value)})">
-                `}
+                `
+                }
 
                 <label>Payout Status</label>
                 <select onchange="Vendors.update('${v.id}',{payoutStatus:this.value})">
-                    <option value="Unpaid" ${v.payoutStatus==="Unpaid"?"selected":""}>Unpaid</option>
-                    <option value="Pending" ${v.payoutStatus==="Pending"?"selected":""}>Pending</option>
-                    <option value="Paid" ${v.payoutStatus==="Paid"?"selected":""}>Paid</option>
+                    <option value="Unpaid" ${v.payoutStatus === "Unpaid" ? "selected" : ""}>Unpaid</option>
+                    <option value="Pending" ${v.payoutStatus === "Pending" ? "selected" : ""}>Pending</option>
+                    <option value="Paid" ${v.payoutStatus === "Paid" ? "selected" : ""}>Paid</option>
                 </select>
 
                 <p>
@@ -1232,9 +1314,11 @@ ${
                 <h4>Products / Services Offered</h4>
 
 ${
-    !Array.isArray(v.offerings) || v.offerings.length === 0
-        ? "<p>No products or services added yet.</p>"
-        : v.offerings.map(item => `
+  !Array.isArray(v.offerings) || v.offerings.length === 0
+    ? "<p>No products or services added yet.</p>"
+    : v.offerings
+        .map(
+          (item) => `
 
             <div class="card">
 
@@ -1250,9 +1334,13 @@ ${
     )">
 
 <datalist id="vendorOfferingNames">
-    ${Vendors.offeringNames().map(name => `
+    ${Vendors.offeringNames()
+      .map(
+        (name) => `
         <option value="${this.esc(name)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
                 <label>Description</label>
 <input
@@ -1266,9 +1354,13 @@ ${
     )">
 
 <datalist id="vendorOfferingDescriptions">
-    ${Vendors.offeringDescriptions().map(description => `
+    ${Vendors.offeringDescriptions()
+      .map(
+        (description) => `
         <option value="${this.esc(description)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
 
                 <label>Quantity</label>
@@ -1288,15 +1380,15 @@ ${
                     '${item.id}',
                     {unit:this.value}
                 )">
-                    <option value="Each" ${item.unit==="Each"?"selected":""}>Each</option>
-                    <option value="Hour" ${item.unit==="Hour"?"selected":""}>Hour</option>
-                    <option value="Day" ${item.unit==="Day"?"selected":""}>Day</option>
-                    <option value="Package" ${item.unit==="Package"?"selected":""}>Package</option>
-                    <option value="Case" ${item.unit==="Case"?"selected":""}>Case</option>
-                    <option value="Box" ${item.unit==="Box"?"selected":""}>Box</option>
-                    <option value="Dozen" ${item.unit==="Dozen"?"selected":""}>Dozen</option>
-                    <option value="Flat Rate" ${item.unit==="Flat Rate"?"selected":""}>Flat Rate</option>
-                    <option value="Other" ${item.unit==="Other"?"selected":""}>Other</option>
+                    <option value="Each" ${item.unit === "Each" ? "selected" : ""}>Each</option>
+                    <option value="Hour" ${item.unit === "Hour" ? "selected" : ""}>Hour</option>
+                    <option value="Day" ${item.unit === "Day" ? "selected" : ""}>Day</option>
+                    <option value="Package" ${item.unit === "Package" ? "selected" : ""}>Package</option>
+                    <option value="Case" ${item.unit === "Case" ? "selected" : ""}>Case</option>
+                    <option value="Box" ${item.unit === "Box" ? "selected" : ""}>Box</option>
+                    <option value="Dozen" ${item.unit === "Dozen" ? "selected" : ""}>Dozen</option>
+                    <option value="Flat Rate" ${item.unit === "Flat Rate" ? "selected" : ""}>Flat Rate</option>
+                    <option value="Other" ${item.unit === "Other" ? "selected" : ""}>Other</option>
                 </select>
 
                 <label>Price</label>
@@ -1334,7 +1426,9 @@ ${
 
             </div>
 
-        `).join("")
+        `,
+        )
+        .join("")
 }
 
 <button onclick="
@@ -1381,12 +1475,14 @@ ${
 
             </div>
 
-        `).join("")}
+        `,
+                )
+                .join("")
+        }
     `;
-},
-    
-renderInventory() {
+  },
 
+  renderInventory() {
     const items = Inventory.all();
     const vendors = Vendors.active();
 
@@ -1436,9 +1532,12 @@ renderInventory() {
 
         <br>
 
-        ${items.length === 0 ? "<p>No inventory items added yet.</p>" :
-
-        items.map(item => `
+        ${
+          items.length === 0
+            ? "<p>No inventory items added yet.</p>"
+            : items
+                .map(
+                  (item) => `
 
             <div class="card">
 
@@ -1455,15 +1554,23 @@ renderInventory() {
     onchange="Inventory.update('${item.id}',{category:this.value})">
 
 <datalist id="inventoryCategories">
-    ${Inventory.categories().map(category => `
+    ${Inventory.categories()
+      .map(
+        (category) => `
         <option value="${this.esc(category)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
 
 <datalist id="inventoryCategories">
-    ${Inventory.categories().map(category => `
+    ${Inventory.categories()
+      .map(
+        (category) => `
         <option value="${this.esc(category)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
 
                 <label>SKU</label>
@@ -1476,13 +1583,17 @@ renderInventory() {
 
                     <option value="">No Vendor</option>
 
-                    ${vendors.map(v => `
+                    ${vendors
+                      .map(
+                        (v) => `
                         <option
                             value="${v.id}"
                             ${item.vendorId === v.id ? "selected" : ""}>
                             ${this.esc(v.name || "Unnamed Vendor")}
                         </option>
-                    `).join("")}
+                    `,
+                      )
+                      .join("")}
 
                 </select>
 
@@ -1493,15 +1604,15 @@ renderInventory() {
                 <label>Purchase Unit</label>
                 <select onchange="Inventory.update('${item.id}',{purchaseUnit:this.value});UI.renderInventory();">
 
-                    <option value="Piece" ${item.purchaseUnit==="Piece"?"selected":""}>Piece</option>
-                    <option value="Pack" ${item.purchaseUnit==="Pack"?"selected":""}>Pack</option>
-                    <option value="Box" ${item.purchaseUnit==="Box"?"selected":""}>Box</option>
-                    <option value="Case" ${item.purchaseUnit==="Case"?"selected":""}>Case</option>
-                    <option value="Bundle" ${item.purchaseUnit==="Bundle"?"selected":""}>Bundle</option>
-                    <option value="Dozen" ${item.purchaseUnit==="Dozen"?"selected":""}>Dozen</option>
-                    <option value="Roll" ${item.purchaseUnit==="Roll"?"selected":""}>Roll</option>
-                    <option value="Set" ${item.purchaseUnit==="Set"?"selected":""}>Set</option>
-                    <option value="Other" ${item.purchaseUnit==="Other"?"selected":""}>Other</option>
+                    <option value="Piece" ${item.purchaseUnit === "Piece" ? "selected" : ""}>Piece</option>
+                    <option value="Pack" ${item.purchaseUnit === "Pack" ? "selected" : ""}>Pack</option>
+                    <option value="Box" ${item.purchaseUnit === "Box" ? "selected" : ""}>Box</option>
+                    <option value="Case" ${item.purchaseUnit === "Case" ? "selected" : ""}>Case</option>
+                    <option value="Bundle" ${item.purchaseUnit === "Bundle" ? "selected" : ""}>Bundle</option>
+                    <option value="Dozen" ${item.purchaseUnit === "Dozen" ? "selected" : ""}>Dozen</option>
+                    <option value="Roll" ${item.purchaseUnit === "Roll" ? "selected" : ""}>Roll</option>
+                    <option value="Set" ${item.purchaseUnit === "Set" ? "selected" : ""}>Set</option>
+                    <option value="Other" ${item.purchaseUnit === "Other" ? "selected" : ""}>Other</option>
 
                 </select>
 
@@ -1524,19 +1635,19 @@ renderInventory() {
 
                     <option
                         value="Total Purchase"
-                        ${item.purchaseCostType==="Total Purchase"?"selected":""}>
+                        ${item.purchaseCostType === "Total Purchase" ? "selected" : ""}>
                         Total Purchase
                     </option>
 
                     <option
                         value="Per Purchase Unit"
-                        ${item.purchaseCostType==="Per Purchase Unit"?"selected":""}>
+                        ${item.purchaseCostType === "Per Purchase Unit" ? "selected" : ""}>
                         Per ${this.esc(item.purchaseUnit || "Purchase Unit")}
                     </option>
 
                     <option
                         value="Per Individual Unit"
-                        ${item.purchaseCostType==="Per Individual Unit"?"selected":""}>
+                        ${item.purchaseCostType === "Per Individual Unit" ? "selected" : ""}>
                         Per Individual Unit
                     </option>
 
@@ -1605,11 +1716,11 @@ renderInventory() {
                 <label>Status</label>
                 <select onchange="Inventory.update('${item.id}',{status:this.value});UI.renderInventory();">
 
-                    <option value="Active" ${item.status==="Active"?"selected":""}>
+                    <option value="Active" ${item.status === "Active" ? "selected" : ""}>
                         Active
                     </option>
 
-                    <option value="Inactive" ${item.status==="Inactive"?"selected":""}>
+                    <option value="Inactive" ${item.status === "Inactive" ? "selected" : ""}>
                         Inactive
                     </option>
 
@@ -1621,9 +1732,9 @@ renderInventory() {
                 </p>
 
                 ${
-                    Number(item.quantity || 0) <= Number(item.minimum || 0)
-                        ? `<p>${this.statusBadge("Low Stock")}</p>`
-                        : ""
+                  Number(item.quantity || 0) <= Number(item.minimum || 0)
+                    ? `<p>${this.statusBadge("Low Stock")}</p>`
+                    : ""
                 }
 
                 <label>Notes</label>
@@ -1643,11 +1754,13 @@ renderInventory() {
 
             </div>
 
-        `).join("")}
+        `,
+                )
+                .join("")
+        }
     `;
-},
-    renderCRM() {
-
+  },
+  renderCRM() {
     const customers = CRM.all();
 
     document.getElementById("workspace").innerHTML = `
@@ -1660,46 +1773,33 @@ renderInventory() {
 
         <br><br>
 
-        ${customers.length === 0
+        ${
+          customers.length === 0
             ? "<p>No customers added yet.</p>"
-            : customers.map(c => `
+            : customers
+                .map(
+                  (c) => `
 
                 <div class="card">
 
                     <h3>
                         ${this.esc(
-                            CRM.fullName(c) ||
-                            c.company ||
-                            "Unnamed Customer"
+                          CRM.fullName(c) || c.company || "Unnamed Customer",
                         )}
                     </h3>
 
-                    ${
-                        c.company
-                            ? `<p>${this.esc(c.company)}</p>`
-                            : ""
-                    }
+                    ${c.company ? `<p>${this.esc(c.company)}</p>` : ""}
+
+                    ${c.email ? `<p>${this.esc(c.email)}</p>` : ""}
+
+                    ${c.phone ? `<p>${this.esc(c.phone)}</p>` : ""}
 
                     ${
-                        c.email
-                            ? `<p>${this.esc(c.email)}</p>`
-                            : ""
-                    }
-
-                    ${
-                        c.phone
-                            ? `<p>${this.esc(c.phone)}</p>`
-                            : ""
-                    }
-
-                    ${
-                        c.city || c.state
-                            ? `<p>${this.esc(
-                                [c.city, c.state]
-                                    .filter(Boolean)
-                                    .join(", ")
-                            )}</p>`
-                            : ""
+                      c.city || c.state
+                        ? `<p>${this.esc(
+                            [c.city, c.state].filter(Boolean).join(", "),
+                          )}</p>`
+                        : ""
                     }
 
                     <button
@@ -1709,17 +1809,18 @@ renderInventory() {
 
                 </div>
 
-            `).join("")
+            `,
+                )
+                .join("")
         }
     `;
-},
-        renderCustomerDetail(id) {
-
+  },
+  renderCustomerDetail(id) {
     const c = CRM.get(id);
 
     if (!c) {
-        this.renderCRM();
-        return;
+      this.renderCRM();
+      return;
     }
 
     document.getElementById("workspace").innerHTML = `
@@ -1733,11 +1834,7 @@ renderInventory() {
         <div class="card">
 
             <h2>
-                ${this.esc(
-                    CRM.fullName(c) ||
-                    c.company ||
-                    "Unnamed Customer"
-                )}
+                ${this.esc(CRM.fullName(c) || c.company || "Unnamed Customer")}
             </h2>
 
             <p><strong>First Name:</strong> ${this.esc(c.firstName || "—")}</p>
@@ -1770,9 +1867,11 @@ renderInventory() {
             <h4>Products / Services Offered</h4>
 
 ${
-    !Array.isArray(c.offerings) || c.offerings.length === 0
-        ? "<p>No products or services added.</p>"
-        : c.offerings.map(item => `
+  !Array.isArray(c.offerings) || c.offerings.length === 0
+    ? "<p>No products or services added.</p>"
+    : c.offerings
+        .map(
+          (item) => `
 
             <div class="card">
 
@@ -1808,7 +1907,9 @@ ${
 
             </div>
 
-        `).join("")
+        `,
+        )
+        .join("")
 }
                 <strong>Tags:</strong>
                 ${this.esc((c.tags || []).join(", ") || "—")}
@@ -1827,14 +1928,13 @@ ${
 
         </div>
     `;
-},
-        renderCustomerEdit(id) {
-
+  },
+  renderCustomerEdit(id) {
     const c = CRM.get(id);
 
     if (!c) {
-        this.renderCRM();
-        return;
+      this.renderCRM();
+      return;
     }
 
     document.getElementById("workspace").innerHTML = `
@@ -1959,9 +2059,11 @@ ${
 <h4>Products / Services Offered</h4>
 
 ${
-    !Array.isArray(c.offerings) || c.offerings.length === 0
-        ? "<p>No products or services added yet.</p>"
-        : c.offerings.map(item => `
+  !Array.isArray(c.offerings) || c.offerings.length === 0
+    ? "<p>No products or services added yet.</p>"
+    : c.offerings
+        .map(
+          (item) => `
 
             <div class="card">
 
@@ -1977,9 +2079,13 @@ ${
     )">
 
 <datalist id="crmOfferingNames">
-    ${CRM.offeringNames().map(name => `
+    ${CRM.offeringNames()
+      .map(
+        (name) => `
         <option value="${this.esc(name)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
 
                 <label>Description</label>
@@ -1994,9 +2100,13 @@ ${
     )">
 
 <datalist id="crmOfferingDescriptions">
-    ${CRM.offeringDescriptions().map(description => `
+    ${CRM.offeringDescriptions()
+      .map(
+        (description) => `
         <option value="${this.esc(description)}">
-    `).join("")}
+    `,
+      )
+      .join("")}
 </datalist>
 
                 <label>Quantity</label>
@@ -2016,15 +2126,15 @@ ${
                     '${item.id}',
                     {unit:this.value}
                 )">
-                    <option value="Each" ${item.unit==="Each"?"selected":""}>Each</option>
-                    <option value="Hour" ${item.unit==="Hour"?"selected":""}>Hour</option>
-                    <option value="Day" ${item.unit==="Day"?"selected":""}>Day</option>
-                    <option value="Package" ${item.unit==="Package"?"selected":""}>Package</option>
-                    <option value="Case" ${item.unit==="Case"?"selected":""}>Case</option>
-                    <option value="Box" ${item.unit==="Box"?"selected":""}>Box</option>
-                    <option value="Dozen" ${item.unit==="Dozen"?"selected":""}>Dozen</option>
-                    <option value="Flat Rate" ${item.unit==="Flat Rate"?"selected":""}>Flat Rate</option>
-                    <option value="Other" ${item.unit==="Other"?"selected":""}>Other</option>
+                    <option value="Each" ${item.unit === "Each" ? "selected" : ""}>Each</option>
+                    <option value="Hour" ${item.unit === "Hour" ? "selected" : ""}>Hour</option>
+                    <option value="Day" ${item.unit === "Day" ? "selected" : ""}>Day</option>
+                    <option value="Package" ${item.unit === "Package" ? "selected" : ""}>Package</option>
+                    <option value="Case" ${item.unit === "Case" ? "selected" : ""}>Case</option>
+                    <option value="Box" ${item.unit === "Box" ? "selected" : ""}>Box</option>
+                    <option value="Dozen" ${item.unit === "Dozen" ? "selected" : ""}>Dozen</option>
+                    <option value="Flat Rate" ${item.unit === "Flat Rate" ? "selected" : ""}>Flat Rate</option>
+                    <option value="Other" ${item.unit === "Other" ? "selected" : ""}>Other</option>
                 </select>
 
                 <label>Price</label>
@@ -2059,7 +2169,9 @@ ${
 
             </div>
 
-        `).join("")
+        `,
+        )
+        .join("")
 }
 
 <button onclick="
@@ -2118,15 +2230,14 @@ ${
 
         </div>
     `;
-},
-    renderFinance() {
+  },
+  renderFinance() {
+    const transactions = Finance.all();
+    const events = Events.all();
+    const vendors = Vendors.active();
+    const customers = CRM.all();
 
-        const transactions = Finance.all();
-        const events = Events.all();
-        const vendors = Vendors.active();
-        const customers = CRM.all();
-
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
             <h2>Finance</h2>
 
@@ -2147,9 +2258,12 @@ ${
 
             <br>
 
-            ${transactions.length === 0 ? "<p>No transactions recorded yet.</p>" :
-
-            transactions.map(t => `
+            ${
+              transactions.length === 0
+                ? "<p>No transactions recorded yet.</p>"
+                : transactions
+                    .map(
+                      (t) => `
 
                 <div class="card">
 
@@ -2159,8 +2273,8 @@ ${
 
                     <label>Type</label>
                     <select onchange="Finance.update('${t.id}',{type:this.value});UI.renderFinance();">
-                        <option value="Income" ${t.type==="Income"?"selected":""}>Income</option>
-                        <option value="Expense" ${t.type==="Expense"?"selected":""}>Expense</option>
+                        <option value="Income" ${t.type === "Income" ? "selected" : ""}>Income</option>
+                        <option value="Expense" ${t.type === "Expense" ? "selected" : ""}>Expense</option>
                     </select>
 
                     <label>Description</label>
@@ -2184,12 +2298,16 @@ ${
 
                         <option value="">No Event</option>
 
-                        ${events.map(event => `
+                        ${events
+                          .map(
+                            (event) => `
                             <option value="${event.id}"
                                 ${t.eventId === event.id ? "selected" : ""}>
                                 ${this.esc(event.name || "Unnamed Event")}
                             </option>
-                        `).join("")}
+                        `,
+                          )
+                          .join("")}
 
                     </select>
 
@@ -2198,12 +2316,16 @@ ${
 
                         <option value="">No Vendor</option>
 
-                        ${vendors.map(vendor => `
+                        ${vendors
+                          .map(
+                            (vendor) => `
                             <option value="${vendor.id}"
                                 ${t.vendorId === vendor.id ? "selected" : ""}>
                                 ${this.esc(vendor.name || "Unnamed Vendor")}
                             </option>
-                        `).join("")}
+                        `,
+                          )
+                          .join("")}
 
                     </select>
 
@@ -2212,31 +2334,36 @@ ${
 
                         <option value="">No Customer</option>
 
-                        ${customers.map(customer => `
+                        ${customers
+                          .map(
+                            (customer) => `
                             <option value="${customer.id}"
                                 ${t.customerId === customer.id ? "selected" : ""}>
                                 ${this.esc(
-                                    `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "Unnamed Customer"
+                                  `${customer.firstName || ""} ${customer.lastName || ""}`.trim() ||
+                                    "Unnamed Customer",
                                 )}
                             </option>
-                        `).join("")}
+                        `,
+                          )
+                          .join("")}
 
                     </select>
 
                     <label>Payment Method</label>
                     <select onchange="Finance.update('${t.id}',{paymentMethod:this.value})">
-                        <option value="Cash" ${t.paymentMethod==="Cash"?"selected":""}>Cash</option>
-                        <option value="Card" ${t.paymentMethod==="Card"?"selected":""}>Card</option>
-                        <option value="Bank Transfer" ${t.paymentMethod==="Bank Transfer"?"selected":""}>Bank Transfer</option>
-                        <option value="Check" ${t.paymentMethod==="Check"?"selected":""}>Check</option>
-                        <option value="Other" ${t.paymentMethod==="Other"?"selected":""}>Other</option>
+                        <option value="Cash" ${t.paymentMethod === "Cash" ? "selected" : ""}>Cash</option>
+                        <option value="Card" ${t.paymentMethod === "Card" ? "selected" : ""}>Card</option>
+                        <option value="Bank Transfer" ${t.paymentMethod === "Bank Transfer" ? "selected" : ""}>Bank Transfer</option>
+                        <option value="Check" ${t.paymentMethod === "Check" ? "selected" : ""}>Check</option>
+                        <option value="Other" ${t.paymentMethod === "Other" ? "selected" : ""}>Other</option>
                     </select>
 
                     <label>Status</label>
                     <select onchange="Finance.update('${t.id}',{status:this.value});UI.renderFinance();">
-                        <option value="Completed" ${t.status==="Completed"?"selected":""}>Completed</option>
-                        <option value="Pending" ${t.status==="Pending"?"selected":""}>Pending</option>
-                        <option value="Cancelled" ${t.status==="Cancelled"?"selected":""}>Cancelled</option>
+                        <option value="Completed" ${t.status === "Completed" ? "selected" : ""}>Completed</option>
+                        <option value="Pending" ${t.status === "Pending" ? "selected" : ""}>Pending</option>
+                        <option value="Cancelled" ${t.status === "Cancelled" ? "selected" : ""}>Cancelled</option>
                     </select>
                     <p>
     Status: ${this.statusBadge(t.status)}
@@ -2258,16 +2385,18 @@ ${
 
                 </div>
 
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
         `;
-    },
+  },
 
-    renderAssets() {
+  renderAssets() {
+    const assets = Assets.all();
+    const events = Events.all();
 
-        const assets = Assets.all();
-        const events = Events.all();
-
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
             <h2>Asset Management</h2>
 
@@ -2289,9 +2418,12 @@ ${
 
             <br>
 
-            ${assets.length === 0 ? "<p>No assets added yet.</p>" :
-
-            assets.map(a => `
+            ${
+              assets.length === 0
+                ? "<p>No assets added yet.</p>"
+                : assets
+                    .map(
+                      (a) => `
 
                 <div class="card">
 
@@ -2332,21 +2464,25 @@ ${
 
                         <option value="">No Event</option>
 
-                        ${events.map(event => `
+                        ${events
+                          .map(
+                            (event) => `
                             <option value="${event.id}"
                                 ${a.assignedEventId === event.id ? "selected" : ""}>
                                 ${this.esc(event.name || "Unnamed Event")}
                             </option>
-                        `).join("")}
+                        `,
+                          )
+                          .join("")}
 
                     </select>
 
                     <label>Status</label>
                     <select onchange="Assets.update('${a.id}',{status:this.value});UI.renderAssets();">
-                        <option value="Available" ${a.status==="Available"?"selected":""}>Available</option>
-                        <option value="Assigned" ${a.status==="Assigned"?"selected":""}>Assigned</option>
-                        <option value="Maintenance" ${a.status==="Maintenance"?"selected":""}>Maintenance</option>
-                        <option value="Retired" ${a.status==="Retired"?"selected":""}>Retired</option>
+                        <option value="Available" ${a.status === "Available" ? "selected" : ""}>Available</option>
+                        <option value="Assigned" ${a.status === "Assigned" ? "selected" : ""}>Assigned</option>
+                        <option value="Maintenance" ${a.status === "Maintenance" ? "selected" : ""}>Maintenance</option>
+                        <option value="Retired" ${a.status === "Retired" ? "selected" : ""}>Retired</option>
                     </select>
                     <p>
     Status: ${this.statusBadge(a.status)}
@@ -2354,10 +2490,10 @@ ${
 
                     <label>Condition</label>
                     <select onchange="Assets.update('${a.id}',{condition:this.value});UI.renderAssets();">
-                        <option value="Excellent" ${a.condition==="Excellent"?"selected":""}>Excellent</option>
-                        <option value="Good" ${a.condition==="Good"?"selected":""}>Good</option>
-                        <option value="Fair" ${a.condition==="Fair"?"selected":""}>Fair</option>
-                        <option value="Needs Repair" ${a.condition==="Needs Repair"?"selected":""}>Needs Repair</option>
+                        <option value="Excellent" ${a.condition === "Excellent" ? "selected" : ""}>Excellent</option>
+                        <option value="Good" ${a.condition === "Good" ? "selected" : ""}>Good</option>
+                        <option value="Fair" ${a.condition === "Fair" ? "selected" : ""}>Fair</option>
+                        <option value="Needs Repair" ${a.condition === "Needs Repair" ? "selected" : ""}>Needs Repair</option>
  </select>
                     
  <p>
@@ -2391,16 +2527,18 @@ ${
 
                 </div>
 
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
         `;
-    },
+  },
 
-    renderCalendar() {
+  renderCalendar() {
+    const reminders = Calendar.all();
+    const events = Events.all();
 
-        const reminders = Calendar.all();
-        const events = Events.all();
-
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
             <h2>Calendar & Reminders</h2>
 
@@ -2421,9 +2559,12 @@ ${
 
             <br>
 
-            ${reminders.length === 0 ? "<p>No reminders created yet.</p>" :
-
-            reminders.map(r => `
+            ${
+              reminders.length === 0
+                ? "<p>No reminders created yet.</p>"
+                : reminders
+                    .map(
+                      (r) => `
 
                 <div class="card">
 
@@ -2439,12 +2580,16 @@ ${
 
                         <option value="">No Event</option>
 
-                        ${events.map(event => `
+                        ${events
+                          .map(
+                            (event) => `
                             <option value="${event.id}"
                                 ${r.eventId === event.id ? "selected" : ""}>
                                 ${this.esc(event.name || "Unnamed Event")}
                             </option>
-                        `).join("")}
+                        `,
+                          )
+                          .join("")}
 
                     </select>
 
@@ -2458,19 +2603,19 @@ ${
 
                     <label>Category</label>
                     <select onchange="Calendar.update('${r.id}',{category:this.value})">
-                        <option value="General" ${r.category==="General"?"selected":""}>General</option>
-                        <option value="Event" ${r.category==="Event"?"selected":""}>Event</option>
-                        <option value="Vendor" ${r.category==="Vendor"?"selected":""}>Vendor</option>
-                        <option value="Customer" ${r.category==="Customer"?"selected":""}>Customer</option>
-                        <option value="Inventory" ${r.category==="Inventory"?"selected":""}>Inventory</option>
-                        <option value="Finance" ${r.category==="Finance"?"selected":""}>Finance</option>
+                        <option value="General" ${r.category === "General" ? "selected" : ""}>General</option>
+                        <option value="Event" ${r.category === "Event" ? "selected" : ""}>Event</option>
+                        <option value="Vendor" ${r.category === "Vendor" ? "selected" : ""}>Vendor</option>
+                        <option value="Customer" ${r.category === "Customer" ? "selected" : ""}>Customer</option>
+                        <option value="Inventory" ${r.category === "Inventory" ? "selected" : ""}>Inventory</option>
+                        <option value="Finance" ${r.category === "Finance" ? "selected" : ""}>Finance</option>
                     </select>
 
                     <label>Priority</label>
-<select onchange="Calendar.update('${r.id}',{priority:this.value});UI.renderCalendar();">                        <option value="Low" ${r.priority==="Low"?"selected":""}>Low</option>
-                        <option value="Normal" ${r.priority==="Normal"?"selected":""}>Normal</option>
-                        <option value="High" ${r.priority==="High"?"selected":""}>High</option>
-                        <option value="Urgent" ${r.priority==="Urgent"?"selected":""}>Urgent</option>
+<select onchange="Calendar.update('${r.id}',{priority:this.value});UI.renderCalendar();">                        <option value="Low" ${r.priority === "Low" ? "selected" : ""}>Low</option>
+                        <option value="Normal" ${r.priority === "Normal" ? "selected" : ""}>Normal</option>
+                        <option value="High" ${r.priority === "High" ? "selected" : ""}>High</option>
+                        <option value="Urgent" ${r.priority === "Urgent" ? "selected" : ""}>Urgent</option>
                     </select>
                     <p>
     Priority: ${this.statusBadge(r.priority)}
@@ -2483,17 +2628,21 @@ ${
                         Recurring
                     </label>
 
-                    ${r.recurring ? `
+                    ${
+                      r.recurring
+                        ? `
 
                         <label>Recurrence</label>
                         <select onchange="Calendar.update('${r.id}',{recurrence:this.value})">
-                            <option value="None" ${r.recurrence==="None"?"selected":""}>None</option>
-                            <option value="Daily" ${r.recurrence==="Daily"?"selected":""}>Daily</option>
-                            <option value="Weekly" ${r.recurrence==="Weekly"?"selected":""}>Weekly</option>
-                            <option value="Monthly" ${r.recurrence==="Monthly"?"selected":""}>Monthly</option>
+                            <option value="None" ${r.recurrence === "None" ? "selected" : ""}>None</option>
+                            <option value="Daily" ${r.recurrence === "Daily" ? "selected" : ""}>Daily</option>
+                            <option value="Weekly" ${r.recurrence === "Weekly" ? "selected" : ""}>Weekly</option>
+                            <option value="Monthly" ${r.recurrence === "Monthly" ? "selected" : ""}>Monthly</option>
                         </select>
 
-                    ` : ""}
+                    `
+                        : ""
+                    }
 
                     <label>
                         <input type="checkbox"
@@ -2502,14 +2651,12 @@ ${
                         Completed
                     </label>
                     <p>
-    ${r.completed
+    ${
+      r.completed
         ? this.statusBadge("Completed")
-        : (
-            r.date &&
-            r.date < new Date().toISOString().slice(0,10)
-                ? this.statusBadge("Overdue")
-                : this.statusBadge("Pending")
-        )
+        : r.date && r.date < new Date().toISOString().slice(0, 10)
+          ? this.statusBadge("Overdue")
+          : this.statusBadge("Pending")
     }
 </p>
 
@@ -2526,20 +2673,22 @@ ${
 
                 </div>
 
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
         `;
-    },
+  },
 
-    renderReports() {
+  renderReports() {
+    const summary = Reports.summary();
+    const financial = Reports.financial();
+    const inventory = Reports.inventory();
+    const customers = Reports.customers();
+    const assets = Reports.assets();
+    const calendar = Reports.calendar();
 
-        const summary = Reports.summary();
-        const financial = Reports.financial();
-        const inventory = Reports.inventory();
-        const customers = Reports.customers();
-        const assets = Reports.assets();
-        const calendar = Reports.calendar();
-
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
             <h2>Business Reports</h2>
 
@@ -2593,13 +2742,12 @@ ${
                 Download Full Report
             </button>
         `;
-    },
+  },
 
-    renderSettings() {
+  renderSettings() {
+    const s = Settings.data;
 
-        const s = Settings.data;
-
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
 
             <h2>Settings</h2>
 
@@ -2607,8 +2755,8 @@ ${
 
                 <label>Theme</label>
                 <select id="theme">
-                    <option value="light" ${s.theme==="light"?"selected":""}>Light</option>
-                    <option value="dark" ${s.theme==="dark"?"selected":""}>Dark</option>
+                    <option value="light" ${s.theme === "light" ? "selected" : ""}>Light</option>
+                    <option value="dark" ${s.theme === "dark" ? "selected" : ""}>Dark</option>
                 </select>
 
                 <label>Currency</label>
@@ -2619,16 +2767,16 @@ ${
 
                 <label>Date Format</label>
                 <select id="dateFormat">
-                    <option value="MM/DD/YYYY" ${s.dateFormat==="MM/DD/YYYY"?"selected":""}>MM/DD/YYYY</option>
-                    <option value="DD/MM/YYYY" ${s.dateFormat==="DD/MM/YYYY"?"selected":""}>DD/MM/YYYY</option>
-                    <option value="YYYY-MM-DD" ${s.dateFormat==="YYYY-MM-DD"?"selected":""}>YYYY-MM-DD</option>
+                    <option value="MM/DD/YYYY" ${s.dateFormat === "MM/DD/YYYY" ? "selected" : ""}>MM/DD/YYYY</option>
+                    <option value="DD/MM/YYYY" ${s.dateFormat === "DD/MM/YYYY" ? "selected" : ""}>DD/MM/YYYY</option>
+                    <option value="YYYY-MM-DD" ${s.dateFormat === "YYYY-MM-DD" ? "selected" : ""}>YYYY-MM-DD</option>
                 </select>
 
                 <label>Time Format</label>
-                <select id="timeFormat">
-                    <option value="12" ${s.timeFormat==="12"?"selected":""}>12 Hour</option>
-                    <option value="24" ${s.timeFormat==="24"?"selected":""}>24 Hour</option>
+                <select id="timeFormat" disabled aria-describedby="timeFormatHelp">
+                    <option value="12" selected>12 Hour (AM/PM) — System-wide</option>
                 </select>
+                <small id="timeFormatHelp">All planner, staff, customer, ticket, menu, reminder, and email times use AM/PM.</small>
 
                 <label>Default Tax Rate (%)</label>
                 <input id="defaultTaxRate" type="number" step="0.01" value="${Number(s.defaultTaxRate || 0)}">
@@ -2694,6 +2842,5 @@ ${
 
             </div>
         `;
-    }
-
+  },
 };

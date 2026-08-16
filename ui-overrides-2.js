@@ -4,29 +4,28 @@
  */
 
 (function () {
+  function eventName(id) {
+    const event = Events.get(id);
+    return event ? event.name || "Unnamed Event" : "—";
+  }
 
-    function eventName(id) {
-        const event = Events.get(id);
-        return event ? (event.name || "Unnamed Event") : "—";
-    }
+  function vendorName(id) {
+    const vendor = Vendors.get(id);
+    return vendor ? vendor.name || "Unnamed Vendor" : "—";
+  }
 
-    function vendorName(id) {
-        const vendor = Vendors.get(id);
-        return vendor ? (vendor.name || "Unnamed Vendor") : "—";
-    }
+  function customerName(id) {
+    const customer = CRM.get(id);
+    if (!customer) return "—";
+    return CRM.fullName(customer) || customer.company || "Unnamed Customer";
+  }
 
-    function customerName(id) {
-        const customer = CRM.get(id);
-        if (!customer) return "—";
-        return CRM.fullName(customer) || customer.company || "Unnamed Customer";
-    }
+  /* ---------------- FINANCE ---------------- */
 
-    /* ---------------- FINANCE ---------------- */
+  UI.renderFinance = function () {
+    const transactions = Finance.all();
 
-    UI.renderFinance = function () {
-        const transactions = Finance.all();
-
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
             <h2>Finance</h2>
             <button onclick="const t=Finance.create({type:'Expense'});UI.renderFinanceEdit(t.id);">+ Add Transaction</button>
             <br><br>
@@ -40,7 +39,12 @@
 
             <br>
 
-            ${transactions.length === 0 ? "<p>No transactions recorded yet.</p>" : transactions.map(t => `
+            ${
+              transactions.length === 0
+                ? "<p>No transactions recorded yet.</p>"
+                : transactions
+                    .map(
+                      (t) => `
                 <div class="card">
                     <h3>${this.esc(t.description || "Unnamed Transaction")}</h3>
                     <p>${this.esc(t.date || "No date")} — ${this.esc(t.type || "Expense")}</p>
@@ -49,15 +53,18 @@
                     <p>Status: ${this.statusBadge(t.status || "Completed")}</p>
                     <button onclick="UI.renderFinanceDetail('${t.id}')">View Transaction</button>
                 </div>
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
         `;
-    };
+  };
 
-    UI.renderFinanceDetail = function (id) {
-        const t = Finance.get(id);
-        if (!t) return this.renderFinance();
+  UI.renderFinanceDetail = function (id) {
+    const t = Finance.get(id);
+    if (!t) return this.renderFinance();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderFinance()">← Back to Finance</button>
             <br><br>
             <div class="card">
@@ -78,16 +85,16 @@
                 <button onclick="if(confirm('Delete this transaction?')){Finance.remove('${t.id}');UI.renderFinance();}">Delete Transaction</button>
             </div>
         `;
-    };
+  };
 
-    UI.renderFinanceEdit = function (id) {
-        const t = Finance.get(id);
-        if (!t) return this.renderFinance();
-        const events = Events.all();
-        const vendors = Vendors.all();
-        const customers = CRM.all();
+  UI.renderFinanceEdit = function (id) {
+    const t = Finance.get(id);
+    if (!t) return this.renderFinance();
+    const events = Events.all();
+    const vendors = Vendors.all();
+    const customers = CRM.all();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderFinanceDetail('${t.id}')">← Cancel</button>
             <br><br>
             <div class="card">
@@ -98,7 +105,7 @@
 
                 <label>Type</label>
                 <select id="financeType">
-                    ${["Income","Expense"].map(x => `<option value="${x}" ${t.type === x ? "selected" : ""}>${x}</option>`).join("")}
+                    ${["Income", "Expense"].map((x) => `<option value="${x}" ${t.type === x ? "selected" : ""}>${x}</option>`).join("")}
                 </select>
 
                 <label>Description</label>
@@ -116,29 +123,29 @@
                 <label>Event</label>
                 <select id="financeEventId">
                     <option value="">No Event</option>
-                    ${events.map(event => `<option value="${event.id}" ${t.eventId === event.id ? "selected" : ""}>${this.esc(event.name || "Unnamed Event")}</option>`).join("")}
+                    ${events.map((event) => `<option value="${event.id}" ${t.eventId === event.id ? "selected" : ""}>${this.esc(event.name || "Unnamed Event")}</option>`).join("")}
                 </select>
 
                 <label>Vendor</label>
                 <select id="financeVendorId">
                     <option value="">No Vendor</option>
-                    ${vendors.map(vendor => `<option value="${vendor.id}" ${t.vendorId === vendor.id ? "selected" : ""}>${this.esc(vendor.name || "Unnamed Vendor")}</option>`).join("")}
+                    ${vendors.map((vendor) => `<option value="${vendor.id}" ${t.vendorId === vendor.id ? "selected" : ""}>${this.esc(vendor.name || "Unnamed Vendor")}</option>`).join("")}
                 </select>
 
                 <label>Customer</label>
                 <select id="financeCustomerId">
                     <option value="">No Customer</option>
-                    ${customers.map(customer => `<option value="${customer.id}" ${t.customerId === customer.id ? "selected" : ""}>${this.esc(CRM.fullName(customer) || customer.company || "Unnamed Customer")}</option>`).join("")}
+                    ${customers.map((customer) => `<option value="${customer.id}" ${t.customerId === customer.id ? "selected" : ""}>${this.esc(CRM.fullName(customer) || customer.company || "Unnamed Customer")}</option>`).join("")}
                 </select>
 
                 <label>Payment Method</label>
                 <select id="financePaymentMethod">
-                    ${["Cash","Card","Bank Transfer","Check","Other"].map(x => `<option value="${x}" ${t.paymentMethod === x ? "selected" : ""}>${x}</option>`).join("")}
+                    ${["Cash", "Card", "Bank Transfer", "Check", "Other"].map((x) => `<option value="${x}" ${t.paymentMethod === x ? "selected" : ""}>${x}</option>`).join("")}
                 </select>
 
                 <label>Status</label>
                 <select id="financeStatus">
-                    ${["Completed","Pending","Cancelled"].map(x => `<option value="${x}" ${t.status === x ? "selected" : ""}>${x}</option>`).join("")}
+                    ${["Completed", "Pending", "Cancelled"].map((x) => `<option value="${x}" ${t.status === x ? "selected" : ""}>${x}</option>`).join("")}
                 </select>
 
                 <label>Notes</label>
@@ -164,14 +171,14 @@
                 ">Save Transaction</button>
             </div>
         `;
-    };
+  };
 
-    /* ---------------- ASSETS ---------------- */
+  /* ---------------- ASSETS ---------------- */
 
-    UI.renderAssets = function () {
-        const assets = Assets.all();
+  UI.renderAssets = function () {
+    const assets = Assets.all();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
             <h2>Asset Management</h2>
             <button onclick="const a=Assets.create();UI.renderAssetEdit(a.id);">+ Add Asset</button>
             <br><br>
@@ -186,7 +193,12 @@
 
             <br>
 
-            ${assets.length === 0 ? "<p>No assets added yet.</p>" : assets.map(a => `
+            ${
+              assets.length === 0
+                ? "<p>No assets added yet.</p>"
+                : assets
+                    .map(
+                      (a) => `
                 <div class="card">
                     <h3>${this.esc(a.name || "Unnamed Asset")}</h3>
                     ${a.category ? `<p>${this.esc(a.category)}</p>` : ""}
@@ -195,15 +207,18 @@
                     <p>Condition: ${this.statusBadge(a.condition || "Good")}</p>
                     <button onclick="UI.renderAssetDetail('${a.id}')">View Asset</button>
                 </div>
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
         `;
-    };
+  };
 
-    UI.renderAssetDetail = function (id) {
-        const a = Assets.get(id);
-        if (!a) return this.renderAssets();
+  UI.renderAssetDetail = function (id) {
+    const a = Assets.get(id);
+    if (!a) return this.renderAssets();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderAssets()">← Back to Assets</button>
             <br><br>
             <div class="card">
@@ -227,14 +242,14 @@
                 <button onclick="if(confirm('Delete this asset?')){Assets.remove('${a.id}');UI.renderAssets();}">Delete Asset</button>
             </div>
         `;
-    };
+  };
 
-    UI.renderAssetEdit = function (id) {
-        const a = Assets.get(id);
-        if (!a) return this.renderAssets();
-        const events = Events.all();
+  UI.renderAssetEdit = function (id) {
+    const a = Assets.get(id);
+    if (!a) return this.renderAssets();
+    const events = Events.all();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderAssetDetail('${a.id}')">← Cancel</button>
             <br><br>
             <div class="card">
@@ -252,14 +267,14 @@
                 <label>Assigned Event</label>
                 <select id="assetAssignedEventId">
                     <option value="">No Event</option>
-                    ${events.map(event => `<option value="${event.id}" ${a.assignedEventId === event.id ? "selected" : ""}>${this.esc(event.name || "Unnamed Event")}</option>`).join("")}
+                    ${events.map((event) => `<option value="${event.id}" ${a.assignedEventId === event.id ? "selected" : ""}>${this.esc(event.name || "Unnamed Event")}</option>`).join("")}
                 </select>
 
                 <label>Status</label>
-                <select id="assetStatus">${["Available","Assigned","Maintenance","Retired"].map(x => `<option value="${x}" ${a.status === x ? "selected" : ""}>${x}</option>`).join("")}</select>
+                <select id="assetStatus">${["Available", "Assigned", "Maintenance", "Retired"].map((x) => `<option value="${x}" ${a.status === x ? "selected" : ""}>${x}</option>`).join("")}</select>
 
                 <label>Condition</label>
-                <select id="assetCondition">${["Excellent","Good","Fair","Needs Repair"].map(x => `<option value="${x}" ${a.condition === x ? "selected" : ""}>${x}</option>`).join("")}</select>
+                <select id="assetCondition">${["Excellent", "Good", "Fair", "Needs Repair"].map((x) => `<option value="${x}" ${a.condition === x ? "selected" : ""}>${x}</option>`).join("")}</select>
 
                 <label>Warranty Expires</label><input id="assetWarrantyExpires" type="date" value="${this.esc(a.warrantyExpires || "")}">
                 <label>Maintenance Due</label><input id="assetMaintenanceDue" type="date" value="${this.esc(a.maintenanceDue || "")}">
@@ -289,14 +304,14 @@
                 ">Save Asset</button>
             </div>
         `;
-    };
+  };
 
-    /* ---------------- CALENDAR ---------------- */
+  /* ---------------- CALENDAR ---------------- */
 
-    UI.renderCalendar = function () {
-        const reminders = Calendar.all();
+  UI.renderCalendar = function () {
+    const reminders = Calendar.all();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
             <h2>Calendar & Reminders</h2>
             <button onclick="const r=Calendar.create();UI.renderReminderEdit(r.id);">+ Add Reminder</button>
             <br><br>
@@ -310,24 +325,32 @@
 
             <br>
 
-            ${reminders.length === 0 ? "<p>No reminders created yet.</p>" : reminders.map(r => `
+            ${
+              reminders.length === 0
+                ? "<p>No reminders created yet.</p>"
+                : reminders
+                    .map(
+                      (r) => `
                 <div class="card">
                     <h3>${this.esc(r.title || "Untitled Reminder")}</h3>
-                    <p>${this.esc(r.date || "No date")}${r.time ? ` — ${this.esc(r.time)}` : ""}</p>
+                    <p>${this.esc(r.date || "No date")}${r.time ? ` — ${this.esc(Utils.formatTime(r.time))}` : ""}</p>
                     ${r.category ? `<p>${this.esc(r.category)}</p>` : ""}
                     <p>Priority: ${this.statusBadge(r.priority || "Normal")}</p>
-                    <p>Status: ${this.statusBadge(r.completed ? "Completed" : (r.date && r.date < new Date().toISOString().slice(0,10) ? "Overdue" : "Pending"))}</p>
+                    <p>Status: ${this.statusBadge(r.completed ? "Completed" : r.date && r.date < new Date().toISOString().slice(0, 10) ? "Overdue" : "Pending")}</p>
                     <button onclick="UI.renderReminderDetail('${r.id}')">View Reminder</button>
                 </div>
-            `).join("")}
+            `,
+                    )
+                    .join("")
+            }
         `;
-    };
+  };
 
-    UI.renderReminderDetail = function (id) {
-        const r = Calendar.get(id);
-        if (!r) return this.renderCalendar();
+  UI.renderReminderDetail = function (id) {
+    const r = Calendar.get(id);
+    if (!r) return this.renderCalendar();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderCalendar()">← Back to Calendar</button>
             <br><br>
             <div class="card">
@@ -335,7 +358,7 @@
                 <p><strong>Description:</strong> ${this.esc(r.description || "—")}</p>
                 <p><strong>Event:</strong> ${this.esc(eventName(r.eventId))}</p>
                 <p><strong>Date:</strong> ${this.esc(r.date || "—")}</p>
-                <p><strong>Time:</strong> ${this.esc(r.time || "—")}</p>
+                <p><strong>Time:</strong> ${this.esc(Utils.formatTime(r.time) || "—")}</p>
                 <p><strong>Category:</strong> ${this.esc(r.category || "—")}</p>
                 <p><strong>Priority:</strong> ${this.statusBadge(r.priority || "Normal")}</p>
                 <p><strong>Completed:</strong> ${r.completed ? "Yes" : "No"}</p>
@@ -346,14 +369,14 @@
                 <button onclick="if(confirm('Delete this reminder?')){Calendar.remove('${r.id}');UI.renderCalendar();}">Delete Reminder</button>
             </div>
         `;
-    };
+  };
 
-    UI.renderReminderEdit = function (id) {
-        const r = Calendar.get(id);
-        if (!r) return this.renderCalendar();
-        const events = Events.all();
+  UI.renderReminderEdit = function (id) {
+    const r = Calendar.get(id);
+    if (!r) return this.renderCalendar();
+    const events = Events.all();
 
-        document.getElementById("workspace").innerHTML = `
+    document.getElementById("workspace").innerHTML = `
             <button onclick="UI.renderReminderDetail('${r.id}')">← Cancel</button>
             <br><br>
             <div class="card">
@@ -365,7 +388,7 @@
                 <label>Event</label>
                 <select id="reminderEventId">
                     <option value="">No Event</option>
-                    ${events.map(event => `<option value="${event.id}" ${r.eventId === event.id ? "selected" : ""}>${this.esc(event.name || "Unnamed Event")}</option>`).join("")}
+                    ${events.map((event) => `<option value="${event.id}" ${r.eventId === event.id ? "selected" : ""}>${this.esc(event.name || "Unnamed Event")}</option>`).join("")}
                 </select>
 
                 <label>Date</label><input id="reminderDate" type="date" value="${this.esc(r.date || "")}">
@@ -373,13 +396,13 @@
                 <label>Category</label><input id="reminderCategory" value="${this.esc(r.category || "")}" placeholder="Category">
 
                 <label>Priority</label>
-                <select id="reminderPriority">${["Low","Normal","High","Urgent"].map(x => `<option value="${x}" ${r.priority === x ? "selected" : ""}>${x}</option>`).join("")}</select>
+                <select id="reminderPriority">${["Low", "Normal", "High", "Urgent"].map((x) => `<option value="${x}" ${r.priority === x ? "selected" : ""}>${x}</option>`).join("")}</select>
 
                 <label><input id="reminderCompleted" type="checkbox" ${r.completed ? "checked" : ""}> Completed</label>
                 <label><input id="reminderRecurring" type="checkbox" ${r.recurring ? "checked" : ""}> Recurring</label>
 
                 <label>Recurrence</label>
-                <select id="reminderRecurrence">${["None","Daily","Weekly","Monthly","Yearly"].map(x => `<option value="${x}" ${r.recurrence === x ? "selected" : ""}>${x}</option>`).join("")}</select>
+                <select id="reminderRecurrence">${["None", "Daily", "Weekly", "Monthly", "Yearly"].map((x) => `<option value="${x}" ${r.recurrence === x ? "selected" : ""}>${x}</option>`).join("")}</select>
 
                 <br><br>
                 <button onclick="
@@ -399,6 +422,5 @@
                 ">Save Reminder</button>
             </div>
         `;
-    };
-
+  };
 })();
