@@ -5,10 +5,41 @@
     const TicketPlanning = {
         templateKey: "ticket_type_templates",
         defaultStaffReservePct: 10,
-        defaultPaintPct: 75,
+        defaultPaintPct: 100,
+
+        systemTemplates() {
+            return [
+                {
+                    id:"preset-standard-paint-9x12",
+                    name:"Standard Paint Admission — 9×12 Canvas",
+                    description:"Includes guided painting instruction, painting supplies, and one 9×12 canvas. Food and beverages are purchased separately.",
+                    price:40,
+                    kind:"paint",
+                    includesPainting:true,
+                    preset:true
+                },
+                {
+                    id:"preset-paint-upgrade-11x14",
+                    name:"11×14 Paint Upgrade",
+                    description:"Includes guided painting instruction, painting supplies, and one 11×14 canvas. Food and beverages are purchased separately.",
+                    price:55,
+                    kind:"paint",
+                    includesPainting:true,
+                    preset:true
+                }
+            ];
+        },
+
+        savedTemplates() {
+            return Utils.load(this.templateKey, []);
+        },
 
         templates() {
-            return Utils.load(this.templateKey, []);
+            const byName = new Map();
+            [...this.systemTemplates(), ...this.savedTemplates()].forEach(template => {
+                byName.set(String(template.name || "").trim().toLowerCase(), template);
+            });
+            return [...byName.values()];
         },
 
         saveTemplates(list) {
@@ -55,7 +86,7 @@
         addTemplateFromTicket(eventId, ticketId) {
             const event = Events.get(eventId); if (!event) return;
             const t = (event.ticketTypes || []).find(x => x.id === ticketId); if (!t) return;
-            const templates = this.templates();
+            const templates = this.savedTemplates();
             const same = templates.find(x => String(x.name || "").trim().toLowerCase() === String(t.name || "").trim().toLowerCase());
             const payload = { id:same?.id || Utils.id(), name:t.name || "", description:t.description || "", price:Number(t.price || 0), kind:t.kind || "paint", includesPainting:t.includesPainting !== false };
             if (same) Object.assign(same, payload); else templates.push(payload);
@@ -99,13 +130,11 @@
         applySuggestedAllocation(eventId) {
             const event = this.ensureEvent(Events.get(eventId)); if (!event) return;
             const cap = this.availableCapacity(event).publicCapacity;
-            const paintPct = Math.min(100, Math.max(0, Number(event.paintSeatPct || this.defaultPaintPct)));
+            const paintPct = Math.min(100, Math.max(0, Number(event.paintSeatPct ?? this.defaultPaintPct)));
             const paintQty = Math.round(cap * paintPct / 100);
-            const observerQty = Math.max(0, cap - paintQty);
             const active = event.ticketTypes.filter(t => t.active !== false);
             const paint = active.filter(t => t.kind === "paint" || (t.kind === "vip" && t.includesPainting));
-            const observer = active.filter(t => t.kind === "observer");
-            if (!paint.length || !observer.length) return alert("Add at least one Paint ticket type and one Observer / Gallery ticket type first.");
+            if (!paint.length) return alert("Add at least one active Paint Admission ticket type first.");
             const split = (list,total) => {
                 let remaining = total;
                 list.forEach((t,i) => {
@@ -113,7 +142,7 @@
                     t.quantity = Math.max(0, qty); remaining -= qty;
                 });
             };
-            split(paint, paintQty); split(observer, observerQty);
+            split(paint, paintQty);
             Events.update(eventId, { ticketTypes:event.ticketTypes });
             UI.renderEvents();
         },
@@ -161,7 +190,7 @@
             const actualPct = ratioTotal ? Math.round(painterQty / ratioTotal * 100) : 0;
             return `<p><strong>Venue capacity:</strong> ${cap.venueCapacity} &nbsp; <strong>Reserved for staff:</strong> ${cap.staffSeats} &nbsp; <strong>Public ticket capacity:</strong> ${cap.publicCapacity}</p>
                 <p><strong>Ticket capacity assigned:</strong> ${used}/${cap.publicCapacity} ${over ? `<span style="color:#b91c1c;font-weight:700;">— OVER CAPACITY</span>` : ""}</p>
-                <p><strong>Paint / Observer allocation:</strong> ${painterQty} / ${observerQty}${ratioTotal ? ` (${actualPct}% paint)` : ""}</p>`;
+                <p><strong>Paint admissions / other admissions:</strong> ${painterQty} / ${observerQty}${ratioTotal ? ` (${actualPct}% paint)` : ""}</p>`;
         },
 
         ticketRows(event) {
@@ -217,17 +246,17 @@
             const templates = this.templates();
             return `<div class="card" id="ticket-planning-${event.id}">
                 <h3>Ticket Types & Capacity Plan</h3>
-                <p>Recommended starting mix: <strong>75% painting seats / 25% observer-gallery seats</strong>. Adjust it when the venue layout or demand calls for something different.</p>
+                <p>The approved reusable package starts with the <strong>$40 Standard 9×12 Paint Admission</strong> and the <strong>$55 11×14 Paint Upgrade</strong>. Food and beverage packages remain separate from admission.</p>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;">
                     <div><label>Staff Reserve (%)</label><input type="number" min="0" max="50" step="1" value="${Number(event.staffReservePct || 0)}" onchange="TicketPlanning.updateEventSetting('${event.id}','staffReservePct',this.value)"></div>
-                    <div><label>Paint Seat Target (%)</label><input type="number" min="0" max="100" step="1" value="${Number(event.paintSeatPct || 75)}" onchange="TicketPlanning.updateEventSetting('${event.id}','paintSeatPct',this.value)"></div>
+                    <div><label>Paint Admission Target (%)</label><input type="number" min="0" max="100" step="1" value="${Number(event.paintSeatPct ?? this.defaultPaintPct)}" onchange="TicketPlanning.updateEventSetting('${event.id}','paintSeatPct',this.value)"></div>
                 </div>
                 <div id="ticket-capacity-${event.id}">${this.capacityHtml(event, cap, used)}</div>
-                <button type="button" onclick="TicketPlanning.applySuggestedAllocation('${event.id}')">Apply Suggested Allocation</button>
+                <button type="button" onclick="TicketPlanning.applySuggestedAllocation('${event.id}')">Allocate Paint Admission Capacity</button>
                 <hr>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
                     <button type="button" onclick="TicketPlanning.addBlank('${event.id}')">+ Add Ticket Type</button>
-                    ${templates.length ? `<select id="ticket-template-${event.id}" style="max-width:280px;"><option value="">Choose saved ticket type…</option>${this.templateOptions()}</select><button type="button" onclick="TicketPlanning.addFromTemplate('${event.id}',document.getElementById('ticket-template-${event.id}').value)">Add Saved Type</button>` : ""}
+                    ${templates.length ? `<select id="ticket-template-${event.id}" style="max-width:360px;"><option value="">Choose approved or saved ticket type…</option>${this.templateOptions()}</select><button type="button" onclick="TicketPlanning.addFromTemplate('${event.id}',document.getElementById('ticket-template-${event.id}').value)">Add Ticket Package</button>` : ""}
                 </div>
                 ${this.ticketRows(event)}
                 <hr>
