@@ -90,6 +90,8 @@
       textarea {
         width: 100%;
       }
+      label { display:block; margin:10px 0 5px; font-weight:650; }
+      .required::after { content:" *"; color:#a92525; }
       button {
         cursor: pointer;
         background: #172033;
@@ -173,6 +175,7 @@
       const invite = () =>
         new URLSearchParams(location.search).get("invite") || "";
       const pendingEmailKey = "snp_staff_pending_email";
+      const pendingPhoneKey = "snp_staff_pending_phone";
       function redirectUrl() {
         const url = new URL(location.href);
         url.hash = "";
@@ -184,7 +187,7 @@
       function auth(msg = "", email = "") {
         const remembered =
           email || sessionStorage.getItem(pendingEmailKey) || "";
-        app.innerHTML = `${invite() ? '<div class="card"><h3>Employee / Staff Invitation</h3><p>Create your staff account or sign in with the email this invitation was sent to. After signing in, complete your employee profile.</p></div>' : ""}<div class="card"><h2>Staff Sign In</h2><p class="muted">Only assigned event duties are available here.</p>${msg ? `<p class="notice">${esc(msg)}</p>` : ""}<label>Email</label><input id="e" type="email" value="${esc(remembered)}" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"><label>Password</label><input id="p" type="password" minlength="8" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"><label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="showp" type="checkbox" style="width:auto" onchange="togglePassword()"> Show password</label><div class="grid" style="margin-top:10px"><button onclick="login()">Sign In</button><button onclick="signup()">Create Staff Account</button></div><div class="grid" style="margin-top:10px"><button class="secondary" type="button" onclick="forgotPassword()">Forgot Password</button><button class="secondary" type="button" onclick="resendConfirmation()">Resend Confirmation</button></div><p class="muted">New accounts must confirm their email once. Existing confirmed accounts should sign in; they will not receive another signup confirmation.</p></div>`;
+        app.innerHTML = `${invite() ? '<div class="card"><h3>Employee / Staff Invitation</h3><p>Create your staff account or sign in with the email this invitation was sent to. All required profile information must be completed before continuing.</p></div>' : ""}<div class="card"><h2>Staff Sign In</h2><p class="muted">Only assigned event duties are available here.</p>${msg ? `<p class="notice">${esc(msg)}</p>` : ""}<label>Email</label><input id="e" type="email" value="${esc(remembered)}" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"><label>Password</label><input id="p" type="password" minlength="8" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"><label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="showp" type="checkbox" style="width:auto" onchange="togglePassword()"> Show password</label><button style="width:100%;margin-top:10px" onclick="login()">Sign In</button><div class="grid" style="margin-top:10px"><button class="secondary" type="button" onclick="forgotPassword()">Forgot Password</button><button class="secondary" type="button" onclick="resendConfirmation()">Resend Confirmation</button></div></div><div class="card"><h2>Create Staff Account</h2><p class="muted">Fields marked with * are required. You cannot create an account until all fields are complete.</p><div class="grid"><div><label class="required">First Name</label><input id="signupFirstName" autocomplete="given-name" required></div><div><label class="required">Last Name</label><input id="signupLastName" autocomplete="family-name" required></div></div><label class="required">Street Address</label><input id="signupAddress" autocomplete="street-address" required><div class="grid"><div><label class="required">Email</label><input id="signupEmail" type="email" value="${esc(remembered)}" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" required></div><div><label class="required">Cellphone</label><input id="signupPhone" type="tel" autocomplete="tel" inputmode="tel" required></div></div><label class="required">Password</label><input id="signupPassword" type="password" minlength="8" autocomplete="new-password" required><label style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="showSignupPassword" type="checkbox" style="width:auto" onchange="toggleSignupPassword()"> Show password</label><button style="width:100%;margin-top:10px" onclick="signup()">Create Staff Account</button><p class="muted">New accounts must confirm their email once. Existing confirmed accounts should sign in; they will not receive another signup confirmation.</p></div>`;
       }
       function togglePassword() {
         const x = document.getElementById("p");
@@ -192,6 +195,157 @@
           x.type = document.getElementById("showp")?.checked
             ? "text"
             : "password";
+      }
+      function toggleSignupPassword() {
+        const x = document.getElementById("signupPassword");
+        if (x) x.type = document.getElementById("showSignupPassword")?.checked ? "text" : "password";
+      }
+      function normalizePhone(value) {
+        const raw = String(value || "").trim();
+        const digits = raw.replace(/\D/g, "");
+        if (digits.length === 10) return "+1" + digits;
+        if (digits.length === 11 && digits.startsWith("1")) return "+" + digits;
+        if (raw.startsWith("+") && digits.length >= 8 && digits.length <= 15)
+          return "+" + digits;
+        return "";
+      }
+      function metadata() {
+        return S?.user?.user_metadata || {};
+      }
+      function onboardingValues() {
+        const m = metadata();
+        return {
+          firstName: String(m.first_name || ""),
+          lastName: String(m.last_name || ""),
+          address: String(m.street_address || ""),
+          phone: String(S?.user?.phone || m.cellphone || m.phone || ""),
+        };
+      }
+      function profileComplete() {
+        const v = onboardingValues();
+        return Boolean(
+          v.firstName &&
+            v.lastName &&
+            v.address &&
+            v.phone &&
+            S?.user?.email &&
+            S?.user?.email_confirmed_at &&
+            S?.user?.phone_confirmed_at,
+        );
+      }
+      async function refreshCurrentUser() {
+        const r = await fetch(`${U}/auth/v1/user`, {
+          headers: h(S?.access_token),
+        });
+        if (!r.ok) return false;
+        S.user = await r.json();
+        localStorage.setItem(SK, JSON.stringify(S));
+        return true;
+      }
+      function onboarding(msg = "") {
+        const v = onboardingValues();
+        const phoneVerified = Boolean(S?.user?.phone_confirmed_at);
+        app.innerHTML = `<div class="card"><h2>Required Employee Onboarding</h2><p class="muted">Complete every required field and verify your cellphone before entering the Employee Portal.</p>${msg ? `<p class="notice">${esc(msg)}</p>` : ""}<div class="grid"><div><label class="required">First Name</label><input id="onboardFirstName" value="${esc(v.firstName)}" autocomplete="given-name" required></div><div><label class="required">Last Name</label><input id="onboardLastName" value="${esc(v.lastName)}" autocomplete="family-name" required></div></div><label class="required">Street Address</label><input id="onboardAddress" value="${esc(v.address)}" autocomplete="street-address" required><label class="required">Email</label><input value="${esc(S?.user?.email || "")}" readonly><label class="required">Cellphone</label><input id="onboardPhone" type="tel" value="${esc(v.phone)}" autocomplete="tel" inputmode="tel" ${phoneVerified ? "readonly" : ""} required><p class="${phoneVerified ? "ok" : "muted"}">${phoneVerified ? "✓ Cellphone verified" : "Enter a mobile number that can receive a 6-digit SMS code."}</p>${phoneVerified ? "" : '<button type="button" class="secondary" onclick="sendPhoneVerification()">Send Verification Code</button><label class="required">6-Digit Verification Code</label><input id="phoneOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6"><button type="button" onclick="verifyCellphone()">Verify Cellphone</button>'}<button type="button" class="success" style="width:100%;margin-top:14px" onclick="completeOnboarding()" ${phoneVerified ? "" : "disabled"}>Save Profile & Continue</button><p class="muted">You cannot continue until the required information and cellphone verification are complete.</p></div>`;
+      }
+      function readOnboarding() {
+        const firstName = document.getElementById("onboardFirstName")?.value.trim() || "";
+        const lastName = document.getElementById("onboardLastName")?.value.trim() || "";
+        const streetAddress = document.getElementById("onboardAddress")?.value.trim() || "";
+        const phone = normalizePhone(document.getElementById("onboardPhone")?.value || "");
+        if (!firstName) throw new Error("Enter your first name.");
+        if (!lastName) throw new Error("Enter your last name.");
+        if (!streetAddress) throw new Error("Enter your street address.");
+        if (!phone) throw new Error("Enter a valid cellphone number, including area code.");
+        return { firstName, lastName, streetAddress, phone };
+      }
+      async function sendPhoneVerification() {
+        try {
+          const v = readOnboarding();
+          const r = await fetch(`${U}/auth/v1/user`, {
+            method: "PUT",
+            headers: h(S.access_token),
+            body: JSON.stringify({
+              phone: v.phone,
+              data: {
+                ...metadata(),
+                first_name: v.firstName,
+                last_name: v.lastName,
+                full_name: `${v.firstName} ${v.lastName}`,
+                street_address: v.streetAddress,
+                phone: v.phone,
+                cellphone: v.phone,
+              },
+            }),
+          });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok)
+            throw new Error(
+              d.msg || d.message || d.error || "Unable to send the verification code.",
+            );
+          S.user = d;
+          localStorage.setItem(SK, JSON.stringify(S));
+          sessionStorage.setItem(pendingPhoneKey, v.phone);
+          onboarding("A 6-digit verification code was sent by SMS. Enter it below.");
+        } catch (e) {
+          onboarding(e.message);
+        }
+      }
+      async function verifyCellphone() {
+        try {
+          const v = readOnboarding();
+          const token = document.getElementById("phoneOtp")?.value.trim() || "";
+          if (!/^\d{6}$/.test(token))
+            throw new Error("Enter the 6-digit code sent to your cellphone.");
+          const r = await fetch(`${U}/auth/v1/verify`, {
+            method: "POST",
+            headers: h(),
+            body: JSON.stringify({ type: "phone_change", phone: v.phone, token }),
+          });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok)
+            throw new Error(
+              d.msg || d.message || d.error || "The cellphone verification code was not accepted.",
+            );
+          if (d.access_token) {
+            S = d;
+          }
+          await refreshCurrentUser();
+          sessionStorage.removeItem(pendingPhoneKey);
+          onboarding("Cellphone verified. Select Save Profile & Continue.");
+        } catch (e) {
+          onboarding(e.message);
+        }
+      }
+      async function completeOnboarding() {
+        try {
+          const v = readOnboarding();
+          await refreshCurrentUser();
+          if (!S?.user?.phone_confirmed_at)
+            throw new Error("Verify your cellphone before continuing.");
+          if (invite()) {
+            const r = await fetch(`${U}/functions/v1/employee-directory-api`, {
+              method: "POST",
+              headers: h(S.access_token),
+              body: JSON.stringify({
+                action: "claim_invite",
+                token: invite(),
+                firstName: v.firstName,
+                lastName: v.lastName,
+                streetAddress: v.streetAddress,
+                phone: v.phone,
+              }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok || d.ok === false)
+              throw new Error(d.error || "Unable to add your profile to the employee directory.");
+            const q = new URLSearchParams(location.search);
+            q.delete("invite");
+            history.replaceState({}, "", location.pathname + (q.toString() ? `?${q}` : ""));
+          }
+          await load();
+        } catch (e) {
+          onboarding(e.message);
+        }
       }
       async function login() {
         const email = e.value.trim().toLowerCase(),
@@ -255,17 +409,37 @@
         }
       }
       async function signup() {
-        const email = e.value.trim().toLowerCase(),
-          password = p.value;
-        if (!email) return auth("Enter your assigned staff email.");
+        const firstName = document.getElementById("signupFirstName")?.value.trim() || "",
+          lastName = document.getElementById("signupLastName")?.value.trim() || "",
+          address = document.getElementById("signupAddress")?.value.trim() || "",
+          email = document.getElementById("signupEmail")?.value.trim().toLowerCase() || "",
+          phone = normalizePhone(document.getElementById("signupPhone")?.value || ""),
+          password = document.getElementById("signupPassword")?.value || "";
+        if (!firstName) return alert("Enter your first name.");
+        if (!lastName) return alert("Enter your last name.");
+        if (!address) return alert("Enter your street address.");
+        if (!email) return alert("Enter your email address.");
+        if (!/^\S+@\S+\.\S+$/.test(email)) return alert("Enter a valid email address.");
+        if (!phone) return alert("Enter a valid cellphone number, including area code.");
         if (password.length < 8)
-          return auth("Use a password with at least 8 characters.");
+          return alert("Use a password with at least 8 characters.");
         const r = await fetch(
             `${U}/auth/v1/signup?redirect_to=${encodeURIComponent(redirectUrl())}`,
             {
             method: "POST",
             headers: h(),
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({
+              email,
+              password,
+              data: {
+                first_name: firstName,
+                last_name: lastName,
+                full_name: `${firstName} ${lastName}`,
+                street_address: address,
+                phone,
+                cellphone: phone,
+              },
+            }),
             },
           ),
           d = await r.json().catch(() => ({}));
@@ -430,6 +604,8 @@
           if (!S) S = JSON.parse(localStorage.getItem(SK) || "null");
           if (!S?.access_token) return auth();
           if (authRedirectType === "recovery") return passwordResetForm();
+          await refreshCurrentUser();
+          if (!profileComplete() || invite()) return onboarding();
           const d = await api();
           E = d.events || [];
           render();
