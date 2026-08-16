@@ -66,6 +66,9 @@
                 <label>Eventbrite Event ID</label>
                 <input id="eventbriteEventId" inputmode="numeric" value="${UI.esc(link?.eventbriteEventId || event?.eventbriteEventId || "")}" ${event ? "" : "disabled"}>
 
+                <label>Public Eventbrite Ticket Page</label>
+                <input id="eventbritePublicUrl" type="url" value="${UI.esc(link?.publicUrl || event?.eventbritePublicUrl || "")}" placeholder="https://www.eventbrite.com/e/..." ${event ? "" : "disabled"}>
+
                 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
                     <button type="button" onclick="UI.saveEventbriteConnection()" ${event ? "" : "disabled"}>Save Connection</button>
                     <button type="button" onclick="UI.importEventbriteTicketTypes()" ${event ? "" : "disabled"}>Import Eventbrite Ticket Types</button>
@@ -83,8 +86,9 @@
                 <div class="card">
                     <h3>${UI.esc(event.name || "Event")}</h3>
                     <p><strong>Total Tickets Sold in SNP Planner:</strong> ${Number(event.ticketsSold || 0)}</p>
-                    <p><strong>Eventbrite Tickets Sold:</strong> ${Number(event.eventbriteTicketsSold || totalSold || 0)}</p>
+                    <p><strong>Eventbrite Admission Tickets Sold:</strong> ${Number(event.eventbriteTicketsSold ?? totalSold ?? 0)}</p>
                     <p><strong>Eventbrite Revenue:</strong> ${Utils.money(event.eventbriteRevenue || totalRevenue || 0)}</p>
+                    <p><strong>Admission Revenue:</strong> ${Utils.money(event.eventbriteAdmissionRevenue || 0)} &nbsp; <strong>Add-on Revenue:</strong> ${Utils.money(event.eventbriteAddonRevenue || 0)}</p>
                     <p><strong>Actual Revenue in SNP Planner:</strong> ${Utils.money(event.actualRevenue || 0)}</p>
                 </div>
 
@@ -94,8 +98,8 @@
                       ticketClasses.length
                         ? `
                         <div class="scroll"><table>
-                            <tr><th>Ticket Type</th><th>Ticket Class ID</th></tr>
-                            ${ticketClasses.map((item) => `<tr><td>${UI.esc(item.name)}</td><td>${UI.esc(item.id)}</td></tr>`).join("")}
+                            <tr><th>Ticket Type</th><th>Category</th><th>Available / Sold</th><th>Ticket Class ID</th></tr>
+                            ${ticketClasses.map((item) => `<tr><td>${UI.esc(item.name)}</td><td>${UI.esc(item.category || "admission")}</td><td>${Number(item.quantityTotal || 0)} / ${Number(item.quantitySold || 0)}</td><td>${UI.esc(item.id)}</td></tr>`).join("")}
                         </table></div>
                     `
                         : "<p>No ticket types imported yet.</p>"
@@ -108,11 +112,12 @@
                       sales.length
                         ? `
                         <div class="scroll"><table>
-                            <tr><th>Ticket Type</th><th>Ticket Class ID</th><th>Quantity Sold</th><th>Revenue</th></tr>
+                            <tr><th>Ticket Type</th><th>Category</th><th>Ticket Class ID</th><th>Quantity Sold</th><th>Revenue</th></tr>
                             ${sales
                               .map(
                                 (row) => `<tr>
                                 <td>${UI.esc(row.name)}</td>
+                                <td>${UI.esc(row.category || "admission")}</td>
                                 <td>${UI.esc(row.ticketClassId)}</td>
                                 <td>${Number(row.quantity || 0)}</td>
                                 <td>${Utils.money(row.revenue || 0)}</td>
@@ -141,8 +146,13 @@
       eventId,
       document.getElementById("eventbriteEventId")?.value || "",
     );
+    Eventbrite.setPublicUrl(
+      eventId,
+      document.getElementById("eventbritePublicUrl")?.value || "",
+    );
     Events.update(eventId, {
       eventbriteEventId: Eventbrite.link(eventId).eventbriteEventId,
+      eventbritePublicUrl: Eventbrite.link(eventId).publicUrl,
     });
     const status = document.getElementById("eventbriteStatus");
     if (status) status.textContent = "Eventbrite connection saved.";
