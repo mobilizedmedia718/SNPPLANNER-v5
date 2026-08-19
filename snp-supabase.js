@@ -4,7 +4,7 @@ const SNP_SUPABASE_URL = "https://mmstqostdqouxaiyrxtv.supabase.co";
 const SNP_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_6bxNaNPgezRwqyTrLtnUpA_zmXNoIsC";
 const SNP_SESSION_KEY = "snpplanner_supabase_session";
 const SNP_PENDING_EMAIL_KEY = "snpplanner_pending_email";
-const SNP_APP_URL = "https://mobilizedmedia718.github.io/SNPPLANNER-v5/";
+const SNP_APP_URL = "https://paintthetownevents.com/planner.html";
 
 const SNPDatabase = {
     client: {},
