@@ -17,14 +17,8 @@
 
         const moveResponse = await fetch(`${SNP_SUPABASE_URL}/rest/v1/eventbrite_event_links?user_id=eq.${encodeURIComponent(user.id)}&eventbrite_event_id=eq.${encodeURIComponent(eventbriteEventId)}`, {
             method: "PATCH",
-            headers: {
-                ...SNPDatabase.headers(token),
-                "Prefer": "return=representation"
-            },
-            body: JSON.stringify({
-                planner_event_id: plannerEventId,
-                updated_at: new Date().toISOString()
-            })
+            headers: { ...SNPDatabase.headers(token), "Prefer": "return=representation" },
+            body: JSON.stringify({ planner_event_id: plannerEventId, updated_at: new Date().toISOString() })
         });
         if (!moveResponse.ok) throw new Error(await moveResponse.text() || "Unable to update Eventbrite event link.");
         const moved = await moveResponse.json().catch(() => []);
@@ -32,16 +26,8 @@
 
         const response = await fetch(`${SNP_SUPABASE_URL}/rest/v1/eventbrite_event_links?on_conflict=user_id,planner_event_id`, {
             method: "POST",
-            headers: {
-                ...SNPDatabase.headers(token),
-                "Prefer": "resolution=merge-duplicates,return=minimal"
-            },
-            body: JSON.stringify({
-                user_id: user.id,
-                planner_event_id: plannerEventId,
-                eventbrite_event_id: eventbriteEventId,
-                updated_at: new Date().toISOString()
-            })
+            headers: { ...SNPDatabase.headers(token), "Prefer": "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify({ user_id: user.id, planner_event_id: plannerEventId, eventbrite_event_id: eventbriteEventId, updated_at: new Date().toISOString() })
         });
         if (!response.ok) throw new Error(await response.text() || "Unable to register Eventbrite event link.");
         return true;
@@ -52,9 +38,7 @@
         const nextId = String(value || "").trim();
         if (nextId) {
             for (const [otherPlannerEventId, otherLink] of Object.entries(this.data.events || {})) {
-                if (otherPlannerEventId !== eventId && String(otherLink?.eventbriteEventId || "").trim() === nextId) {
-                    delete this.data.events[otherPlannerEventId];
-                }
+                if (otherPlannerEventId !== eventId && String(otherLink?.eventbriteEventId || "").trim() === nextId) delete this.data.events[otherPlannerEventId];
             }
         }
         originalSetEventbriteEventId(eventId, value);
@@ -62,8 +46,7 @@
     };
 
     Eventbrite.registerAllEventLinks = async function() {
-        const entries = Object.entries(this.data.events || {});
-        for (const [plannerEventId, link] of entries) {
+        for (const [plannerEventId, link] of Object.entries(this.data.events || {})) {
             if (link?.eventbriteEventId) {
                 try { await this.registerEventLinkCloud(plannerEventId); } catch (_) {}
             }
@@ -76,7 +59,10 @@
         for (const [plannerEventId, link] of Object.entries(this.data.events || {})) {
             if (!activeEventIds.has(String(plannerEventId)) || !link?.eventbriteEventId) continue;
             try {
+                // Customer/guest synchronization must accompany sales synchronization.
+                // loadAttendees() upserts CRM customers and refreshes the Eventbrite guest list.
                 await this.loadTicketClasses(plannerEventId);
+                await this.loadAttendees(plannerEventId);
                 await this.syncSales(plannerEventId);
             } catch (error) {
                 console.warn("Automatic Eventbrite synchronization:", error);
