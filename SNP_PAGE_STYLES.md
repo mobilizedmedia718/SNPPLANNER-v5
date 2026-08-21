@@ -8,7 +8,7 @@ This file records the approved visual/functional style of planner pages so a pag
 - The specification records both appearance and behavior.
 - If the live page changes, this document must change at the same time.
 - The newest specification is the source of truth for reproducing that page style on another module.
-- Reusing a style means reusing its information hierarchy, navigation pattern, visibility rules, interaction model, and editing rules — not merely copying colors or button shapes.
+- Reusing a style means reusing its information hierarchy, navigation pattern, visibility rules, interaction model, editing rules, and refresh/recovery behavior — not merely copying colors or button shapes.
 - A page must never silently drift away from its recorded style. If a change is intentional, revise the style record and change log together.
 
 ---
@@ -66,6 +66,15 @@ The Events Hub must not display event-specific information or operational panels
 - An existing event detail page must initially display saved information as information, not as an always-open form.
 - Editable fields/dropdowns for event configuration appear only after the user chooses **Edit Event** or enters another explicit planning/editing action.
 
+## Refresh continuity
+
+- Refresh must return the user to the planner page/view that was active before refresh rather than forcing a return to Planner Home.
+- If the active screen contains unsaved form values, those values are preserved as a same-tab/session draft and restored after refresh.
+- Draft recovery is not the same as committing data to Supabase/database storage; it protects against accidental refresh while editing.
+- Password and file inputs are excluded from draft capture.
+- Explicit successful Save/Create/Add actions clear stale draft values for that view.
+- A deliberate Home action changes the saved navigation state to Home; normal application startup must not overwrite the previously active page before recovery occurs.
+
 ## Navigation style
 
 Expected flow:
@@ -94,11 +103,18 @@ This style is appropriate for other modules when the desired behavior is:
 - first choose **New** or **Existing**;
 - do not expose record details until a record is selected;
 - keep viewing separate from editing;
-- move all record-specific functionality onto a dedicated detail screen.
+- move all record-specific functionality onto a dedicated detail screen;
+- preserve current page state and unsaved draft values through an accidental refresh.
 
 When reused, rename the controls and records for the destination module while preserving this information architecture.
 
 ## Revision history
+
+### 2026-08-21 — EVENTS-HUB v2
+- Added refresh continuity as part of the page behavior.
+- Refresh restores the active planner view instead of returning to Home.
+- Unsaved form inputs are recovered from a same-session draft after refresh.
+- Explicit saves clear stale drafts.
 
 ### 2026-08-21 — EVENTS-HUB v1
 - Defined Events as a selection-only landing page.
