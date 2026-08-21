@@ -24,6 +24,9 @@ This file is the durable change record for the live `mobilizedmedia718/SNPPLANNE
 - A deliberate Home action becomes the new saved navigation state.
 
 ### Refresh continuity / draft recovery
+- **REFRESH-CONTINUITY v2 is now a planner-wide standard**, not an Events-only behavior.
+- Current UI pages that materially render the workspace are automatically tracked as restorable views.
+- Current full-screen feature modules are also covered where available, including event menu, coupons, promo, check-in, sales, redemptions, guest/staff-related views, and Eventbrite workspace views.
 - The planner records the current restorable view and its arguments in same-session browser storage.
 - After authenticated startup completes following a refresh, the planner reopens that saved view.
 - Unsaved values in workspace inputs, selects, and textareas are captured as same-session drafts while the user types or changes fields.
@@ -84,21 +87,19 @@ This file is the durable change record for the live `mobilizedmedia718/SNPPLANNE
 ## Change chronology — recent live repository work
 
 ### 2026-08-21
+- Expanded refresh continuity to **site-wide coverage** using automatic UI workspace-render tracking plus current full-screen feature-module tracking.
+- Bumped `ui-refresh-continuity.js` to v2 so browsers load the expanded implementation immediately.
+- Added **REFRESH-CONTINUITY v2** to the page-style library as a global inherited standard and updated **EVENTS-HUB** to v3 to inherit it.
 - Added planner-wide refresh continuity through `ui-refresh-continuity.js`: refresh restores the active page/view instead of returning to Home.
 - Added same-session draft recovery for unsaved workspace form fields so accidental refresh restores in-progress values; password/file fields are excluded and explicit saves clear stale drafts.
-- Updated **EVENTS-HUB** to v2 so refresh continuity is part of the recorded reusable page behavior.
 - Created `SNP_PAGE_STYLES.md` as the persistent page-style library. Every reviewed page can now have a named reusable style specification containing both visual and functional behavior.
 - Added the maintenance rule that every future change to a reviewed page must update its style specification at the same time.
-- Created **EVENTS-HUB v1**, recording the approved minimal Events landing page, New/Existing split, separate detail state, and separate edit/planning state.
-- Rebuilt the Events landing page so it contains only **+ New Event** and an existing-event selector. Removed event-specific ticket/content panels from the Events landing screen by making the final Events renderer selection-only.
-- Established the rule that selecting an event opens a dedicated event detail page; dropdown/data-entry fields appear only in New/Edit event workflows.
-- Standardized record-list collapse behavior across Venues, Vendors, Inventory, Customers/CRM, Finance, Assets, and Calendar. Entries are hidden until their label button is clicked; only one record opens at a time.
+- Created **EVENTS-HUB**, recording the approved minimal Events landing page, New/Existing split, separate detail state, and separate edit/planning state.
+- Rebuilt the Events landing page so it contains only **+ New Event** and an existing-event selector.
+- Standardized record-list collapse behavior across Venues, Vendors, Inventory, Customers/CRM, Finance, Assets, and Calendar.
 - Fixed Home navigation so Back rebuilds Home rather than restoring raw `innerHTML`, preventing dead buttons caused by lost event listeners.
-- Replaced fragile Home button execution with stable direct route handlers.
-- Forced browser refresh of Home navigation script through version bump.
 - Set central planner release version to 5.30 and display it on Home.
 - Changed post-login landing page from Executive Dashboard to dedicated Planner Home.
-- Added full-page Planner Home navigation and a Coupons & Complimentary Benefits shortcut.
 - Added reusable customer coupon generator and connected complimentary benefits to reusable event-menu/inventory items.
 - Fixed Eventbrite attendee/customer auto-sync to create CRM customers from attendees.
 
@@ -119,4 +120,4 @@ When a module is reviewed and a UI/functionality rule is approved, apply the sam
 
 ## 2026-08-21 consistency audit starting point
 
-The user is reviewing modules one at a time beginning with Events. The approved Events workflow is now: Home → Events landing page → New Event or Select Existing Event → dedicated event detail page. Event-specific ticket and operational information must never appear on the initial Events landing page. The matching reusable style is **EVENTS-HUB**, currently v2 with refresh continuity and draft recovery.
+The user is reviewing modules one at a time beginning with Events. The approved Events workflow is now: Home → Events landing page → New Event or Select Existing Event → dedicated event detail page. Event-specific ticket and operational information must never appear on the initial Events landing page. The matching reusable style is **EVENTS-HUB**, currently v3 and inheriting planner-wide **REFRESH-CONTINUITY v2**.
