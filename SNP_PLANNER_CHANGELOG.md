@@ -15,11 +15,22 @@ This file is the durable change record for the live `mobilizedmedia718/SNPPLANNE
 ## Global UI standards
 
 ### Navigation
-- Planner starts on a dedicated full-page Home screen after login.
+- Planner starts on a dedicated full-page Home screen after login when there is no same-session page to recover.
 - Home contains module buttons rather than an always-open sidebar.
 - Back and Home controls appear inside modules.
 - Back returns to a freshly rendered Home instead of restoring copied HTML, because copied HTML loses JavaScript listeners.
 - All Home module buttons use direct route handlers and must remain functional after repeated Back/Home navigation.
+- Browser refresh must restore the active planner view from the same tab/session rather than automatically forcing the user back to Home.
+- A deliberate Home action becomes the new saved navigation state.
+
+### Refresh continuity / draft recovery
+- The planner records the current restorable view and its arguments in same-session browser storage.
+- After authenticated startup completes following a refresh, the planner reopens that saved view.
+- Unsaved values in workspace inputs, selects, and textareas are captured as same-session drafts while the user types or changes fields.
+- Those draft values are restored after refresh so accidental refresh does not erase in-progress work.
+- Password and file inputs are excluded from draft capture.
+- Draft recovery is a safety net and is not a substitute for a normal Save action or database/Supabase persistence.
+- Explicit successful Save/Create/Add actions clear stale draft values for the active view.
 
 ### Events navigation — approved standard
 - Clicking **Events** from Planner Home opens an Events landing page only.
@@ -73,6 +84,9 @@ This file is the durable change record for the live `mobilizedmedia718/SNPPLANNE
 ## Change chronology — recent live repository work
 
 ### 2026-08-21
+- Added planner-wide refresh continuity through `ui-refresh-continuity.js`: refresh restores the active page/view instead of returning to Home.
+- Added same-session draft recovery for unsaved workspace form fields so accidental refresh restores in-progress values; password/file fields are excluded and explicit saves clear stale drafts.
+- Updated **EVENTS-HUB** to v2 so refresh continuity is part of the recorded reusable page behavior.
 - Created `SNP_PAGE_STYLES.md` as the persistent page-style library. Every reviewed page can now have a named reusable style specification containing both visual and functional behavior.
 - Added the maintenance rule that every future change to a reviewed page must update its style specification at the same time.
 - Created **EVENTS-HUB v1**, recording the approved minimal Events landing page, New/Existing split, separate detail state, and separate edit/planning state.
@@ -105,4 +119,4 @@ When a module is reviewed and a UI/functionality rule is approved, apply the sam
 
 ## 2026-08-21 consistency audit starting point
 
-The user is reviewing modules one at a time beginning with Events. The approved Events workflow is now: Home → Events landing page → New Event or Select Existing Event → dedicated event detail page. Event-specific ticket and operational information must never appear on the initial Events landing page. The matching reusable style is **EVENTS-HUB**.
+The user is reviewing modules one at a time beginning with Events. The approved Events workflow is now: Home → Events landing page → New Event or Select Existing Event → dedicated event detail page. Event-specific ticket and operational information must never appear on the initial Events landing page. The matching reusable style is **EVENTS-HUB**, currently v2 with refresh continuity and draft recovery.
