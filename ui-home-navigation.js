@@ -1,0 +1,19 @@
+/* Full-screen home navigation: one module at a time, floating Back/Home controls. */
+(function(){
+ if(typeof UI==='undefined')return;
+ const modules=[
+  ['Dashboard','UI.renderDashboard()'],['Business','UI.renderBusiness()'],['Events','UI.renderEvents()'],['Venues','UI.renderVenues()'],['Vendors','UI.renderVendors()'],['Inventory','UI.renderInventory()'],['Customers / CRM','UI.renderCRM()'],['Coupons & Complimentary Benefits','SNPHome.openCoupons()'],['Finance','UI.renderFinance()'],['Assets','UI.renderAssets()'],['Calendar','UI.renderCalendar()'],['Reports','UI.renderReports()'],['Settings','UI.renderSettings()']
+ ];
+ let history=[]; let navigating=false;
+ function shell(){const sidebar=document.getElementById('sidebar');if(sidebar)sidebar.style.display='none';const layout=document.querySelector('.layout');if(layout){layout.style.display='block';layout.style.width='100%'}const ws=document.getElementById('workspace');if(ws){ws.style.width='100%';ws.style.maxWidth='none';ws.style.margin='0';ws.style.padding='18px'}document.querySelector('.topbar')?.classList.add('snpHomeTopbar');}
+ function controls(){if(document.getElementById('snpNavFloat'))return;const d=document.createElement('div');d.id='snpNavFloat';d.style.cssText='position:fixed;right:16px;bottom:16px;z-index:99999;display:flex;gap:8px;';d.innerHTML='<button type="button" onclick="SNPHome.back()" style="border-radius:999px;padding:12px 16px;box-shadow:0 3px 12px #0003">← Back</button><button type="button" onclick="SNPHome.home()" style="border-radius:999px;padding:12px 16px;box-shadow:0 3px 12px #0003">⌂ Home</button>';document.body.appendChild(d)}
+ function renderHome(){shell();controls();history=[];document.getElementById('workspace').innerHTML=`<h2>Planner Home</h2><p>Select an area. The selected area opens by itself; use the floating Back or Home buttons to navigate.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">${modules.map(([n,a])=>`<button type="button" onclick="SNPHome.go(${JSON.stringify(a)})" style="min-height:86px;font-size:16px;padding:14px">${UI.esc(n)}</button>`).join('')}<button type="button" onclick="SNPHome.logout()" style="min-height:86px;font-size:16px;padding:14px">Log Out</button></div>`}
+ function currentSnapshot(){return document.getElementById('workspace')?.innerHTML||''}
+ function go(action){if(!navigating){const s=currentSnapshot();if(s)history.push(s)}navigating=true;try{Function(action)()}finally{navigating=false;shell();controls()}}
+ function back(){if(!history.length)return renderHome();document.getElementById('workspace').innerHTML=history.pop();shell();controls()}
+ function openCoupons(){shell();controls();const customers=CRM.all();document.getElementById('workspace').innerHTML=`<h2>Coupons & Complimentary Benefits</h2><p>Select a customer to generate or review coupons, free admission, complimentary menu items, or complimentary inventory items.</p>${customers.length?customers.map(c=>`<div class="card"><strong>${UI.esc(CRM.fullName(c))}</strong>${c.email?' — '+UI.esc(c.email):''}<br><button type="button" onclick="SNPCoupons.show('${c.id}')">Open Coupons</button></div>`).join(''):'<div class="card">No customers available.</div>'}`}
+ async function logout(){if(window.SNPDatabase)await SNPDatabase.signOut()}
+ const oldLayout=UI.renderLayout;UI.renderLayout=function(...a){const r=oldLayout.apply(UI,a);setTimeout(()=>{shell();controls();const top=document.querySelector('.topbar-right');if(top){[...top.querySelectorAll('button')].forEach(b=>{if(b.id==='snpLogoutButton')b.style.display='none'})}},0);return r};
+ window.SNPHome={home:renderHome,back,go,openCoupons,logout};
+ document.addEventListener('DOMContentLoaded',()=>setTimeout(renderHome,900));
+})();
