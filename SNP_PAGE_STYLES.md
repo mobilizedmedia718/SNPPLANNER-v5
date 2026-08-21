@@ -13,6 +13,40 @@ This file records the approved visual/functional style of planner pages so a pag
 
 ---
 
+# Global Style: REFRESH-CONTINUITY
+
+**Status:** Active / planner-wide
+
+## Purpose
+
+Protect the user's current position and in-progress form work from accidental browser refreshes throughout the planner.
+
+## Required behavior
+
+- Browser refresh returns to the active restorable planner screen rather than forcing Planner Home.
+- The current view and the arguments needed to reopen it are stored only for the current browser tab/session.
+- Unsaved text, number, date, time, checkbox, radio, textarea, and select values inside the planner workspace are captured while the user works and restored after refresh.
+- Password and file-upload fields are never stored as drafts.
+- Draft recovery is temporary protection only; it does not replace the module's normal Save action or Supabase/database persistence.
+- Successful explicit Save/Create/Add actions clear stale draft data for the active view.
+- Choosing Home deliberately makes Home the saved navigation state.
+- The rule applies to current UI-rendered pages and current full-screen feature modules such as event menus, coupons, promo, check-in, sales, redemptions, guest/staff-related views, and Eventbrite screens when those modules own the workspace.
+- Structural shell/helper functions are not treated as user pages.
+
+## Reuse rule
+
+REFRESH-CONTINUITY is a global behavior, not an optional page decoration. Every current and future planner page should inherit it unless a specific security or technical reason requires an explicit exception.
+
+## Revision history
+
+### 2026-08-21 — REFRESH-CONTINUITY v2
+- Expanded recovery from the initial core module list to a planner-wide renderer/feature model.
+- Added automatic tracking of current UI page renderers that materially change the workspace.
+- Added coverage for current feature objects that open full workspace views.
+- Retained same-session draft recovery and excluded password/file inputs.
+
+---
+
 # Style: EVENTS-HUB
 
 **Status:** Active / approved
@@ -68,12 +102,7 @@ The Events Hub must not display event-specific information or operational panels
 
 ## Refresh continuity
 
-- Refresh must return the user to the planner page/view that was active before refresh rather than forcing a return to Planner Home.
-- If the active screen contains unsaved form values, those values are preserved as a same-tab/session draft and restored after refresh.
-- Draft recovery is not the same as committing data to Supabase/database storage; it protects against accidental refresh while editing.
-- Password and file inputs are excluded from draft capture.
-- Explicit successful Save/Create/Add actions clear stale draft values for that view.
-- A deliberate Home action changes the saved navigation state to Home; normal application startup must not overwrite the previously active page before recovery occurs.
+EVENTS-HUB inherits the planner-wide **REFRESH-CONTINUITY** standard above.
 
 ## Navigation style
 
@@ -103,12 +132,14 @@ This style is appropriate for other modules when the desired behavior is:
 - first choose **New** or **Existing**;
 - do not expose record details until a record is selected;
 - keep viewing separate from editing;
-- move all record-specific functionality onto a dedicated detail screen;
-- preserve current page state and unsaved draft values through an accidental refresh.
+- move all record-specific functionality onto a dedicated detail screen.
 
-When reused, rename the controls and records for the destination module while preserving this information architecture.
+When reused, rename the controls and records for the destination module while preserving this information architecture and the global REFRESH-CONTINUITY behavior.
 
 ## Revision history
+
+### 2026-08-21 — EVENTS-HUB v3
+- Replaced page-specific refresh wording with inheritance from planner-wide REFRESH-CONTINUITY v2.
 
 ### 2026-08-21 — EVENTS-HUB v2
 - Added refresh continuity as part of the page behavior.
