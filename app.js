@@ -1,6 +1,6 @@
 const SNPPlanner = {
 
-    version: "5.0",
+    version: "5.30",
     initialized: false,
 
     async init() {
@@ -46,12 +46,11 @@ const SNPPlanner = {
             if (typeof PromoAgent !== "undefined" && typeof PromoAgent.load === "function") PromoAgent.load();
 
             UI.renderLayout();
-            // Home is the application's landing page. Executive Dashboard is an optional Home button.
             if (window.SNPHome && typeof SNPHome.home === "function") SNPHome.home();
             else UI.renderDashboard();
 
             this.initialized = true;
-            console.log("SNP Planner Ready");
+            console.log(`SNP Planner V${this.version} Ready`);
         } catch (error) {
             this.showStartupError(error);
         }
@@ -61,17 +60,8 @@ const SNPPlanner = {
         console.error("SNP Planner failed to initialize:", error);
         const app = document.getElementById("app");
         if (!app) return;
-        app.innerHTML = `
-            <div style="padding:20px;font-family:Arial,sans-serif;">
-                <h2>SNP Planner could not start</h2>
-                <p>An application error occurred.</p>
-                <pre style="white-space:pre-wrap;background:#f3f4f6;padding:12px;border-radius:8px;">${String(error?.message || error)}</pre>
-            </div>
-        `;
+        app.innerHTML = `<div style="padding:20px;font-family:Arial,sans-serif;"><h2>SNP Planner could not start</h2><p>An application error occurred.</p><pre style="white-space:pre-wrap;background:#f3f4f6;padding:12px;border-radius:8px;">${String(error?.message || error)}</pre></div>`;
     }
-
 };
 
-document.addEventListener("DOMContentLoaded", () => {
-    SNPPlanner.init();
-});
+document.addEventListener("DOMContentLoaded", () => { SNPPlanner.init(); });
