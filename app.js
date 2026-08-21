@@ -30,9 +30,6 @@ const SNPPlanner = {
 
     async startApplication() {
         try {
-            // Pull this user's cloud records before modules refresh their in-memory state.
-            // On the first migration, an empty cloud account is seeded from the
-            // SNP Planner records already present in this browser.
             await SNPDatabase.syncCloudToLocal();
 
             Settings.load();
@@ -49,7 +46,9 @@ const SNPPlanner = {
             if (typeof PromoAgent !== "undefined" && typeof PromoAgent.load === "function") PromoAgent.load();
 
             UI.renderLayout();
-            UI.renderDashboard();
+            // Home is the application's landing page. Executive Dashboard is an optional Home button.
+            if (window.SNPHome && typeof SNPHome.home === "function") SNPHome.home();
+            else UI.renderDashboard();
 
             this.initialized = true;
             console.log("SNP Planner Ready");
