@@ -9,6 +9,8 @@ This file is the durable change record for the live `mobilizedmedia718/SNPPLANNE
 - Existing working integrations should be inspected before being replaced.
 - Public posting, ad spend, destructive deletion, and irreversible changes still require the appropriate approval.
 - Do not expose service-role keys, passwords, API tokens, webhook secrets, or other secrets in the UI or repository.
+- Page-specific style/behavior specifications are stored in `SNP_PAGE_STYLES.md`.
+- Whenever a reviewed page changes, update its matching page style specification in the same change set so the recorded style always reflects the live page.
 
 ## Global UI standards
 
@@ -30,6 +32,7 @@ This file is the durable change record for the live `mobilizedmedia718/SNPPLANNE
 - The existing-event selector is not shown on the event detail page.
 - Dropdowns and data-entry controls used to change event information belong only in **Edit Event** or **New Event / event-planning** flows.
 - Viewing an event must not look like editing an event.
+- The reusable page style for this workflow is named **EVENTS-HUB** and is documented in `SNP_PAGE_STYLES.md`.
 
 ### Collapsed lists / menus
 - List/menu entries are closed by default.
@@ -70,6 +73,9 @@ This file is the durable change record for the live `mobilizedmedia718/SNPPLANNE
 ## Change chronology — recent live repository work
 
 ### 2026-08-21
+- Created `SNP_PAGE_STYLES.md` as the persistent page-style library. Every reviewed page can now have a named reusable style specification containing both visual and functional behavior.
+- Added the maintenance rule that every future change to a reviewed page must update its style specification at the same time.
+- Created **EVENTS-HUB v1**, recording the approved minimal Events landing page, New/Existing split, separate detail state, and separate edit/planning state.
 - Rebuilt the Events landing page so it contains only **+ New Event** and an existing-event selector. Removed event-specific ticket/content panels from the Events landing screen by making the final Events renderer selection-only.
 - Established the rule that selecting an event opens a dedicated event detail page; dropdown/data-entry fields appear only in New/Edit event workflows.
 - Standardized record-list collapse behavior across Venues, Vendors, Inventory, Customers/CRM, Finance, Assets, and Calendar. Entries are hidden until their label button is clicked; only one record opens at a time.
@@ -95,8 +101,8 @@ This file is the durable change record for the live `mobilizedmedia718/SNPPLANNE
 
 ## Known current consistency rule
 
-When a module is reviewed and a UI/functionality rule is approved, apply the same rule to equivalent modules rather than fixing only one screen. Record the approved rule and implementation here so later changes do not accidentally undo it.
+When a module is reviewed and a UI/functionality rule is approved, apply the same rule to equivalent modules rather than fixing only one screen. Record the approved rule and implementation here so later changes do not accidentally undo it. If the rule belongs to a named page style, update that page style too.
 
 ## 2026-08-21 consistency audit starting point
 
-The user is reviewing modules one at a time beginning with Events. The approved Events workflow is now: Home → Events landing page → New Event or Select Existing Event → dedicated event detail page. Event-specific ticket and operational information must never appear on the initial Events landing page.
+The user is reviewing modules one at a time beginning with Events. The approved Events workflow is now: Home → Events landing page → New Event or Select Existing Event → dedicated event detail page. Event-specific ticket and operational information must never appear on the initial Events landing page. The matching reusable style is **EVENTS-HUB**.
