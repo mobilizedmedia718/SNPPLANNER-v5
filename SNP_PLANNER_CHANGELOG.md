@@ -19,12 +19,25 @@ This file is the durable change record for the live `mobilizedmedia718/SNPPLANNE
 - Back returns to a freshly rendered Home instead of restoring copied HTML, because copied HTML loses JavaScript listeners.
 - All Home module buttons use direct route handlers and must remain functional after repeated Back/Home navigation.
 
+### Events navigation — approved standard
+- Clicking **Events** from Planner Home opens an Events landing page only.
+- The Events landing page contains only:
+  - **+ New Event**
+  - one selector for events that have already been created.
+- The Events landing page must not show ticket information, ticket controls, staff panels, financial panels, menu setup, guest information, QR controls, or any other event-specific content.
+- Selecting an existing event opens that event's dedicated detail page.
+- The dedicated event detail page is where everything already attached to that event is shown: event information, tickets, staff, menu, sales, guests, finances, QR/redemption, closeout, promo/event-related features, and other event-specific modules that exist in the planner.
+- The existing-event selector is not shown on the event detail page.
+- Dropdowns and data-entry controls used to change event information belong only in **Edit Event** or **New Event / event-planning** flows.
+- Viewing an event must not look like editing an event.
+
 ### Collapsed lists / menus
 - List/menu entries are closed by default.
 - A record is represented by a label/button using the record name/title.
 - The record contents remain hidden until that record's button is clicked.
 - Only the selected record is open at one time; opening another closes the previous record.
-- This list behavior is standardized for Events, Venues, Vendors, Inventory, Customers/CRM, Finance, Assets, and Calendar.
+- This list behavior is standardized for Venues, Vendors, Inventory, Customers/CRM, Finance, Assets, and Calendar where a list-style module is appropriate.
+- Events use the dedicated Events landing-page selector standard above rather than showing event cards on the landing page.
 - Detail/edit pages are not automatically collapsed; the rule applies to list/menu views.
 
 ### Create/Add/New forms
@@ -57,7 +70,9 @@ This file is the durable change record for the live `mobilizedmedia718/SNPPLANNE
 ## Change chronology — recent live repository work
 
 ### 2026-08-21
-- Standardized record-list collapse behavior across Events, Venues, Vendors, Inventory, Customers/CRM, Finance, Assets, and Calendar. Entries are hidden until their label button is clicked; only one record opens at a time.
+- Rebuilt the Events landing page so it contains only **+ New Event** and an existing-event selector. Removed event-specific ticket/content panels from the Events landing screen by making the final Events renderer selection-only.
+- Established the rule that selecting an event opens a dedicated event detail page; dropdown/data-entry fields appear only in New/Edit event workflows.
+- Standardized record-list collapse behavior across Venues, Vendors, Inventory, Customers/CRM, Finance, Assets, and Calendar. Entries are hidden until their label button is clicked; only one record opens at a time.
 - Fixed Home navigation so Back rebuilds Home rather than restoring raw `innerHTML`, preventing dead buttons caused by lost event listeners.
 - Replaced fragile Home button execution with stable direct route handlers.
 - Forced browser refresh of Home navigation script through version bump.
@@ -84,4 +99,4 @@ When a module is reviewed and a UI/functionality rule is approved, apply the sam
 
 ## 2026-08-21 consistency audit starting point
 
-The user is reviewing modules one at a time beginning with Events. First inconsistency identified: Events/list records were visible/open instead of being hidden behind event-name buttons. The standardized collapsed-list fix was added planner-wide so equivalent list modules follow the same interaction model before individual module review continues.
+The user is reviewing modules one at a time beginning with Events. The approved Events workflow is now: Home → Events landing page → New Event or Select Existing Event → dedicated event detail page. Event-specific ticket and operational information must never appear on the initial Events landing page.
