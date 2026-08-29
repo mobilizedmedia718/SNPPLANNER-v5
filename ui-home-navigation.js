@@ -6,6 +6,7 @@
     ["Executive Dashboard", "dashboard"],
     ["Business", "business"],
     ["Events", "events"],
+    ["Promo Agent", "promo"],
     ["Venues", "venues"],
     ["Vendors", "vendors"],
     ["Inventory", "inventory"],
@@ -22,6 +23,13 @@
     dashboard: () => UI.renderDashboard.call(UI),
     business: () => UI.renderBusiness.call(UI),
     events: () => UI.renderEvents.call(UI),
+    promo: () => {
+      if (typeof PromoAgent === "undefined")
+        throw new Error("Promo Agent is unavailable.");
+      return typeof PromoAgent.openGlobal === "function"
+        ? PromoAgent.openGlobal()
+        : PromoAgent.render();
+    },
     venues: () => UI.renderVenues.call(UI),
     vendors: () => UI.renderVendors.call(UI),
     inventory: () => UI.renderInventory.call(UI),
