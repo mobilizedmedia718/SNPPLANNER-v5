@@ -112,6 +112,28 @@
     return result;
   };
 
+  function injectEventsLandingButton() {
+    const workspace = document.getElementById("workspace");
+    const newEventButton = document.getElementById("snpNewEventButton");
+    if (!workspace || !newEventButton || document.getElementById("snpEventsPromoAgentButton")) return;
+
+    const button = document.createElement("button");
+    button.id = "snpEventsPromoAgentButton";
+    button.type = "button";
+    button.textContent = "📣 Promo Agent — Choose Event";
+    button.style.cssText =
+      "width:100%;padding:13px 16px;font-size:16px;font-weight:700;margin:0 0 18px 0";
+    button.addEventListener("click", () => {
+      if (window.SNPHome && typeof SNPHome.openRoute === "function") {
+        SNPHome.openRoute("promo");
+      } else {
+        PromoAgent.openGlobal();
+      }
+    });
+
+    newEventButton.insertAdjacentElement("afterend", button);
+  }
+
   function injectEventDetailButton(eventId) {
     const event = eventById(eventId);
     const workspace = document.getElementById("workspace");
@@ -153,5 +175,6 @@
     UI[name] = wrapped;
   }
 
+  wrapRenderer("renderEvents", () => injectEventsLandingButton());
   wrapRenderer("renderEventDetail", (eventId) => injectEventDetailButton(eventId));
 })();
